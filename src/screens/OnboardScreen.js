@@ -83,7 +83,7 @@ Dive into a journey designed uniquely for you.`,
 
   // زر Get Started في الشريحة الأخيرة
   handleGetStarted = () => {
-    // مثال: انتقال إلى شاشة Login
+    //يتم نقلك مباشرة بعد زر Get Started الى Login
     this.props.navigation.replace('Login');
   };
 
