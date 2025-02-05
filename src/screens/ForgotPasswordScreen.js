@@ -11,9 +11,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
   Keyboard,
+  Modal,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -24,7 +24,13 @@ class ForgotPasswordScreen extends React.Component {
     super(props);
     this.state = {
       email: '',
-      loading: false, // ✅ إضافة حالة التحميل
+      loading: false,
+      // حالتا عرض المودال - نجاح و خطأ
+      showSuccessModal: false,
+      showErrorModal: false,
+      // لتخزين نصوص الخطأ حسب الحالة
+      errorTitle: '',
+      errorMessage: '',
     };
   }
 
@@ -37,14 +43,19 @@ class ForgotPasswordScreen extends React.Component {
   handleResetPassword = async () => {
     const { email } = this.state;
 
-    // ✅ فحص البريد باستخدام Regex أكثر دقة
+    // فحص البريد باستخدام Regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address.');
+      // عرض مودال الخطأ مع الرسالة المناسبة
+      this.setState({
+        showErrorModal: true,
+        errorTitle: 'Invalid Email',
+        errorMessage: 'Please enter a valid email address.',
+      });
       return;
     }
 
-    Keyboard.dismiss(); // ✅ إخفاء لوحة المفاتيح بعد الضغط
+    Keyboard.dismiss();
 
     try {
       this.setState({ loading: true });
@@ -52,21 +63,42 @@ class ForgotPasswordScreen extends React.Component {
       // 🔹 محاكاة استدعاء API (قم بتغييره إلى API حقيقي)
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      Alert.alert(
-        'Success',
-        `A reset link has been sent to ${email}. Check your inbox!`
-      );
-
-      this.setState({ email: '' }); // ✅ إعادة تعيين الإدخال بعد الإرسال
+      // عرض المودال المخصص للنجاح
+      this.setState({
+        showSuccessModal: true,
+        email: '', // إعادة تعيين الحقل
+      });
     } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      // في حال حدوث خطأ عام
+      this.setState({
+        showErrorModal: true,
+        errorTitle: 'Something went wrong',
+        errorMessage: 'Please try again later.',
+      });
     } finally {
       this.setState({ loading: false });
     }
   };
 
+  // إغلاق مودال النجاح
+  closeSuccessModal = () => {
+    this.setState({ showSuccessModal: false });
+  };
+
+  // إغلاق مودال الخطأ
+  closeErrorModal = () => {
+    this.setState({ showErrorModal: false });
+  };
+
   render() {
-    const { email, loading } = this.state;
+    const {
+      email,
+      loading,
+      showSuccessModal,
+      showErrorModal,
+      errorTitle,
+      errorMessage,
+    } = this.state;
 
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -107,18 +139,68 @@ class ForgotPasswordScreen extends React.Component {
             <TouchableOpacity
               style={[
                 styles.resetButton,
-                email.trim() === '' ? styles.disabledButton : {}, // ✅ تعطيل الزر عند عدم إدخال بريد
+                email.trim() === '' ? styles.disabledButton : {},
               ]}
               onPress={this.handleResetPassword}
               disabled={email.trim() === ''}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" /> // ✅ إظهار مؤشر تحميل أثناء الإرسال
+                <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.resetButtonText}>Reset Password</Text>
               )}
             </TouchableOpacity>
           </ScrollView>
+
+          {/* مودال النجاح */}
+          <Modal
+            visible={showSuccessModal}
+            transparent
+            animationType="fade"
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                {/* أيقونة النجاح */}
+                <View style={styles.successIconWrapper}>
+                  <Ionicons name="mail" size={30} color="#fff" />
+                </View>
+                {/* العنوان */}
+                <Text style={styles.modalTitle}>Check your email</Text>
+                {/* الرسالة */}
+                <Text style={styles.modalMessage}>
+                  We have sent password recovery{'\n'}instruction to your email
+                </Text>
+                {/* زر إغلاق المودال */}
+                <TouchableOpacity onPress={this.closeSuccessModal} style={styles.closeButton}>
+                  <Text style={styles.closeButtonText}>OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* مودال الخطأ */}
+          <Modal
+            visible={showErrorModal}
+            transparent
+            animationType="fade"
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                {/* أيقونة الخطأ */}
+                <View style={styles.errorIconWrapper}>
+                  <Ionicons name="warning" size={30} color="#fff" />
+                </View>
+                {/* العنوان */}
+                <Text style={styles.modalTitle}>{errorTitle}</Text>
+                {/* الرسالة */}
+                <Text style={styles.modalMessage}>{errorMessage}</Text>
+                {/* زر إغلاق المودال */}
+                <TouchableOpacity onPress={this.closeErrorModal} style={styles.closeButton}>
+                  <Text style={styles.closeButtonText}>OK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </KeyboardAvoidingView>
       </SafeAreaView>
     );
@@ -186,9 +268,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   disabledButton: {
-    backgroundColor: '#A8DADC', // ✅ لون باهت عند تعطيل الزر
+    backgroundColor: '#A8DADC',
   },
   resetButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // أنماط المودال
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)', // خلفية شفافة للمودال
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+  },
+  // أيقونة النجاح
+  successIconWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#F95728',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  // أيقونة الخطأ
+  errorIconWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#f44336',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#000',
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  closeButton: {
+    backgroundColor: '#00ADEF',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  closeButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
