@@ -5,9 +5,10 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TravelPlanScreen() {
-  // Sample data - replace with your actual data
+  // Sample data - replace actual data
   const plan = {
     destination: "New York",
     duration: "5 Days",
@@ -19,48 +20,66 @@ export default function TravelPlanScreen() {
       },
       {
         day: 2,
-        activities: [
-          { time: "7:30AM-8:00PM", name: "Central Park" },
-          { time: "8:00AM-8:30PM", name: "Times Square" },
-        ],
+        activities: [{ time: "7:30AM-8:00PM", name: "Central Park" }],
+      },
+      {
+        day: 3,
+        activities: [{ time: "8:00AM-8:30PM", name: "Times Square" }],
+      },
+      {
+        day: 4,
+        activities: [{ time: "7:00AM-8:00PM", name: "Statue of Liberty" }],
+      },
+      {
+        day: 5,
+        activities: [{ time: "7:30AM-8:00PM", name: "Central Park" }],
+      },
+      {
+        day: 6,
+        activities: [{ time: "8:00AM-8:30PM", name: "Times Square" }],
       },
     ],
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <Text style={styles.title}>Your Plan</Text>
-
-      {/* Details Card */}
-      <View style={styles.detailsCard}>
-        <View style={styles.detailRow}>
-          <DetailItem label="Destination" value={plan.destination} />
-          <DetailItem label="Duration" value={plan.duration} />
+    <SafeAreaView>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Header */}
+        <View>
+          <Text style={styles.title}>Your Plan</Text>
         </View>
-        <DetailItem label="Expenses" value={plan.expenses} />
-      </View>
 
-      {/* Itinerary Sections */}
-      {plan.days.map((day, index) => (
-        <View key={index} style={styles.dayContainer}>
-          <Text style={styles.dayHeader}>Day{day.day}</Text>
-          {day.activities.map((activity, idx) => (
-            <ActivityItem
-              key={idx}
-              time={activity.time}
-              name={activity.name}
-              isLast={idx === day.activities.length - 1}
-            />
-          ))}
+        {/* Details Card */}
+        <View style={styles.detailsCard}>
+          <View style={styles.detailRow}>
+            <DetailItem label="Destination" value={plan.destination} />
+            <DetailItem label="Duration" value={plan.duration} />
+          </View>
+          <DetailItem label="Expenses" value={plan.expenses} />
         </View>
-      ))}
 
+        {/* Itinerary Sections */}
+        {plan.days.map((day, index) => (
+          <View key={index} style={styles.dayContainer}>
+            <Text style={styles.dayHeader}>Day{day.day}</Text>
+            {day.activities.map((activity, idx) => (
+              <ActivityItem
+                key={idx}
+                time={activity.time}
+                name={activity.name}
+                isLast={idx === day.activities.length - 1}
+              />
+            ))}
+          </View>
+        ))}
+      </ScrollView>
       {/* Next Button */}
-      <TouchableOpacity style={styles.nextButton}>
-        <Text style={styles.nextButtonText}>Next</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.nextButton}>
+          <Text style={styles.nextButtonText}>Next</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -151,16 +170,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
+  buttonContainer: {
+    flex: 1, // Takes full screen height
+    justifyContent: "center", // Vertical centering
+    alignItems: "center", // Horizontal centering
+    bottom: "50",
+  },
   nextButton: {
-    backgroundColor: "#2196F3",
-    borderRadius: 8,
+    height: "57",
+    width: "122",
+    backgroundColor: "#24BAEC",
+    borderRadius: 80,
     padding: 16,
+    justifyContent: "center",
     alignItems: "center",
-    marginVertical: 20,
   },
   nextButtonText: {
     color: "white",
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "500",
   },
 });
