@@ -84,7 +84,7 @@ Dive into a journey designed uniquely for you.`,
   // زر Get Started في الشريحة الأخيرة
   handleGetStarted = () => {
     // مثال: انتقال إلى شاشة Login
-    this.props.navigation.replace('Verification');
+    this.props.navigation.replace('Login');
   };
 
   renderSlide = (slide, index) => {
