@@ -4,10 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function TravelPlanScreen() {
+export default function UserPlan() {
   // Sample data - replace actual data
   const plan = {
     destination: "New York",
@@ -42,13 +43,28 @@ export default function TravelPlanScreen() {
   };
 
   return (
-    <SafeAreaView>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header */}
-        <View>
-          <Text style={styles.title}>Your Plan</Text>
+    <SafeAreaView style={styles.wrapper}>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <View style={styles.titleContainer}>
+          <Text style={styles.titleText}>Your Plan</Text>
         </View>
-
+        <View style={styles.iconsContainer}>
+          <Image
+            source={require("../../assets/Icons/Share.png")}
+            style={styles.icon}
+          />
+          <Image
+            source={require("../../assets/Icons/Edit.png")}
+            style={styles.icon}
+          />
+          ;
+        </View>
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        style={styles.wrapper}
+      >
         {/* Details Card */}
         <View style={styles.detailsCard}>
           <View style={styles.detailRow}>
@@ -100,22 +116,45 @@ const ActivityItem = ({ time, name, isLast }) => (
 
 // Styles
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
+  wrapper: {
     backgroundColor: "#f5f5f5",
   },
-  title: {
-    fontSize: 24,
+  container: {
+    paddingBottom: 200,
+  },
+  headerContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    alignContent: "center",
+    padding: 15,
+    backgroundColor: "white",
+  },
+  titleContainer: {
+    flex: 1,
+    alignSelf: "center",
+  },
+  titleText: {
+    fontSize: 22,
     textAlign: "center",
     fontWeight: "bold",
-    marginBottom: 20,
     color: "#333",
+  },
+  iconsContainer: {
+    flex: 2,
+    flexDirection: "row",
+    gap: 10,
+  },
+  icon: {
+    width: 44,
+    height: 44,
   },
   detailsCard: {
     backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 20,
+    margin: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -146,6 +185,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
+    marginInline: 20,
   },
   dayHeader: {
     fontSize: 18,
@@ -174,7 +214,7 @@ const styles = StyleSheet.create({
     flex: 1, // Takes full screen height
     justifyContent: "center", // Vertical centering
     alignItems: "center", // Horizontal centering
-    bottom: "50",
+    bottom: "10%",
   },
   nextButton: {
     height: "57",
