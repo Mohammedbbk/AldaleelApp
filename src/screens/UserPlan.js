@@ -124,16 +124,17 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     width: "100%",
+    height: 60,
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    alignContent: "center",
     padding: 15,
     backgroundColor: "white",
+    borderRadius: 15,
   },
   titleContainer: {
-    flex: 1,
-    alignSelf: "center",
+    position: "absolute",
+    right: "0",
+    left: "0",
   },
   titleText: {
     fontSize: 22,
@@ -142,8 +143,10 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   iconsContainer: {
-    flex: 2,
+    position: "absolute",
     flexDirection: "row",
+    alignItems: "center",
+    right: 10,
     gap: 10,
   },
   icon: {
