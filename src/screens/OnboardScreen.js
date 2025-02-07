@@ -11,6 +11,9 @@ import {
   Animated,
 } from 'react-native';
 
+// استيراد عناصر SVG
+import Svg, { Path } from 'react-native-svg';
+
 // أمثلة على صور/شرائح مختلفة
 import waveBoat from '../../assets/onboard/waveBoat.png';
 import cityTravel from '../../assets/onboard/cityTravel.png';
@@ -22,7 +25,7 @@ class OnboardScreen extends React.Component {
   constructor(props) {
     super(props);
 
-    // الشرائح مع عناوين، نصوص فرعية (Subtitle)، أوصاف وصور محدثة
+    // الشرائح مع عناوين، نصوص فرعية، أوصاف وصور محدثة
     this.slides = [
       {
         key: 'slide1',
@@ -31,7 +34,7 @@ class OnboardScreen extends React.Component {
         subtitle: 'Harness AI to craft your perfect escape',
         description: `Embark on a futuristic travel adventure. 
 Let AI uncover hidden gems and design personalized itineraries for unforgettable memories.`,
-        showSlantedLine: true, // تُستخدم فقط في الشريحة الأولى
+        showSlantedLine: true, // تستخدم في الشريحة الأولى (لرسم القوس)
       },
       {
         key: 'slide2',
@@ -55,7 +58,7 @@ Dive into a journey designed uniquely for you.`,
       currentSlideIndex: 0,
     };
 
-    // مرجع للتحكم في الـ ScrollView (للانتقال إلى الشريحة الأخيرة عند الضغط على Skip)
+    // مرجع للتحكم في الـ ScrollView
     this.scrollViewRef = React.createRef();
 
     // قيمة متحركة لاستخدامها لاحقًا إن أردت أي تأثيرات (غير مستخدمة حالياً)
@@ -83,7 +86,7 @@ Dive into a journey designed uniquely for you.`,
 
   // زر Get Started في الشريحة الأخيرة
   handleGetStarted = () => {
-    //يتم نقلك مباشرة بعد زر Get Started الى Login
+    // يتم نقلك مباشرة بعد زر Get Started إلى Login
     this.props.navigation.replace('Login');
   };
 
@@ -116,9 +119,24 @@ Dive into a journey designed uniquely for you.`,
               }
             </Text>
 
-            {/* في حالة الشريحة الأولى، إضافة الشرطة المائلة تحت كلمة intelligently */}
+            {/* في حالة الشريحة الأولى، رسم القوس تحت كلمة "intelligently" */}
             {slide.showSlantedLine && (
-              <View style={styles.slantedLine} />
+ <View style={styles.arcContainer}>  
+<Svg  
+    width="220"  // زيادة العرض  
+    height="60"  // زيادة الارتفاع  
+    viewBox="0 0 80 50"  // تعديل نطاق الرسم  
+    style={styles.arcStyle}  
+>  
+    <Path  
+        d="M0,20 C20,5 60,5 80,20" // تعديل نقاط التحكم للانحناء المعكوس  
+        fill="none"  
+        stroke="#FF6E2C"  
+        strokeWidth={4}  
+        strokeLinecap="round"  
+    />  
+</Svg>
+</View>
             )}
           </View>
 
@@ -156,7 +174,7 @@ Dive into a journey designed uniquely for you.`,
           {this.slides.map((slide, i) => this.renderSlide(slide, i))}
         </ScrollView>
 
-        {/* المؤشرات (Dashes) في الأسفل */}
+        {/* المؤشرات (Dashes) بعد رفعها لتكون تحت النص المكتوب */}
         <View style={styles.dashesContainer}>
           {this.slides.map((_, i) => {
             const isActive = i === currentSlideIndex;
@@ -190,14 +208,14 @@ const styles = StyleSheet.create({
   // زر Skip
   skipButton: {
     position: 'absolute',
-    top: 50, // عدّلها حسب شكل الـ StatusBar أو الـ Notch
+    top: 50, // اضبطها حسب شكل الـ StatusBar أو الـ Notch
     right: 20,
     zIndex: 10,
   },
   skipText: {
     fontSize: 16,
     color: '#666',
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
   },
   // كل شريحة تملأ الشاشة
   slide: {
@@ -208,7 +226,7 @@ const styles = StyleSheet.create({
   // الصورة العلوية
   imageContainer: {
     width: '100%',
-    height: height * 0.45,
+    height: height * 0.55,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     overflow: 'hidden',
@@ -230,28 +248,33 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: 'bold',
     textAlign: 'center',
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
   },
   highlight: {
     color: '#FF6E2C', // برتقالي
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
   },
-  // الشرطة المائلة تحت كلمة "intelligently" (تم رفعها قليلاً)
-  slantedLine: {
+  // حاوية القوس
+  arcContainer: {
     position: 'absolute',
-    width: 75,
-    height: 2,
-    backgroundColor: '#FF6E2C',
-    left: '27%',
-    top: 22, // رفعها لأعلى قليلاً
-    transform: [{ rotate: '10deg' }],
+    left: '25%', // قد تحتاج لضبطه حسب المكان المناسب
+    top: 25,     // قد تحتاج لضبطه حسب ارتفاع الكلمة
+  },
+  // تنسيق SVG
+  arcStyle: {
+    // لإضافة ظل خفيف (قد لا يعمل على كل المنصات بنفس الشكل):
+    shadowColor: '#FF6E2C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3, // لأندرويد
   },
   subtitle: {
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
     marginTop: 5,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
   },
   description: {
     marginTop: 10,
@@ -259,12 +282,12 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 22,
     textAlign: 'center',
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
   },
-  // الشرطات في الأسفل
+  // المؤشرات (Dashes) تم رفعها لتكون تحت النص المكتوب
   dashesContainer: {
     position: 'absolute',
-    bottom: height * 0.12,
+    bottom: height * 0.18, // تحكم في المسافة من الأسفل
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -297,6 +320,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
   },
 });
