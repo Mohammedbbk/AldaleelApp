@@ -11,9 +11,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function UserPlan() {
   // Sample data - replace actual data from AI
   const plan = {
-    destination: "New York",
-    duration: "5 Days",
-    expenses: "1500 USD",
+    details: [
+      { name: "Destination", value: "New York" },
+      { name: "Duration", value: "5 Days" },
+      { name: "Expenses", value: "1500 USD" },
+    ],
+
     days: [
       {
         day: 1,
@@ -42,6 +45,12 @@ export default function UserPlan() {
     ],
   };
 
+  const emojis = [
+    { name: "Destination", emoji: "✈️" },
+    { name: "Duration", emoji: "⏳" },
+    { name: "Expenses", emoji: "💵" },
+  ];
+
   return (
     <SafeAreaView style={styles.wrapper}>
       {/* Header */}
@@ -61,32 +70,50 @@ export default function UserPlan() {
           ;
         </View>
       </View>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        style={styles.wrapper}
-      >
+      <ScrollView contentContainerStyle={styles.container}>
         {/* Overall Review Card */}
+
         <View style={styles.overallReview}>
-          <View style={styles.overallReviewCol}>
-            <DetailItem label="Destination" value={plan.destination} />
-            <DetailItem label="Duration" value={plan.duration} />
-            <DetailItem label="Expenses" value={plan.expenses} />
+          <View style={styles.detailCol}>
+            {plan.details.map((detail, index) => (
+              <View key={index}>
+                <DetailItem label={detail.name} value={null} />
+              </View>
+            ))}
+          </View>
+          <View style={styles.detailColSeperator}>
+            {plan.details.map((detail, index) => (
+              <View key={index} style={styles.detailItem}>
+                <Text style={styles.detailValue}>
+                  {emojis.find((emoji) => emoji.name === detail.name).emoji}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.detailCol}>
+            {plan.details.map((detail, index) => (
+              <View key={index}>
+                <DetailItem label={null} value={detail.value} />
+              </View>
+            ))}
           </View>
         </View>
 
         {/* Itinerary Sections */}
         {plan.days.map((day, index) => (
-          <View key={index} style={styles.dayContainer}>
+          <>
             <Text style={styles.dayHeader}>Day{day.day}</Text>
-            {day.activities.map((activity, idx) => (
-              <ActivityItem
-                key={idx}
-                time={activity.time}
-                name={activity.name}
-                isLast={idx === day.activities.length - 1}
-              />
-            ))}
-          </View>
+            <View key={index} style={styles.dayContainer}>
+              {day.activities.map((activity, idx) => (
+                <ActivityItem
+                  key={idx}
+                  time={activity.time}
+                  name={activity.name}
+                  isLast={idx === day.activities.length - 1}
+                />
+              ))}
+            </View>
+          </>
         ))}
       </ScrollView>
       {/* Next Button */}
@@ -117,13 +144,15 @@ const ActivityItem = ({ time, name, isLast }) => (
 // Styles
 const styles = StyleSheet.create({
   wrapper: {
+    position: "relative",
+    width: "100%",
+    padding: 10,
     backgroundColor: "#f5f5f5",
   },
   container: {
     paddingBottom: 200,
   },
   headerContainer: {
-    width: "100%",
     height: 60,
     flexDirection: "row",
     alignItems: "center",
@@ -154,25 +183,31 @@ const styles = StyleSheet.create({
     height: 44,
   },
   overallReview: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    margin: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  overallReviewCol: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-evenly",
-    marginBottom: 12,
+    justifyContent: "center",
+    shadowRadius: 6,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "#000",
+    elevation: 2,
+    backgroundColor: "white",
+    padding: 10,
+    marginBlock: 20,
+    borderRadius: 12,
+  },
+  detailCol: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  detailColSeperator: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   detailItem: {
-    flex: 1,
-    marginHorizontal: 8,
+    flexDirection: "row",
+    padding: 10,
   },
   detailLabel: {
     fontSize: 14,
@@ -189,7 +224,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
-    marginInline: 20,
   },
   dayHeader: {
     fontSize: 18,
