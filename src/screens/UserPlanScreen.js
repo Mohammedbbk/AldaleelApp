@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function UserPlan() {
-  // Sample data - replace actual data
+  // Sample data - replace actual data from AI
   const plan = {
     destination: "New York",
     duration: "5 Days",
@@ -65,13 +65,13 @@ export default function UserPlan() {
         contentContainerStyle={styles.container}
         style={styles.wrapper}
       >
-        {/* Details Card */}
-        <View style={styles.detailsCard}>
-          <View style={styles.detailRow}>
+        {/* Overall Review Card */}
+        <View style={styles.overallReview}>
+          <View style={styles.overallReviewCol}>
             <DetailItem label="Destination" value={plan.destination} />
             <DetailItem label="Duration" value={plan.duration} />
+            <DetailItem label="Expenses" value={plan.expenses} />
           </View>
-          <DetailItem label="Expenses" value={plan.expenses} />
         </View>
 
         {/* Itinerary Sections */}
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
   },
-  detailsCard: {
+  overallReview: {
     backgroundColor: "white",
     borderRadius: 12,
     padding: 16,
@@ -164,9 +164,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  detailRow: {
+  overallReviewCol: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    justifyContent: "space-evenly",
     marginBottom: 12,
   },
   detailItem: {
