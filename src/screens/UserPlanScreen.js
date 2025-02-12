@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ScrollView,
   View,
@@ -5,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -50,6 +52,35 @@ export default function UserPlan() {
     { name: "Duration", emoji: "⏳" },
     { name: "Expenses", emoji: "💵" },
   ];
+
+  const [isLoading, setLoading] = useState(true);
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Encode the activity name for the URL
+        const encodedName = encodeURIComponent(plan.days[0].activities[0].name);
+        const url = `https://pixabay.com/api/?key=48791338-871e8e68f968c04f8f6fb8343&q=${encodedName}&image_type=photo`;
+
+        const response = await fetch(url);
+        const json = await response.json();
+
+        if (json.hits && json.hits.length > 0) {
+          setData(json.hits);
+        } else {
+          console.log("No images found for:", plan.days[0].activities[0].name);
+        }
+      } catch (error) {
+        console.error("Error fetching images:", error);
+        alert(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <SafeAreaView style={styles.wrapper}>
@@ -101,21 +132,21 @@ export default function UserPlan() {
 
         {/* Itinerary Sections */}
         {plan.days.map((day, index) => (
-          <View style={styles.itineraryWrapper}>
-            <Text style={styles.dayHeader}>Day{day.day}</Text>
-            <View key={index} style={styles.dayContainer}>
+          <View key={index} style={styles.itineraryWrapper}>
+            <Text style={styles.dayHeader}>Day {day.day}</Text>
+            <View style={styles.dayContainer}>
               {day.activities.map((activity, idx) => (
                 <ActivityItem
                   key={idx}
                   time={activity.time}
                   name={activity.name}
-                  isLast={idx === day.activities.length - 1}
                 />
               ))}
             </View>
           </View>
         ))}
       </ScrollView>
+
       {/* Next Button */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.nextButton}>
@@ -134,16 +165,55 @@ const DetailItem = ({ label, value }) => (
   </View>
 );
 
-const ActivityItem = ({ time, name, isLast }) => (
-  <View style={styles.activityItem}>
-    <Image style={styles.activityImage}></Image>
+const ActivityItem = ({ time, name }) => {
+  const [imageUrl, setImageUrl] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    <View style={styles.activityDetails}>
-      <Text style={styles.activityTime}>{time}</Text>
-      <Text style={styles.activityName}>{name}</Text>
+  useEffect(() => {
+    const fetchImage = async () => {
+      try {
+        const encodedName = encodeURIComponent(name);
+        const url = `https://pixabay.com/api/?key=48791338-871e8e68f968c04f8f6fb8343&q=${encodedName}&image_type=photo`;
+
+        const response = await fetch(url);
+        const json = await response.json();
+
+        if (json.hits && json.hits.length > 0) {
+          setImageUrl(json.hits[0].largeImageURL);
+        } else {
+          console.log("No images found for:", name);
+        }
+      } catch (error) {
+        console.error("Error fetching image for:", name, error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchImage();
+  }, [name]); // Dependency on name ensures fetch happens when name changes
+
+  return (
+    <View style={styles.activityItem}>
+      {isLoading ? (
+        <ActivityIndicator style={styles.activityImage} />
+      ) : (
+        imageUrl && (
+          <Image
+            style={styles.activityImage}
+            source={{ uri: imageUrl }}
+            resizeMode="cover"
+          />
+        )
+      )}
+
+      <View style={styles.activityDetails}>
+        <Text style={styles.activityTime}>{time}</Text>
+        <Text style={styles.activityName}>{name}</Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 // Styles
 const styles = StyleSheet.create({
