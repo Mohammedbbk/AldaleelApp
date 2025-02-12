@@ -98,34 +98,29 @@ export default function UserPlan() {
             source={require("../../assets/Icons/Edit.png")}
             style={styles.icon}
           />
-          ;
         </View>
       </View>
+
       <ScrollView contentContainerStyle={styles.container}>
         {/* Overall Review Card */}
-
         <View style={styles.overallReview}>
           <View style={styles.detailCol}>
             {plan.details.map((detail, index) => (
-              <View key={index}>
-                <DetailItem label={detail.name} value={null} />
-              </View>
+              <DetailItem key={index} label={detail.name} value={null} />
             ))}
           </View>
           <View style={styles.detailColSeperator}>
             {plan.details.map((detail, index) => (
               <View key={index} style={styles.detailItem}>
                 <Text style={styles.detailValue}>
-                  {emojis.find((emoji) => emoji.name === detail.name).emoji}
+                  {emojis.find((emoji) => emoji.name === detail.name)?.emoji}
                 </Text>
               </View>
             ))}
           </View>
           <View style={styles.detailCol}>
             {plan.details.map((detail, index) => (
-              <View key={index}>
-                <DetailItem label={null} value={detail.value} />
-              </View>
+              <DetailItem key={index} label={null} value={detail.value} />
             ))}
           </View>
         </View>
@@ -341,8 +336,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nextButton: {
-    height: "57",
-    width: "122",
+    height: 57,
+    width: 122,
     backgroundColor: "#24BAEC",
     borderRadius: 10,
     justifyContent: "center",
