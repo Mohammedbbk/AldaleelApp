@@ -11,14 +11,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function UserPlan() {
-  // Sample data - replace actual data from AI
+  // Sample data - replace with actual data from API
   const plan = {
     details: [
       { name: "Destination", value: "New York" },
       { name: "Duration", value: "5 Days" },
       { name: "Expenses", value: "1500 USD" },
     ],
-
     days: [
       {
         day: 1,
@@ -59,7 +58,6 @@ export default function UserPlan() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Encode the activity name for the URL
         const encodedName = encodeURIComponent(plan.days[0].activities[0].name);
         const url = `https://pixabay.com/api/?key=48791338-871e8e68f968c04f8f6fb8343&q=${encodedName}&image_type=photo`;
 
@@ -75,7 +73,7 @@ export default function UserPlan() {
         console.error("Error fetching images:", error);
         alert(error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
@@ -84,7 +82,7 @@ export default function UserPlan() {
 
   return (
     <SafeAreaView style={styles.wrapper}>
-      {/* Header */}
+      {/* Header Section */}
       <View style={styles.headerContainer}>
         <View style={styles.titleContainer}>
           <Text style={styles.titleText}>Your Plan</Text>
@@ -102,7 +100,7 @@ export default function UserPlan() {
       </View>
 
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Overall Review Card */}
+        {/* Plan Details Section */}
         <View style={styles.overallReview}>
           <View style={styles.detailCol}>
             {plan.details.map((detail, index) => (
@@ -125,7 +123,7 @@ export default function UserPlan() {
           </View>
         </View>
 
-        {/* Itinerary Sections */}
+        {/* Itinerary Section */}
         {plan.days.map((day, index) => (
           <View key={index} style={styles.itineraryWrapper}>
             <Text style={styles.dayHeader}>Day {day.day}</Text>
@@ -186,7 +184,7 @@ const ActivityItem = ({ time, name }) => {
     };
 
     fetchImage();
-  }, [name]); // Dependency on name ensures fetch happens when name changes
+  }, [name]);
 
   return (
     <View style={styles.activityItem}>
