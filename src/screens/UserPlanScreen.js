@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,27 +22,208 @@ export default function UserPlan() {
     days: [
       {
         day: 1,
-        activities: [{ time: "7:00AM-8:00PM", name: "Statue of Liberty" }],
+        activities: [{ time: "7:00AM-8:00PM", name: "Chinatown" }],
+        plan: [
+          {
+            time: "8:00AM",
+            event:
+              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+          },
+          {
+            time: "9:30AM",
+            event:
+              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+          },
+          {
+            time: "11:00AM",
+            event:
+              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+          },
+          {
+            time: "12:30PM",
+            event:
+              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+          },
+          {
+            time: "2:00PM",
+            event:
+              "Visit nearby attractions like Little Italy or explore street art in the area.",
+          },
+          {
+            time: "5:00PM",
+            event:
+              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+          },
+          {
+            time: "7:00PM",
+            event:
+              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+          },
+        ],
       },
       {
         day: 2,
         activities: [{ time: "7:30AM-8:00PM", name: "Central Park" }],
+        plan: [
+          {
+            time: "8:00AM",
+            event:
+              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+          },
+          {
+            time: "9:30AM",
+            event:
+              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+          },
+          {
+            time: "11:00AM",
+            event:
+              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+          },
+          {
+            time: "12:30PM",
+            event:
+              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+          },
+          {
+            time: "2:00PM",
+            event:
+              "Visit nearby attractions like Little Italy or explore street art in the area.",
+          },
+          {
+            time: "5:00PM",
+            event:
+              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+          },
+          {
+            time: "7:00PM",
+            event:
+              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+          },
+        ],
       },
       {
         day: 3,
         activities: [{ time: "8:00AM-8:30PM", name: "Times Square" }],
+        plan: [
+          {
+            time: "8:00AM",
+            event:
+              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+          },
+          {
+            time: "9:30AM",
+            event:
+              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+          },
+          {
+            time: "11:00AM",
+            event:
+              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+          },
+          {
+            time: "12:30PM",
+            event:
+              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+          },
+          {
+            time: "2:00PM",
+            event:
+              "Visit nearby attractions like Little Italy or explore street art in the area.",
+          },
+          {
+            time: "5:00PM",
+            event:
+              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+          },
+          {
+            time: "7:00PM",
+            event:
+              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+          },
+        ],
       },
       {
         day: 4,
         activities: [{ time: "7:00AM-8:00PM", name: "Statue of Liberty" }],
+        plan: [
+          {
+            time: "8:00AM",
+            event:
+              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+          },
+          {
+            time: "9:30AM",
+            event:
+              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+          },
+          {
+            time: "11:00AM",
+            event:
+              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+          },
+          {
+            time: "12:30PM",
+            event:
+              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+          },
+          {
+            time: "2:00PM",
+            event:
+              "Visit nearby attractions like Little Italy or explore street art in the area.",
+          },
+          {
+            time: "5:00PM",
+            event:
+              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+          },
+          {
+            time: "7:00PM",
+            event:
+              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+          },
+        ],
       },
       {
         day: 5,
-        activities: [{ time: "7:30AM-8:00PM", name: "Central Park" }],
-      },
-      {
-        day: 6,
-        activities: [{ time: "8:00AM-8:30PM", name: "Times Square" }],
+        activities: [{ time: "7:30AM-8:00PM", name: "Museum of Modern Art" }],
+        plan: [
+          {
+            time: "8:00AM",
+            event:
+              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+          },
+          {
+            time: "9:30AM",
+            event:
+              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+          },
+          {
+            time: "11:00AM",
+            event:
+              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+          },
+          {
+            time: "12:30PM",
+            event:
+              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+          },
+          {
+            time: "2:00PM",
+            event:
+              "Visit nearby attractions like Little Italy or explore street art in the area.",
+          },
+          {
+            time: "5:00PM",
+            event:
+              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+          },
+          {
+            time: "7:00PM",
+            event:
+              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+          },
+        ],
       },
     ],
   };
@@ -51,34 +233,6 @@ export default function UserPlan() {
     { name: "Duration", emoji: "⏳" },
     { name: "Expenses", emoji: "💵" },
   ];
-
-  const [isLoading, setLoading] = useState(true);
-  const [data, setData] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const encodedName = encodeURIComponent(plan.days[0].activities[0].name);
-        const url = `https://pixabay.com/api/?key=48791338-871e8e68f968c04f8f6fb8343&q=${encodedName}&image_type=photo`;
-
-        const response = await fetch(url);
-        const json = await response.json();
-
-        if (json.hits && json.hits.length > 0) {
-          setData(json.hits);
-        } else {
-          console.log("No images found for:", plan.days[0].activities[0].name);
-        }
-      } catch (error) {
-        console.error("Error fetching images:", error);
-        alert(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   return (
     <SafeAreaView style={styles.wrapper}>
@@ -99,7 +253,10 @@ export default function UserPlan() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Plan Details Section */}
         <View style={styles.overallReview}>
           <View style={styles.detailCol}>
@@ -129,11 +286,19 @@ export default function UserPlan() {
             <Text style={styles.dayHeader}>Day {day.day}</Text>
             <View style={styles.dayContainer}>
               {day.activities.map((activity, idx) => (
-                <ActivityItem
+                <Accordion
                   key={idx}
-                  time={activity.time}
-                  name={activity.name}
-                />
+                  title={
+                    <ActivityItem time={activity.time} name={activity.name} />
+                  }
+                >
+                  {day.plan.map((item, i) => (
+                    <View key={i} style={styles.planItem}>
+                      <Text style={styles.planTime}>{item.time}</Text>
+                      <Text style={styles.planEvent}>{item.event}</Text>
+                    </View>
+                  ))}
+                </Accordion>
               ))}
             </View>
           </View>
@@ -204,6 +369,57 @@ const ActivityItem = ({ time, name }) => {
         <Text style={styles.activityTime}>{time}</Text>
         <Text style={styles.activityName}>{name}</Text>
       </View>
+    </View>
+  );
+};
+
+const Accordion = ({ title, children }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+
+  // Measure content height once on initial render
+  const measureContent = (event) => {
+    const { height } = event.nativeEvent.layout;
+    setContentHeight(height);
+  };
+
+  const toggleAccordion = () => {
+    if (!contentHeight) return;
+
+    Animated.timing(animatedHeight, {
+      toValue: expanded ? 0 : contentHeight,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      setExpanded(!expanded);
+    });
+  };
+
+  return (
+    <View>
+      {/* Measurement view (hidden off-screen) */}
+      <View
+        style={{ position: "absolute", left: -500 }}
+        onLayout={measureContent}
+      >
+        <View style={styles.content}>{children}</View>
+      </View>
+
+      {/* Clickable header */}
+      <TouchableOpacity onPress={toggleAccordion} activeOpacity={0.9}>
+        {title}
+        <Animated.View
+          style={{
+            height: animatedHeight,
+            overflow: "hidden",
+          }}
+        >
+          <View style={styles.content}>{children}</View>
+        </Animated.View>
+      </TouchableOpacity>
+
+      {/* Animated content */}
     </View>
   );
 };
