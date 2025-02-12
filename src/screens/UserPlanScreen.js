@@ -253,6 +253,7 @@ export default function UserPlan() {
         </View>
       </View>
 
+      {/* Body */}
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
