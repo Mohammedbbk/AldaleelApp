@@ -101,7 +101,7 @@ export default function UserPlan() {
 
         {/* Itinerary Sections */}
         {plan.days.map((day, index) => (
-          <>
+          <View style={styles.itineraryWrapper}>
             <Text style={styles.dayHeader}>Day{day.day}</Text>
             <View key={index} style={styles.dayContainer}>
               {day.activities.map((activity, idx) => (
@@ -113,7 +113,7 @@ export default function UserPlan() {
                 />
               ))}
             </View>
-          </>
+          </View>
         ))}
       </ScrollView>
       {/* Next Button */}
@@ -135,9 +135,13 @@ const DetailItem = ({ label, value }) => (
 );
 
 const ActivityItem = ({ time, name, isLast }) => (
-  <View style={[styles.activityItem, !isLast && styles.activityBorder]}>
-    <Text style={styles.activityTime}>{time}</Text>
-    <Text style={styles.activityName}>{name}</Text>
+  <View style={styles.activityItem}>
+    <Image style={styles.activityImage}></Image>
+
+    <View style={styles.activityDetails}>
+      <Text style={styles.activityTime}>{time}</Text>
+      <Text style={styles.activityName}>{name}</Text>
+    </View>
   </View>
 );
 
@@ -146,11 +150,11 @@ const styles = StyleSheet.create({
   wrapper: {
     position: "relative",
     width: "100%",
-    padding: 10,
     backgroundColor: "#f5f5f5",
   },
   container: {
     paddingBottom: 200,
+    paddingInline: 10,
   },
   headerContainer: {
     height: 60,
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 15,
     backgroundColor: "white",
-    borderRadius: 15,
+    borderRadius: 10,
   },
   titleContainer: {
     position: "absolute",
@@ -192,8 +196,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     backgroundColor: "white",
     padding: 10,
-    marginBlock: 20,
-    borderRadius: 12,
+    marginBlock: 10,
+    borderRadius: 10,
   },
   detailCol: {
     flexDirection: "column",
@@ -219,25 +223,31 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#333",
   },
+  itineraryWrapper: {
+    flexDirection: "column",
+    alignItems: "strech",
+  },
   dayContainer: {
+    flexGrow: 1,
     backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    overflow: "hidden",
     marginBottom: 20,
   },
+  activityImage: {
+    backgroundColor: "#555",
+    width: "100%",
+    height: 200,
+  },
   dayHeader: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "400",
     color: "#333",
-    marginBottom: 12,
+    marginBottom: 5,
   },
-  activityItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  activityBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+  activityItem: {},
+  activityDetails: {
+    padding: 20,
   },
   activityTime: {
     fontSize: 14,
@@ -249,16 +259,17 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   buttonContainer: {
-    flex: 1, // Takes full screen height
-    justifyContent: "center", // Vertical centering
-    alignItems: "center", // Horizontal centering
-    bottom: "10%",
+    position: "absolute",
+    zIndex: 1,
+    bottom: 100,
+    width: "100%",
+    alignItems: "center",
   },
   nextButton: {
     height: "57",
     width: "122",
     backgroundColor: "#24BAEC",
-    borderRadius: 80,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
