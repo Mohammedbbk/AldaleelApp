@@ -400,7 +400,13 @@ const Accordion = ({ title, children }) => {
     <View>
       {/* Measurement view (hidden off-screen) */}
       <View
-        style={{ position: "absolute", left: -500 }}
+        style={[
+          {
+            position: "absolute",
+            left: -500,
+          },
+          styles.accordianContent,
+        ]}
         onLayout={measureContent}
       >
         <View style={styles.content}>{children}</View>
@@ -409,17 +415,17 @@ const Accordion = ({ title, children }) => {
       {/* Clickable header */}
       <TouchableOpacity onPress={toggleAccordion} activeOpacity={0.9}>
         {title}
+        {/* Animated content */}
         <Animated.View
           style={{
             height: animatedHeight,
             overflow: "hidden",
+            style: styles.accordianContent,
           }}
         >
-          <View style={styles.content}>{children}</View>
+          <View style={styles.accordianContent}>{children}</View>
         </Animated.View>
       </TouchableOpacity>
-
-      {/* Animated content */}
     </View>
   );
 };
@@ -506,10 +512,19 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "strech",
   },
+  dayHeader: {
+    fontSize: 13,
+    fontWeight: "400",
+    color: "#333",
+    marginBottom: 5,
+  },
   dayContainer: {
     padding: 0,
-    backgroundColor: "white",
+    position: "relative",
+    backgroundColor: "#00ADEF",
     borderRadius: 10,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     overflow: "hidden",
     marginBottom: 20,
     shadowRadius: 6,
@@ -523,24 +538,40 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
   },
-  dayHeader: {
-    fontSize: 13,
-    fontWeight: "400",
-    color: "#333",
-    marginBottom: 5,
-  },
   activityItem: {},
   activityDetails: {
     padding: 20,
   },
   activityTime: {
     fontSize: 14,
-    color: "#666",
+    color: "white",
+    fontWeight: 400,
     marginBottom: 4,
   },
   activityName: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: 18,
+    fontWeight: 500,
+    color: "white",
+  },
+  accordianContent: {
+    borderColor: "#3333",
+    backgroundColor: "white",
+  },
+  planItem: {
+    flexDirection: "row",
+    gap: 5,
+    justifyContent: "space-between",
+    padding: 10,
+  },
+  planTime: {
+    color: "#666",
+    width: 70,
+    borderRightWidth: 1,
+    borderColor: "#666",
+  },
+  planEvent: {
+    flex: 2,
+    flexWrap: 1,
   },
   buttonContainer: {
     position: "absolute",
