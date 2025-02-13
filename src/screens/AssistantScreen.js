@@ -31,6 +31,16 @@ class ChatScreen extends React.Component {
     isLoading: false,
   };
 
+  // Create a ref for the ScrollView
+  scrollViewRef = React.createRef();
+
+  // Function to scroll to the bottom
+  scrollToBottom = () => {
+    if (this.scrollViewRef.current) {
+      this.scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  };
+
   handleBack = () => {
     this.props.navigation.replace("UserPlanScreen");
   };
@@ -77,11 +87,17 @@ class ChatScreen extends React.Component {
       isUser: true,
     };
 
-    this.setState({
-      messages: [...messages, newUserMessage],
-      userInput: "",
-      isLoading: true,
-    });
+    this.setState(
+      {
+        messages: [...messages, newUserMessage],
+        userInput: "",
+        isLoading: true,
+      },
+      () => {
+        // Scroll to bottom after state update
+        this.scrollToBottom();
+      }
+    );
 
     // Attempt to get AI response
     try {
@@ -145,7 +161,12 @@ class ChatScreen extends React.Component {
         </View>
 
         {/* Chat Messages */}
-        <ScrollView style={styles.chatContainer}>
+        <ScrollView
+          ref={this.scrollViewRef} // Attach the ref
+          style={styles.chatContainer}
+          contentContainerStyle={{ paddingBottom: 20 }} // Add padding to avoid overlap with input
+          onContentSizeChange={() => this.scrollToBottom()} // Scroll to bottom when content size changes
+        >
           <Text style={styles.dateLabel}>Today</Text>
 
           {messages.map((message) => (
@@ -291,10 +312,12 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
+    paddingHorizontal: 10,
     backgroundColor: "#F2F2F7",
     borderRadius: 15,
-    paddingHorizontal: 16,
     fontSize: 16,
+    flex: 1,
+    flexWrap: 1,
     flexGrow: 1,
   },
   sendButton: {
