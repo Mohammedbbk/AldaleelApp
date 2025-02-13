@@ -16,7 +16,10 @@ const initialMessages = [
   {
     id: 1,
     text: "Welcome! Ready to adjust your travel plan? Let me know how I can help!",
-    time: "9:34",
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
     isUser: false,
   },
 ];
@@ -36,6 +39,29 @@ class ChatScreen extends React.Component {
     this.setState({ userInput: text });
   };
 
+  //Ai response handle
+  getAIResponse = async (userMessage) => {
+    try {
+      const response = await fetch("TO_BE_ADDED", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          context: "travel_planning",
+          // Include any other necessary context
+        }),
+      });
+
+      const data = await response.json();
+      return data.response;
+    } catch (error) {
+      throw new Error("Failed to get AI response");
+    }
+  };
+
+  //User input handle
   handleSend = async () => {
     const { userInput, messages } = this.state;
     if (!userInput.trim()) return;
