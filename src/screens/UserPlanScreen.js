@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect, useRef } from "react";
 import {
   ScrollView,
@@ -10,311 +11,230 @@ import {
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import react from "react";
 
-export default function UserPlan() {
-  // Sample data - replace with actual data from API
-  const plan = {
-    details: [
-      { name: "Destination", value: "New York" },
-      { name: "Duration", value: "5 Days" },
-      { name: "Expenses", value: "1500 USD" },
-    ],
-    days: [
-      {
-        day: 1,
-        activities: [{ time: "7:00AM-8:00PM", name: "Chinatown" }],
-        plan: [
-          {
-            time: "8:00AM",
-            event:
-              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
-          },
-          {
-            time: "9:30AM",
-            event:
-              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
-          },
-          {
-            time: "11:00AM",
-            event:
-              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
-          },
-          {
-            time: "12:30PM",
-            event:
-              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
-          },
-          {
-            time: "2:00PM",
-            event:
-              "Visit nearby attractions like Little Italy or explore street art in the area.",
-          },
-          {
-            time: "5:00PM",
-            event:
-              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
-          },
-          {
-            time: "7:00PM",
-            event:
-              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
-          },
-        ],
-      },
-      {
-        day: 2,
-        activities: [{ time: "7:30AM-8:00PM", name: "Central Park" }],
-        plan: [
-          {
-            time: "8:00AM",
-            event:
-              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
-          },
-          {
-            time: "9:30AM",
-            event:
-              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
-          },
-          {
-            time: "11:00AM",
-            event:
-              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
-          },
-          {
-            time: "12:30PM",
-            event:
-              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
-          },
-          {
-            time: "2:00PM",
-            event:
-              "Visit nearby attractions like Little Italy or explore street art in the area.",
-          },
-          {
-            time: "5:00PM",
-            event:
-              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
-          },
-          {
-            time: "7:00PM",
-            event:
-              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
-          },
-        ],
-      },
-      {
-        day: 3,
-        activities: [{ time: "8:00AM-8:30PM", name: "Times Square" }],
-        plan: [
-          {
-            time: "8:00AM",
-            event:
-              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
-          },
-          {
-            time: "9:30AM",
-            event:
-              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
-          },
-          {
-            time: "11:00AM",
-            event:
-              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
-          },
-          {
-            time: "12:30PM",
-            event:
-              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
-          },
-          {
-            time: "2:00PM",
-            event:
-              "Visit nearby attractions like Little Italy or explore street art in the area.",
-          },
-          {
-            time: "5:00PM",
-            event:
-              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
-          },
-          {
-            time: "7:00PM",
-            event:
-              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
-          },
-        ],
-      },
-      {
-        day: 4,
-        activities: [{ time: "7:00AM-8:00PM", name: "Statue of Liberty" }],
-        plan: [
-          {
-            time: "8:00AM",
-            event:
-              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
-          },
-          {
-            time: "9:30AM",
-            event:
-              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
-          },
-          {
-            time: "11:00AM",
-            event:
-              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
-          },
-          {
-            time: "12:30PM",
-            event:
-              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
-          },
-          {
-            time: "2:00PM",
-            event:
-              "Visit nearby attractions like Little Italy or explore street art in the area.",
-          },
-          {
-            time: "5:00PM",
-            event:
-              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
-          },
-          {
-            time: "7:00PM",
-            event:
-              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
-          },
-        ],
-      },
-      {
-        day: 5,
-        activities: [{ time: "7:30AM-8:00PM", name: "Museum of Modern Art" }],
-        plan: [
-          {
-            time: "8:00AM",
-            event:
-              "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
-          },
-          {
-            time: "9:30AM",
-            event:
-              "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
-          },
-          {
-            time: "11:00AM",
-            event:
-              "Stop by cultural landmarks like Columbus Park and Chatham Square.",
-          },
-          {
-            time: "12:30PM",
-            event:
-              "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
-          },
-          {
-            time: "2:00PM",
-            event:
-              "Visit nearby attractions like Little Italy or explore street art in the area.",
-          },
-          {
-            time: "5:00PM",
-            event:
-              "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
-          },
-          {
-            time: "7:00PM",
-            event:
-              "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
-          },
-        ],
-      },
-    ],
-  };
+// Sample data - replace with actual data from API
+const plan = {
+  details: [
+    { name: "Destination", value: "New York" },
+    { name: "Duration", value: "5 Days" },
+    { name: "Expenses", value: "1500 USD" },
+  ],
+  days: [
+    {
+      day: 1,
+      activities: [{ time: "7:00AM-8:00PM", name: "Chinatown" }],
+      plan: [
+        {
+          time: "8:00AM",
+          event:
+            "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+        },
+        {
+          time: "9:30AM",
+          event:
+            "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+        },
+        {
+          time: "11:00AM",
+          event:
+            "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+        },
+        {
+          time: "12:30PM",
+          event:
+            "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+        },
+        {
+          time: "2:00PM",
+          event:
+            "Visit nearby attractions like Little Italy or explore street art in the area.",
+        },
+        {
+          time: "5:00PM",
+          event:
+            "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+        },
+        {
+          time: "7:00PM",
+          event:
+            "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+        },
+      ],
+    },
+    {
+      day: 2,
+      activities: [{ time: "7:30AM-8:00PM", name: "Central Park" }],
+      plan: [
+        {
+          time: "8:00AM",
+          event:
+            "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+        },
+        {
+          time: "9:30AM",
+          event:
+            "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+        },
+        {
+          time: "11:00AM",
+          event:
+            "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+        },
+        {
+          time: "12:30PM",
+          event:
+            "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+        },
+        {
+          time: "2:00PM",
+          event:
+            "Visit nearby attractions like Little Italy or explore street art in the area.",
+        },
+        {
+          time: "5:00PM",
+          event:
+            "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+        },
+        {
+          time: "7:00PM",
+          event:
+            "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+        },
+      ],
+    },
+    {
+      day: 3,
+      activities: [{ time: "8:00AM-8:30PM", name: "Times Square" }],
+      plan: [
+        {
+          time: "8:00AM",
+          event:
+            "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+        },
+        {
+          time: "9:30AM",
+          event:
+            "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+        },
+        {
+          time: "11:00AM",
+          event:
+            "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+        },
+        {
+          time: "12:30PM",
+          event:
+            "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+        },
+        {
+          time: "2:00PM",
+          event:
+            "Visit nearby attractions like Little Italy or explore street art in the area.",
+        },
+        {
+          time: "5:00PM",
+          event:
+            "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+        },
+        {
+          time: "7:00PM",
+          event:
+            "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+        },
+      ],
+    },
+    {
+      day: 4,
+      activities: [{ time: "7:00AM-8:00PM", name: "Statue of Liberty" }],
+      plan: [
+        {
+          time: "8:00AM",
+          event:
+            "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+        },
+        {
+          time: "9:30AM",
+          event:
+            "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+        },
+        {
+          time: "11:00AM",
+          event:
+            "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+        },
+        {
+          time: "12:30PM",
+          event:
+            "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+        },
+        {
+          time: "2:00PM",
+          event:
+            "Visit nearby attractions like Little Italy or explore street art in the area.",
+        },
+        {
+          time: "5:00PM",
+          event:
+            "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+        },
+        {
+          time: "7:00PM",
+          event:
+            "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+        },
+      ],
+    },
+    {
+      day: 5,
+      activities: [{ time: "7:30AM-8:00PM", name: "Museum of Modern Art" }],
+      plan: [
+        {
+          time: "8:00AM",
+          event:
+            "Breakfast at Eggloo, a popular spot for Hong Kong-style egg waffles.",
+        },
+        {
+          time: "9:30AM",
+          event:
+            "Stroll through Chinatown’s bustling streets and visit the markets for unique souvenirs.",
+        },
+        {
+          time: "11:00AM",
+          event:
+            "Stop by cultural landmarks like Columbus Park and Chatham Square.",
+        },
+        {
+          time: "12:30PM",
+          event:
+            "Have lunch at Nom Wah Tea Parlor, a historic dim sum restaurant.",
+        },
+        {
+          time: "2:00PM",
+          event:
+            "Visit nearby attractions like Little Italy or explore street art in the area.",
+        },
+        {
+          time: "5:00PM",
+          event:
+            "Enjoy dinner at Jing Fong or another authentic restaurant in Chinatown.",
+        },
+        {
+          time: "7:00PM",
+          event:
+            "End the day with bubble tea from a local shop and enjoy the vibrant nighttime atmosphere of the neighborhood.",
+        },
+      ],
+    },
+  ],
+};
 
-  const emojis = [
-    { name: "Destination", emoji: "✈️" },
-    { name: "Duration", emoji: "⏳" },
-    { name: "Expenses", emoji: "💵" },
-  ];
-
-  return (
-    <SafeAreaView style={styles.wrapper}>
-      {/* Header Section */}
-      <View style={styles.headerContainer}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.titleText}>Your Plan</Text>
-        </View>
-        <View style={styles.iconsContainer}>
-          <Image
-            source={require("../../assets/Icons/Share.png")}
-            style={styles.icon}
-          />
-          <Image
-            source={require("../../assets/Icons/Edit.png")}
-            style={styles.icon}
-          />
-        </View>
-      </View>
-
-      {/* Body */}
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Plan Details Section */}
-        <View style={styles.overallReview}>
-          <View style={styles.detailCol}>
-            {plan.details.map((detail, index) => (
-              <DetailItem key={index} label={detail.name} value={null} />
-            ))}
-          </View>
-          <View style={styles.detailColSeperator}>
-            {plan.details.map((detail, index) => (
-              <View key={index} style={styles.detailItem}>
-                <Text style={styles.detailValue}>
-                  {emojis.find((emoji) => emoji.name === detail.name)?.emoji}
-                </Text>
-              </View>
-            ))}
-          </View>
-          <View style={styles.detailCol}>
-            {plan.details.map((detail, index) => (
-              <DetailItem key={index} label={null} value={detail.value} />
-            ))}
-          </View>
-        </View>
-
-        {/* Itinerary Section */}
-        {plan.days.map((day, index) => (
-          <View key={index} style={styles.itineraryWrapper}>
-            <Text style={styles.dayHeader}>Day {day.day}</Text>
-            <View style={styles.dayContainer}>
-              {day.activities.map((activity, idx) => (
-                <Accordion
-                  key={idx}
-                  title={
-                    <ActivityItem time={activity.time} name={activity.name} />
-                  }
-                >
-                  {day.plan.map((item, i) => (
-                    <View key={i} style={styles.planItem}>
-                      <Text style={styles.planTime}>{item.time}</Text>
-                      <Text style={styles.planEvent}>{item.event}</Text>
-                    </View>
-                  ))}
-                </Accordion>
-              ))}
-            </View>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Next Button */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.nextButton}>
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
+const emojis = [
+  { name: "Destination", emoji: "✈️" },
+  { name: "Duration", emoji: "⏳" },
+  { name: "Expenses", emoji: "💵" },
+];
 
 // Reusable Components
 const DetailItem = ({ label, value }) => (
@@ -431,6 +351,96 @@ const Accordion = ({ title, children }) => {
   );
 };
 
+class UserPlan extends React.Component {
+  //handlers
+  handleEditPlan = () => {
+    this.props.navigation.navigate("AssistantScreen");
+  };
+
+  render() {
+    return (
+      <SafeAreaView style={styles.wrapper}>
+        {/* Header Section */}
+        <View style={styles.headerContainer}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.titleText}>Your Plan</Text>
+          </View>
+          <View style={styles.iconsContainer}>
+            <Ionicons name="share-outline" size={25} color="#007AFF" />
+            <Ionicons
+              name="pencil-outline"
+              size={25}
+              color="#007AFF"
+              onPress={this.handleEditPlan}
+            />
+          </View>
+        </View>
+
+        {/* Body */}
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Plan Details Section */}
+          <View style={styles.overallReview}>
+            <View style={styles.detailCol}>
+              {plan.details.map((detail, index) => (
+                <DetailItem key={index} label={detail.name} value={null} />
+              ))}
+            </View>
+            <View style={styles.detailColSeperator}>
+              {plan.details.map((detail, index) => (
+                <View key={index} style={styles.detailItem}>
+                  <Text style={styles.detailValue}>
+                    {emojis.find((emoji) => emoji.name === detail.name)?.emoji}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.detailCol}>
+              {plan.details.map((detail, index) => (
+                <DetailItem key={index} label={null} value={detail.value} />
+              ))}
+            </View>
+          </View>
+
+          {/* Itinerary Section */}
+          {plan.days.map((day, index) => (
+            <View key={index} style={styles.itineraryWrapper}>
+              <Text style={styles.dayHeader}>Day {day.day}</Text>
+              <View style={styles.dayContainer}>
+                {day.activities.map((activity, idx) => (
+                  <Accordion
+                    key={idx}
+                    title={
+                      <ActivityItem time={activity.time} name={activity.name} />
+                    }
+                  >
+                    {day.plan.map((item, i) => (
+                      <View key={i} style={styles.planItem}>
+                        <Text style={styles.planTime}>{item.time}</Text>
+                        <Text style={styles.planEvent}>{item.event}</Text>
+                      </View>
+                    ))}
+                  </Accordion>
+                ))}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Next Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.nextButton}>
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+}
+export default UserPlan;
+
 // Styles
 const styles = StyleSheet.create({
   wrapper: {
@@ -465,8 +475,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     flexDirection: "row",
     alignItems: "center",
-    right: 10,
-    gap: 10,
+    right: 20,
+    gap: 20,
   },
   icon: {
     width: 44,

@@ -11,12 +11,20 @@ import SignUpScreen from "./src/screens/SignUpScreen"; // <-- أضف هذا
 import VerificationScreen from "./src/screens/VerificationScreen";
 import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
 import UserPlanScreen from "./src/screens/UserPlanScreen";
+import AssistantScreen from "./src/screens/AssistantScreen";
 
 const Stack = createStackNavigator();
 
 class App extends React.Component {
   render() {
-    return <UserPlanScreen />;
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
+          <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
     // return (
     //   <NavigationContainer>
     //     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
