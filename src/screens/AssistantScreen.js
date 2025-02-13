@@ -9,47 +9,95 @@ import {
   StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { ScrollView } from "react-native-gesture-handler";
 
 //mock data
-const messages = [
+const initialMessages = [
   {
     id: 1,
     text: "Welcome! Ready to adjust your travel plan? Let me know how I can help!",
     time: "9:34",
     isUser: false,
   },
-  {
-    id: 2,
-    text: "I'd like to swap Chinatown for the High Line in my plan.",
-    time: "9:30",
-    isUser: true,
-  },
-  {
-    id: 3,
-    text: "Got it! Let's update your plan to include the High Line instead of Chinatown. Would you like any recommendations for things to do or places to eat around the High Line?",
-    time: "9:34",
-    isUser: false,
-  },
-  {
-    id: 4,
-    text: "No, thank you.",
-    time: "9:30",
-    isUser: true,
-  },
-  {
-    id: 5,
-    text: "No problem! Your change to visit the High Line instead of Chinatown is ready. Just click the check button when you're all set to update your plan!",
-    time: "9:34",
-    isUser: false,
-  },
 ];
 
 class ChatScreen extends React.Component {
-  //Navigation Handlers
+  state = {
+    messages: initialMessages, // Initialize with mock data
+    userInput: "",
+    isLoading: false,
+  };
+
   handleBack = () => {
     this.props.navigation.replace("UserPlanScreen");
   };
+
+  handleInputChange = (text) => {
+    this.setState({ userInput: text });
+  };
+
+  handleSend = async () => {
+    const { userInput, messages } = this.state;
+    if (!userInput.trim()) return;
+
+    // Add user message
+    const newUserMessage = {
+      id: messages.length + 1,
+      text: userInput,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      isUser: true,
+    };
+
+    this.setState({
+      messages: [...messages, newUserMessage],
+      userInput: "",
+      isLoading: true,
+    });
+
+    // Attempt to get AI response
+    try {
+      const aiResponse = await this.getAIResponse(userInput);
+
+      const newAIMessage = {
+        id: messages.length + 2,
+        text: aiResponse,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isUser: false,
+      };
+
+      this.setState((prevState) => ({
+        messages: [...prevState.messages, newAIMessage],
+        isLoading: false,
+      }));
+    } catch (error) {
+      // Add error message to chat
+      const errorMessage = {
+        id: messages.length + 2,
+        text: "I apologize, but I'm having trouble responding right now. Please try again in a moment.",
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isUser: false,
+        isError: true,
+      };
+
+      this.setState((prevState) => ({
+        messages: [...prevState.messages, errorMessage],
+        isLoading: false,
+      }));
+    }
+  };
+
   render() {
+    const { messages } = this.state; // Access messages from state
+
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" />
@@ -71,7 +119,7 @@ class ChatScreen extends React.Component {
         </View>
 
         {/* Chat Messages */}
-        <View style={styles.chatContainer}>
+        <ScrollView style={styles.chatContainer}>
           <Text style={styles.dateLabel}>Today</Text>
 
           {messages.map((message) => (
@@ -103,7 +151,7 @@ class ChatScreen extends React.Component {
               </Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Input Area */}
         <View style={styles.inputContainer}>
@@ -111,13 +159,29 @@ class ChatScreen extends React.Component {
             style={styles.input}
             placeholder="Type your message"
             placeholderTextColor="#8E8E93"
+            value={this.state.userInput}
+            onChangeText={this.handleInputChange}
+            onSubmitEditing={this.handleSend}
           />
-          <Ionicons
-            name="send"
-            size={24}
-            color={"white"}
-            style={styles.sendButton}
-          />
+          <TouchableOpacity
+            onPress={this.handleSend}
+            disabled={this.state.isLoading}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name="send"
+              size={24}
+              color={this.state.userInput.trim() ? "white" : "#B0B0B0"}
+              style={[
+                styles.sendButton,
+                {
+                  backgroundColor: this.state.userInput.trim()
+                    ? "#007AFF"
+                    : "#E5E5EA",
+                },
+              ]}
+            />
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
