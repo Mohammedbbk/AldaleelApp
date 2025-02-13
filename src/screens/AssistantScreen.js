@@ -112,6 +112,12 @@ class ChatScreen extends React.Component {
             placeholder="Type your message"
             placeholderTextColor="#8E8E93"
           />
+          <Ionicons
+            name="send"
+            size={24}
+            color={"white"}
+            style={styles.sendButton}
+          />
         </View>
       </SafeAreaView>
     );
@@ -187,16 +193,26 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
   },
   inputContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "white",
   },
   input: {
-    height: 40,
+    height: 50,
     backgroundColor: "#F2F2F7",
-    borderRadius: 20,
+    borderRadius: 15,
     paddingHorizontal: 16,
     fontSize: 16,
+    flexGrow: 1,
+  },
+  sendButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 100,
+    padding: 13,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 
