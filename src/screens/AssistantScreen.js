@@ -166,6 +166,7 @@ class ChatScreen extends React.Component {
           style={styles.chatContainer}
           contentContainerStyle={{ paddingBottom: 20 }} // Add padding to avoid overlap with input
           onContentSizeChange={() => this.scrollToBottom()} // Scroll to bottom when content size changes
+          showsVerticalScrollIndicator={false}
         >
           <Text style={styles.dateLabel}>Today</Text>
 
