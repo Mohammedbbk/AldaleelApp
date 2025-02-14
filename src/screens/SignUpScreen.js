@@ -15,9 +15,8 @@ import {
   Alert,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-// لتخزين البيانات (مثلاً التوكن)
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// استيراد الـ AuthContext لاستخدامه في إدارة حالة التوكن
+import { AuthContext } from '../../AuthProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -25,6 +24,9 @@ const { width } = Dimensions.get('window');
 const SIGNUP_API_URL = 'https://example.com/api/signup';
 
 class SignUpScreen extends React.Component {
+  // تعيين الـ context ليكون متاحاً عبر this.context
+  static contextType = AuthContext;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -45,18 +47,15 @@ class SignUpScreen extends React.Component {
   // التحقق من صحة المدخلات (Validation)
   validateInputs = () => {
     const { name, email, password } = this.state;
-    // يجب أن يكون الاسم غير فارغ، وفيه 2 أحرف على الأقل مثلًا
     if (name.trim().length < 2) {
       this.setState({ errorMessage: 'Name must be at least 2 characters.' });
       return false;
     }
-    // تحقق صيغة البريد
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
       this.setState({ errorMessage: 'Please enter a valid email address.' });
       return false;
     }
-    // كلمة المرور 8 أحرف على الأقل
     if (password.length < 8) {
       this.setState({ errorMessage: 'Password must be at least 8 characters.' });
       return false;
@@ -84,21 +83,22 @@ class SignUpScreen extends React.Component {
 
       const data = await response.json();
       if (!response.ok) {
-        // إن عاد الخادم برمز خطأ (400, 409, ...)
         const message = data?.message || 'Sign up failed. Please try again.';
         throw new Error(message);
       }
 
-      // نجاح إنشاء الحساب
-      const token = data.token; // تأكد من أن اسم الحقل مطابق لردّ السيرفر
-      await AsyncStorage.setItem('userToken', token);
+      // نجاح إنشاء الحساب: استخرج التوكن
+      const token = data.token;
+      // استخدام الدالة من الـ AuthContext لتخزين التوكن
+      this.context.setUserToken(token);
 
       Alert.alert('Success', 'Account created successfully!', [
         {
           text: 'OK',
           onPress: () => {
-            // مثلًا الانتقال لشاشة Login أو لشاشة رئيسية
-            this.props.navigation.replace('Login');
+            // لا داعي للتنقل يدوياً لأن الـ AuthProvider سيعرض الشاشات المناسبة بناءً على وجود التوكن.
+            // إذا رغبت في التنقل مباشرة، يمكنك استبدال السطر التالي:
+            // this.props.navigation.replace('Home');
           },
         },
       ]);

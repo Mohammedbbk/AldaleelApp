@@ -18,8 +18,8 @@ import {
 // أيقونات Ionicons
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-// AsyncStorage لتخزين الـToken
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// استيراد AuthContext من ملف المزوّد (AuthProvider.js مثلاً)
+import { AuthContext } from '../../AuthProvider'; // عدّل المسار حسب مشروعك
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +27,9 @@ const { width } = Dimensions.get('window');
 const LOGIN_API_URL = 'https://example.com/api/login';
 
 class LoginScreen extends React.Component {
+  // للسماح باستخدام this.context
+  static contextType = AuthContext;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -38,7 +41,7 @@ class LoginScreen extends React.Component {
     };
   }
 
-  // زر الرجوع: ينقل المستخدم إلى شاشة Onboard (مثلًا)
+  // زر الرجوع: ينقل المستخدم إلى شاشة Onboard
   handleBack = () => {
     this.props.navigation.replace('Onboard');
   };
@@ -46,58 +49,55 @@ class LoginScreen extends React.Component {
   // التحقق من صحة الحقول قبل إرسال الطلب
   validateInputs = () => {
     const { email, password } = this.state;
-    // فحص بسيط لصيغة البريد الإلكتروني
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
       this.setState({ errorMessage: 'Please enter a valid email address.' });
       return false;
     }
-    // فحص طول كلمة المرور (مثال: 8 حروف على الأقل)
+    // فحص طول كلمة المرور (8 حروف على الأقل)
     if (password.length < 8) {
       this.setState({ errorMessage: 'Password must be at least 8 characters.' });
       return false;
     }
-    // إذا التحقق ناجح
     return true;
   };
 
   // عند الضغط على زر Sign In
   handleSignIn = async () => {
-    // مسح الأخطاء السابقة
-    this.setState({ errorMessage: '' });
+    this.setState({ errorMessage: '' }); // مسح الأخطاء السابقة
 
     // التحقق من صحة المدخلات
     if (!this.validateInputs()) return;
 
     try {
       this.setState({ loading: true }); // إظهار مؤشر التحميل
-
       const { email, password } = this.state;
+
+      // الاتصال بالـAPI الوهمي
       const response = await fetch(LOGIN_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await response.json();
+      
+      // التحقق من حالة الرد
       if (!response.ok) {
-        // الخادم أعاد خطأ (401, 400, ...)
-        // قد يحتوي body على حقل "message" أو اسم آخر
         const message = data?.message || 'Login failed. Please try again.';
         throw new Error(message);
       }
 
       // نجاح تسجيل الدخول
-      const token = data.token; // تأكد من أن "token" هو الاسم العائد من API
-      // تخزين التوكن في AsyncStorage
-      await AsyncStorage.setItem('userToken', token);
+      const token = data.token; // تأكد من أن "token" هو الحقل الذي يعيده الـAPI
+      // تحديث التوكن في AuthContext (سيقوم الـAuthProvider بتخزينه)
+      this.context.setUserToken(token);
 
       Alert.alert('Success', 'Logged in successfully!', [
         {
           text: 'OK',
           onPress: () => {
             // مثال: الانتقال لصفحة رئيسية أو شاشة Verification
-            this.props.navigation.replace('PopUp'); 
+            this.props.navigation.replace('PopUp');
           },
         },
       ]);
@@ -125,12 +125,12 @@ class LoginScreen extends React.Component {
     this.props.navigation.navigate('SignUp');
   };
 
-  // تسجيل الدخول عبر Apple (يحتاج ربط مع مكتبة)
+  // تسجيل الدخول عبر Apple (تنبيه شكلي حاليًا)
   handleSignInApple = () => {
     Alert.alert('Apple Sign In', 'Integration not implemented yet!');
   };
 
-  // تسجيل الدخول عبر Google (يحتاج ربط مع مكتبة)
+  // تسجيل الدخول عبر Google (تنبيه شكلي حاليًا)
   handleSignInGoogle = () => {
     Alert.alert('Google Sign In', 'Integration not implemented yet!');
   };
