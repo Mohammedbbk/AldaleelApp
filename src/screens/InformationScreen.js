@@ -19,100 +19,32 @@ import local from "../../assets/Information_pictures/Local.png";
 import transportation from "../../assets/Information_pictures/Transportation.png";
 import currency from "../../assets/Information_pictures/Currency.png";
 
-// Sample data - replace with actual data from API
-const information = {
-  titles: [
-    {
-      number: 1,
-      title: "Visa Requirements",
-      image: visa,
-    },
-    {
-      number: 2,
-      title: "Local Customs",
-      image: local,
-    },
-    {
-      number: 3,
-      title: "Currency Information",
-      image: currency,
-    },
-    {
-      number: 4,
-      title: "Health & Safety",
-      image: health,
-    },
-    {
-      number: 5,
-      title: "Transportation",
-      image: transportation,
-    },
-    {
-      number: 6,
-      title: "Language Basics",
-      image: language,
-    },
-  ],
-};
-
-// Reusable Components
-
-const Accordion = ({ title, children }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [contentHeight, setContentHeight] = useState(0);
-  const animatedHeight = useRef(new Animated.Value(0)).current;
-
-  // Measure content height once on initial render
-  const measureContent = (event) => {
-    const { height } = event.nativeEvent.layout;
-    setContentHeight(height);
-  };
-
-  const toggleAccordion = () => {
-    if (!contentHeight) return;
-
-    Animated.timing(animatedHeight, {
-      toValue: expanded ? 0 : contentHeight,
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => {
-      setExpanded(!expanded);
-    });
-  };
-
-  return (
-    <View>
-      {/* Measurement view (hidden off-screen) */}
-      <View
-        style={[
-          {
-            position: "absolute",
-            left: -500,
-          },
-          styles.accordianContent,
-        ]}
-        onLayout={measureContent}
-      >
-        <View style={styles.content}>{children}</View>
-      </View>
-
-      {/* Clickable header */}
-      <TouchableOpacity onPress={toggleAccordion} activeOpacity={0.9}>
-        {title}
-        {/* Animated content */}
-        <Animated.View
-          style={{
-            height: animatedHeight,
-            overflow: "hidden",
-            style: styles.accordianContent,
-          }}
-        >
-          <View style={styles.accordianContent}>{children}</View>
-        </Animated.View>
-      </TouchableOpacity>
-    </View>
-  );
-};
+const titles = [
+  {
+    title: "Visa Requirements",
+    image: visa,
+  },
+  {
+    title: "Local Customs",
+    image: local,
+  },
+  {
+    title: "Currency Information",
+    image: currency,
+  },
+  {
+    title: "Health & Safety",
+    image: health,
+  },
+  {
+    title: "Transportation",
+    image: transportation,
+  },
+  {
+    title: "Language Basics",
+    image: language,
+  },
+];
 
 class InformationScreen extends React.Component {
   //handlers
@@ -180,26 +112,15 @@ class InformationScreen extends React.Component {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.informationWrapper}>
-            {information.titles.map((item) => (
-              <Accordion
-                key={item.number}
-                title={
-                  <View style={styles.informationContainer}>
-                    <Image
-                      style={styles.informationImage}
-                      source={item.image}
-                    />
-                    <Text style={styles.informationTitle}>{item.title}</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={24}
-                      color={"#007AFF"}
-                    />
-                  </View>
-                }
+            {titles.map((item) => (
+              <TouchableOpacity
+                style={styles.informationContainer}
+                activeOpacity={0.9}
               >
-                <Text>{item.content}</Text>
-              </Accordion>
+                <Image style={styles.informationImage} source={item.image} />
+                <Text style={styles.informationTitle}>{item.title}</Text>
+                <Ionicons name="chevron-forward" size={24} color={"#007AFF"} />
+              </TouchableOpacity>
             ))}
           </View>
         </ScrollView>
@@ -257,43 +178,6 @@ const styles = StyleSheet.create({
     padding: 8,
     gap: 20,
   },
-  overallReview: {
-    flexDirection: "row",
-    justifyContent: "center",
-    shadowRadius: 6,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowColor: "#000",
-    elevation: 3,
-    backgroundColor: "white",
-    padding: 10,
-    marginBlock: 10,
-    borderRadius: 10,
-  },
-  detailCol: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  detailColSeperator: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  detailItem: {
-    flexDirection: "row",
-    padding: 10,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
-  },
   informationWrapper: {
     flexDirection: "column",
     alignItems: "strech",
@@ -327,10 +211,6 @@ const styles = StyleSheet.create({
     color: "black",
     flex: 1,
     padding: 10,
-  },
-  accordianContent: {
-    borderColor: "#3333",
-    backgroundColor: "white",
   },
   buttonContainer: {
     position: "absolute",
