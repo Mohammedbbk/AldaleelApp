@@ -361,18 +361,29 @@ class UserPlan extends React.Component {
     return (
       <SafeAreaView style={styles.wrapper}>
         {/* Header Section */}
+
         <View style={styles.headerContainer}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Your Plan</Text>
-          </View>
-          <View style={styles.iconsContainer}>
-            <Ionicons name="share-outline" size={25} color="#007AFF" />
+          <View style={styles.headerButton}>
             <Ionicons
-              name="pencil-outline"
-              size={25}
+              name="chevron-back"
+              size={24}
               color="#007AFF"
-              onPress={this.handleEditPlan}
+              onPress={this.handleBack}
             />
+          </View>
+          <Text style={styles.titleText}>Your Plan</Text>
+          <View style={styles.headerButton}>
+            <TouchableOpacity>
+              <Ionicons name="share-outline" size={24} color="#007AFF" />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Ionicons
+                name="pencil-outline"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleEditPlan}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -453,12 +464,14 @@ const styles = StyleSheet.create({
     paddingInline: 10,
   },
   headerContainer: {
-    height: 60,
+    backgroundColor: "white",
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    backgroundColor: "white",
-    borderRadius: 10,
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
   },
   titleContainer: {
     position: "absolute",
@@ -466,16 +479,19 @@ const styles = StyleSheet.create({
     left: "0",
   },
   titleText: {
-    fontSize: 22,
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#000000",
     textAlign: "center",
-    fontWeight: "bold",
-    color: "#333",
-  },
-  iconsContainer: {
     position: "absolute",
+    left: 0,
+    right: 0,
+  },
+  headerButton: {
     flexDirection: "row",
-    alignItems: "center",
-    right: 20,
+    justifyContent: "flex-end",
+    flexShrink: 1,
+    padding: 8,
     gap: 20,
   },
   icon: {
