@@ -349,7 +349,7 @@ const Accordion = ({ title, children }) => {
   );
 };
 
-class UserPlan extends React.Component {
+class UserPlanScreen extends React.Component {
   //handlers
   handleBack = () => {
     this.props.navigation.navigate("MainScreen");
@@ -462,7 +462,7 @@ class UserPlan extends React.Component {
     );
   }
 }
-export default UserPlan;
+export default UserPlanScreen;
 
 // Styles
 const styles = StyleSheet.create({
