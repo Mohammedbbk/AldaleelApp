@@ -12,13 +12,96 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
+// Sample data - replace with actual data from API
+const information = {
+  titles: [
+    {
+      number: 1,
+      title: "Visa Requirements",
+      content:
+        "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the U.S. Embassy. Your passport must be valid for at least six months beyond the date of travel. Not applicable, as this is outside the Schengen zone. Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance.",
+    },
+    {
+      number: 2,
+      title: "Visa Requirementssssssss ssssss sssssss",
+      content:
+        "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the U.S. Embassy. Your passport must be valid for at least six months beyond the date of travel. Not applicable, as this is outside the Schengen zone. Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance.",
+    },
+    {
+      number: 3,
+      title: "Visa Requirementsssssssssssssssss",
+      content:
+        "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the U.S. Embassy. Your passport must be valid for at least six months beyond the date of travel. Not applicable, as this is outside the Schengen zone. Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance.",
+    },
+  ],
+};
+
+// Reusable Components
+
+const Accordion = ({ title, children }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+
+  // Measure content height once on initial render
+  const measureContent = (event) => {
+    const { height } = event.nativeEvent.layout;
+    setContentHeight(height);
+  };
+
+  const toggleAccordion = () => {
+    if (!contentHeight) return;
+
+    Animated.timing(animatedHeight, {
+      toValue: expanded ? 0 : contentHeight,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      setExpanded(!expanded);
+    });
+  };
+
+  return (
+    <View>
+      {/* Measurement view (hidden off-screen) */}
+      <View
+        style={[
+          {
+            position: "absolute",
+            left: -500,
+          },
+          styles.accordianContent,
+        ]}
+        onLayout={measureContent}
+      >
+        <View style={styles.content}>{children}</View>
+      </View>
+
+      {/* Clickable header */}
+      <TouchableOpacity onPress={toggleAccordion} activeOpacity={0.9}>
+        {title}
+        {/* Animated content */}
+        <Animated.View
+          style={{
+            height: animatedHeight,
+            overflow: "hidden",
+            style: styles.accordianContent,
+          }}
+        >
+          <View style={styles.accordianContent}>{children}</View>
+        </Animated.View>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 class InformationScreen extends React.Component {
   //handlers
   handleBack = () => {
     this.props.navigation.navigate("UserPlanScreen");
   };
   handleHome = () => {
-    this.props.navigation.navigate("MainScreen");
+    //TBD
   };
   handleEditPlan = () => {
     this.props.navigation.navigate("AssistantScreen");
@@ -27,13 +110,14 @@ class InformationScreen extends React.Component {
     this.props.navigation.navigate("InformationScreen");
   };
   handleShare = () => {};
+
   render() {
     return (
-      <SafeAreaView>
+      <SafeAreaView style={styles.wrapper}>
         {/* Header Section */}
 
         <View style={styles.headerContainer}>
-          <Text style={styles.titleText}>Your Plan</Text>
+          <Text style={styles.titleText}>Information Hub</Text>
           <View style={styles.headerButton}>
             <TouchableOpacity>
               <Ionicons
@@ -71,13 +155,42 @@ class InformationScreen extends React.Component {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Body */}
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.informationWrapper}>
+            {information.titles.map((item) => (
+              <Accordion
+                key={item.number}
+                title={
+                  <View style={styles.informationContainer}>
+                    <Image style={styles.informationImage} resizeMode="cover" />
+                    <Text style={styles.informationTitle}>{item.title}</Text>
+                    <Ionicons name="chevron-down" size={24} color={"#007AFF"} />
+                  </View>
+                }
+              >
+                <Text>{item.content}</Text>
+              </Accordion>
+            ))}
+          </View>
+        </ScrollView>
+        {/* Next Button */}
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.nextButton} onPress={this.handleNext}>
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
   }
 }
-
 export default InformationScreen;
 
+// Styles
 const styles = StyleSheet.create({
   wrapper: {
     position: "relative",
@@ -119,10 +232,6 @@ const styles = StyleSheet.create({
     padding: 8,
     gap: 20,
   },
-  icon: {
-    width: 44,
-    height: 44,
-  },
   overallReview: {
     flexDirection: "row",
     justifyContent: "center",
@@ -160,70 +269,43 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#333",
   },
-  itineraryWrapper: {
+  informationWrapper: {
     flexDirection: "column",
     alignItems: "strech",
+    paddingTop: 20,
+    gap: 20,
   },
-  dayHeader: {
-    fontSize: 13,
-    fontWeight: "400",
-    color: "#333",
-    marginBottom: 5,
-  },
-  dayContainer: {
+  informationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 0,
-    position: "relative",
-    backgroundColor: "#00ADEF",
+    backgroundColor: "white",
     borderRadius: 10,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
     overflow: "hidden",
-    marginBottom: 20,
     shadowRadius: 6,
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowColor: "#000",
     elevation: 3,
   },
-  activityImage: {
+  informationImage: {
+    borderRadius: 10,
     backgroundColor: "#555",
-    width: "100%",
-    height: 200,
+    width: "30%",
+    height: "175",
   },
-  activityItem: {},
-  activityDetails: {
-    padding: 20,
-  },
-  activityTime: {
-    fontSize: 14,
-    color: "white",
-    fontWeight: 400,
-    marginBottom: 4,
-  },
-  activityName: {
+  informationTitle: {
     fontSize: 18,
     fontWeight: 500,
-    color: "white",
+    textAlign: "center",
+    color: "black",
+    flex: 1,
+    padding: 10,
   },
   accordianContent: {
     borderColor: "#3333",
     backgroundColor: "white",
-  },
-  planItem: {
-    flexDirection: "row",
-    gap: 5,
-    justifyContent: "space-between",
-    padding: 10,
-  },
-  planTime: {
-    color: "#666",
-    width: 70,
-    borderRightWidth: 1,
-    borderColor: "#666",
-  },
-  planEvent: {
-    flex: 2,
-    flexWrap: 1,
   },
   buttonContainer: {
     position: "absolute",
