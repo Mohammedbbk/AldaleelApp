@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -12,7 +11,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import react from "react";
 
 // Sample data - replace with actual data from API
 const plan = {
@@ -353,9 +351,16 @@ const Accordion = ({ title, children }) => {
 
 class UserPlan extends React.Component {
   //handlers
+  handleBack = () => {
+    this.props.navigation.navigate("MainScreen");
+  };
   handleEditPlan = () => {
     this.props.navigation.navigate("AssistantScreen");
   };
+  handleNext = () => {
+    this.props.navigation.navigate("InformationScreen");
+  };
+  handleShare = () => {};
 
   render() {
     return (
@@ -363,18 +368,25 @@ class UserPlan extends React.Component {
         {/* Header Section */}
 
         <View style={styles.headerContainer}>
-          <View style={styles.headerButton}>
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color="#007AFF"
-              onPress={this.handleBack}
-            />
-          </View>
           <Text style={styles.titleText}>Your Plan</Text>
           <View style={styles.headerButton}>
             <TouchableOpacity>
-              <Ionicons name="share-outline" size={24} color="#007AFF" />
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleBack}
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerButton}>
+            <TouchableOpacity>
+              <Ionicons
+                name="share-outline"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleShare}
+              />
             </TouchableOpacity>
             <TouchableOpacity>
               <Ionicons
@@ -442,7 +454,7 @@ class UserPlan extends React.Component {
 
         {/* Next Button */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.nextButton}>
+          <TouchableOpacity style={styles.nextButton} onPress={this.handleNext}>
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
         </View>
