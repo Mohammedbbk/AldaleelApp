@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   Animated,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,26 +22,32 @@ import currency from "../../assets/Information_pictures/Currency.png";
 
 const titles = [
   {
+    number: 1,
     title: "Visa Requirements",
     image: visa,
   },
   {
+    number: 2,
     title: "Local Customs",
     image: local,
   },
   {
+    number: 3,
     title: "Currency Information",
     image: currency,
   },
   {
+    number: 4,
     title: "Health & Safety",
     image: health,
   },
   {
+    number: 5,
     title: "Transportation",
     image: transportation,
   },
   {
+    number: 6,
     title: "Language Basics",
     image: language,
   },
@@ -61,6 +68,33 @@ class InformationScreen extends React.Component {
     this.props.navigation.navigate("InformationScreen");
   };
   handleShare = () => {};
+
+  handleSubScreens = (pageNumber) => {
+    switch (pageNumber) {
+      case 1:
+        this.props.navigation.navigate("VisaScreen");
+        break;
+      case 2:
+        this.props.navigation.navigate("LocalScreen");
+        break;
+      case 3:
+        this.props.navigation.navigate("CurrencyScreen");
+        break;
+      case 4:
+        this.props.navigation.navigate("HealthScreen");
+        break;
+      case 5:
+        this.props.navigation.navigate("TransportationScreen");
+        break;
+      case 6:
+        this.props.navigation.navigate("LanguageScreen");
+        break;
+
+      default:
+        Alert.alert("Error", "Something went wrong, try again later");
+        break;
+    }
+  };
 
   render() {
     return (
@@ -116,6 +150,7 @@ class InformationScreen extends React.Component {
               <TouchableOpacity
                 style={styles.informationContainer}
                 activeOpacity={0.9}
+                onPress={() => this.handleSubScreens(item.number)}
               >
                 <Image style={styles.informationImage} source={item.image} />
                 <Text style={styles.informationTitle}>{item.title}</Text>
@@ -156,11 +191,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
-  },
-  titleContainer: {
-    position: "absolute",
-    right: "0",
-    left: "0",
   },
   titleText: {
     fontSize: 17,
