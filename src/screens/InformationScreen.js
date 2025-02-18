@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   ScrollView,
   View,
@@ -6,11 +6,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  ActivityIndicator,
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+
+//pictures
+import visa from "../../assets/Information_pictures/Visa.png";
+import health from "../../assets/Information_pictures/Health.png";
+import language from "../../assets/Information_pictures/Language.png";
+import local from "../../assets/Information_pictures/Local.png";
+import transportation from "../../assets/Information_pictures/Transportation.png";
+import currency from "../../assets/Information_pictures/Currency.png";
 
 // Sample data - replace with actual data from API
 const information = {
@@ -18,20 +25,32 @@ const information = {
     {
       number: 1,
       title: "Visa Requirements",
-      content:
-        "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the U.S. Embassy. Your passport must be valid for at least six months beyond the date of travel. Not applicable, as this is outside the Schengen zone. Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance.",
+      image: visa,
     },
     {
       number: 2,
-      title: "Visa Requirementssssssss ssssss sssssss",
-      content:
-        "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the U.S. Embassy. Your passport must be valid for at least six months beyond the date of travel. Not applicable, as this is outside the Schengen zone. Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance.",
+      title: "Local Customs",
+      image: local,
     },
     {
       number: 3,
-      title: "Visa Requirementsssssssssssssssss",
-      content:
-        "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the U.S. Embassy. Your passport must be valid for at least six months beyond the date of travel. Not applicable, as this is outside the Schengen zone. Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance.",
+      title: "Currency Information",
+      image: currency,
+    },
+    {
+      number: 4,
+      title: "Health & Safety",
+      image: health,
+    },
+    {
+      number: 5,
+      title: "Transportation",
+      image: transportation,
+    },
+    {
+      number: 6,
+      title: "Language Basics",
+      image: language,
     },
   ],
 };
@@ -115,7 +134,6 @@ class InformationScreen extends React.Component {
     return (
       <SafeAreaView style={styles.wrapper}>
         {/* Header Section */}
-
         <View style={styles.headerContainer}>
           <Text style={styles.titleText}>Information Hub</Text>
           <View style={styles.headerButton}>
@@ -167,9 +185,16 @@ class InformationScreen extends React.Component {
                 key={item.number}
                 title={
                   <View style={styles.informationContainer}>
-                    <Image style={styles.informationImage} resizeMode="cover" />
+                    <Image
+                      style={styles.informationImage}
+                      source={item.image}
+                    />
                     <Text style={styles.informationTitle}>{item.title}</Text>
-                    <Ionicons name="chevron-down" size={24} color={"#007AFF"} />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={24}
+                      color={"#007AFF"}
+                    />
                   </View>
                 }
               >
@@ -279,9 +304,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 0,
+    padding: 5,
     backgroundColor: "white",
-    borderRadius: 10,
+    borderRadius: 20,
     overflow: "hidden",
     shadowRadius: 6,
     shadowOpacity: 0.1,
@@ -290,14 +315,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   informationImage: {
-    borderRadius: 10,
+    borderRadius: 20,
     backgroundColor: "#555",
-    width: "30%",
-    height: "175",
+    height: 130,
+    width: 100,
   },
   informationTitle: {
     fontSize: 18,
-    fontWeight: 500,
+    fontWeight: 400,
     textAlign: "center",
     color: "black",
     flex: 1,
