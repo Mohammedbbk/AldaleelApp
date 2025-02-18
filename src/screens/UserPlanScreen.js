@@ -352,6 +352,9 @@ const Accordion = ({ title, children }) => {
 class UserPlanScreen extends React.Component {
   //handlers
   handleBack = () => {
+    //TBD
+  };
+  handleHome = () => {
     this.props.navigation.navigate("MainScreen");
   };
   handleEditPlan = () => {
@@ -376,6 +379,14 @@ class UserPlanScreen extends React.Component {
                 size={24}
                 color="#007AFF"
                 onPress={this.handleBack}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Ionicons
+                name="home-outline"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleHome}
               />
             </TouchableOpacity>
           </View>
@@ -505,10 +516,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     padding: 8,
     gap: 20,
-  },
-  icon: {
-    width: 44,
-    height: 44,
   },
   overallReview: {
     flexDirection: "row",

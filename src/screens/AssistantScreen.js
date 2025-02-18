@@ -25,12 +25,22 @@ const initialMessages = [
 ];
 
 class ChatScreen extends React.Component {
+  // Initialize with mock data
   state = {
-    messages: initialMessages, // Initialize with mock data
+    messages: initialMessages,
     userInput: "",
     isLoading: false,
   };
-
+  //handelers
+  handleBack = () => {
+    this.props.navigation.replace("UserPlanScreen");
+  };
+  handleHome = () => {
+    this.props.navigation.navigate("MainScreen");
+  };
+  handleProceed = () => {
+    //TBD
+  };
   // Create a ref for the ScrollView
   scrollViewRef = React.createRef();
 
@@ -39,10 +49,6 @@ class ChatScreen extends React.Component {
     if (this.scrollViewRef.current) {
       this.scrollViewRef.current.scrollToEnd({ animated: true });
     }
-  };
-
-  handleBack = () => {
-    this.props.navigation.replace("UserPlanScreen");
   };
 
   handleInputChange = (text) => {
@@ -142,22 +148,37 @@ class ChatScreen extends React.Component {
 
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons
-              name="chevron-back"
-              size={24}
-              color="#007AFF"
-              onPress={this.handleBack}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>AI Daleel Assistant</Text>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="checkmark" size={24} color="#007AFF" />
-          </TouchableOpacity>
+        <View style={styles.headerContainer}>
+          <Text style={styles.titleText}>Al-Daleel AI</Text>
+          <View style={styles.headerButton}>
+            <TouchableOpacity>
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleBack}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Ionicons
+                name="home-outline"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleHome}
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.headerButton}>
+            <TouchableOpacity>
+              <Ionicons
+                name="checkmark"
+                size={24}
+                color="#007AFF"
+                onPress={this.handleShare}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Chat Messages */}
@@ -241,7 +262,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-  header: {
+  headerContainer: {
+    backgroundColor: "white",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -250,13 +272,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
   },
-  headerButton: {
-    padding: 8,
+  titleContainer: {
+    position: "absolute",
+    right: "0",
+    left: "0",
   },
-  headerTitle: {
+  titleText: {
     fontSize: 17,
     fontWeight: "600",
     color: "#000000",
+    textAlign: "center",
+    position: "absolute",
+    left: 0,
+    right: 0,
+  },
+  headerButton: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    flexShrink: 1,
+    padding: 8,
+    gap: 20,
   },
   chatContainer: {
     flex: 1,

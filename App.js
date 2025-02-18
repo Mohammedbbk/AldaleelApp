@@ -12,6 +12,7 @@ import VerificationScreen from "./src/screens/VerificationScreen";
 import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
 import UserPlanScreen from "./src/screens/UserPlanScreen";
 import AssistantScreen from "./src/screens/AssistantScreen";
+import InformationScreen from "./src/screens/InformationScreen";
 
 const Stack = createStackNavigator();
 
@@ -22,6 +23,10 @@ class App extends React.Component {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
           <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
+          <Stack.Screen
+            name="InformationScreen"
+            component={InformationScreen}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     );
