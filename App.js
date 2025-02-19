@@ -19,19 +19,19 @@ const Stack = createStackNavigator();
 
 class App extends React.Component {
   render() {
-    return <VisaScreen />;
-    // return (
-    //   <NavigationContainer>
-    //     <Stack.Navigator screenOptions={{ headerShown: false }}>
-    //       <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
-    //       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
-    //       <Stack.Screen
-    //         name="InformationScreen"
-    //         component={InformationScreen}
-    //       />
-    //     </Stack.Navigator>
-    //   </NavigationContainer>
-    // );
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
+          <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
+          <Stack.Screen
+            name="InformationScreen"
+            component={InformationScreen}
+          />
+          <Stack.Screen name="VisaScreen" component={VisaScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
     // return (
     //   <NavigationContainer>
     //     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>

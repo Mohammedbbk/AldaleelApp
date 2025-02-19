@@ -46,7 +46,7 @@ class VisaScreen extends React.Component {
         <TouchableOpacity
           style={styles.closeButton}
           activeOpacity={0.9}
-          onPress={() => this.handleClose}
+          onPress={() => this.handleClose()}
         >
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
