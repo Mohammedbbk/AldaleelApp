@@ -8,6 +8,7 @@ import {
   Image,
   Animated,
   Alert,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -148,6 +149,7 @@ class InformationScreen extends React.Component {
           <View style={styles.informationWrapper}>
             {titles.map((item) => (
               <TouchableOpacity
+                key={item.number}
                 style={styles.informationContainer}
                 activeOpacity={0.9}
                 onPress={() => this.handleSubScreens(item.number)}

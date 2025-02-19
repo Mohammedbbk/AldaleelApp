@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  StatusBar,
 } from "react-native";
 
 import { SCREENS_CONTENT } from "./config/infoScreensContent";
@@ -40,7 +41,7 @@ class InfoBaseScreen extends React.Component {
           </View>
         </ScrollView>
 
-        {/* Export Button */}
+        {/* Close Button */}
         <TouchableOpacity
           style={styles.closeButton}
           activeOpacity={0.9}
@@ -55,6 +56,7 @@ class InfoBaseScreen extends React.Component {
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: StatusBar.currentHeight,
     flex: 1,
     backgroundColor: "#fff",
   },

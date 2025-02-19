@@ -631,6 +631,7 @@ export default UserPlanScreen;
 // Styles
 const styles = StyleSheet.create({
   wrapper: {
+    marginTop: StatusBar.currentHeight,
     backgroundColor: "#f5f5f5",
     flex: 1,
   },
