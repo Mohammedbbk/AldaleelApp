@@ -13,7 +13,7 @@ import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
 import UserPlanScreen from "./src/screens/UserPlanScreen";
 import AssistantScreen from "./src/screens/AssistantScreen";
 import InformationScreen from "./src/screens/InformationScreen";
-import VisaScreen from "./src/screens/VisaScreen";
+import InfoBaseScreen from "./src/screens/InfoBaseScreen";
 
 const Stack = createStackNavigator();
 
@@ -28,7 +28,36 @@ class App extends React.Component {
             name="InformationScreen"
             component={InformationScreen}
           />
-          <Stack.Screen name="VisaScreen" component={VisaScreen} />
+          <Stack.Screen
+            name="VisaScreen"
+            component={InfoBaseScreen}
+            initialParams={{ contentKey: "visa" }}
+          />
+          <Stack.Screen
+            name="LocalScreen"
+            component={InfoBaseScreen}
+            initialParams={{ contentKey: "local" }}
+          />
+          <Stack.Screen
+            name="CurrencyScreen"
+            component={InfoBaseScreen}
+            initialParams={{ contentKey: "currency" }}
+          />
+          <Stack.Screen
+            name="HealthScreen"
+            component={InfoBaseScreen}
+            initialParams={{ contentKey: "health" }}
+          />
+          <Stack.Screen
+            name="TransportationScreen"
+            component={InfoBaseScreen}
+            initialParams={{ contentKey: "transportation" }}
+          />
+          <Stack.Screen
+            name="LanguageScreen"
+            component={InfoBaseScreen}
+            initialParams={{ contentKey: "language" }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     );

@@ -9,26 +9,25 @@ import {
   ScrollView,
 } from "react-native";
 
-//mock data
-const content = {
-  text: "A visa is required to enter the United States. You need to apply for a B1/B2 visa through the US Embassy.Your passport must be valid for at least six months beyond the date of travel.Not applicable, as this is outside the Schengen zone.Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insuranceYour passport must be valid for at least six months beyond the date of travel.Not applicable, as this is outside the Schengen zone.Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insuranceYour passport must be valid for at least six months beyond the date of travel.Not applicable, as this is outside the Schengen zonenSuggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insuranceYour passport must be valid for at least six months beyond the date of travel.Not applicable, as this is outside the Schengen zone.Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insuranceYour passport must be valid for at least six months beyond the date of travel.Not applicable, as this is outside the Schengen zone.Suggested documents include proof of employment, a bank statement for the last six months, a preliminary flight booking, and comprehensive travel insurance",
-};
+import { SCREENS_CONTENT } from "./config/infoScreensContent";
 
-class VisaScreen extends React.Component {
+class InfoBaseScreen extends React.Component {
   handleClose = () => {
     this.props.navigation.navigate("InformationScreen");
   };
 
   render() {
+    const { contentKey } = this.props.route.params;
+    const content = SCREENS_CONTENT[contentKey];
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView>
           {/* Title */}
-          <Text style={styles.title}>VISA REQUIREMENTS</Text>
+          <Text style={styles.title}>{content.title}</Text>
 
           {/* Image */}
           <Image
-            source={require("../../assets/Information_pictures/Visa.png")}
+            source={content.image}
             style={styles.image}
             resizeMode="contain"
           />
@@ -129,4 +128,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default VisaScreen;
+export default InfoBaseScreen;
