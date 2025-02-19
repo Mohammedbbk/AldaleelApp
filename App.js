@@ -13,23 +13,25 @@ import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
 import UserPlanScreen from "./src/screens/UserPlanScreen";
 import AssistantScreen from "./src/screens/AssistantScreen";
 import InformationScreen from "./src/screens/InformationScreen";
+import VisaScreen from "./src/screens/VisaScreen";
 
 const Stack = createStackNavigator();
 
 class App extends React.Component {
   render() {
-    return (
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
-          <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
-          <Stack.Screen
-            name="InformationScreen"
-            component={InformationScreen}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    );
+    return <VisaScreen />;
+    // return (
+    //   <NavigationContainer>
+    //     <Stack.Navigator screenOptions={{ headerShown: false }}>
+    //       <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
+    //       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
+    //       <Stack.Screen
+    //         name="InformationScreen"
+    //         component={InformationScreen}
+    //       />
+    //     </Stack.Navigator>
+    //   </NavigationContainer>
+    // );
     // return (
     //   <NavigationContainer>
     //     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
