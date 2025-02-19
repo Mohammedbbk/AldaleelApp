@@ -371,32 +371,151 @@ class UserPlanScreen extends React.Component {
     await Sharing.shareAsync(uri);
   };
   generatePdfContent = () => {
-    let htmlContent = `
-      <html>
-        <body>
+    // Extract plan details
+    const destination = plan.details.find(
+      (d) => d.name === "Destination"
+    ).value;
+    const duration = plan.details.find((d) => d.name === "Duration").value;
+    const expenses = plan.details.find((d) => d.name === "Expenses").value;
+
+    const htmlContent = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Your Travel Plan</title>
+      <style>
+        /* Import Roboto from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        body {
+          font-family: 'Roboto', sans-serif;
+          margin: 0;
+          padding: 0;
+          background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+        }
+        .container {
+          margin: 40px auto;
+          max-width: 800px;
+          background: #ffffff;
+          border-radius: 12px;
+          padding: 30px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid #00adef;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 32px;
+          color: #007aff;
+        }
+        .header p {
+          margin: 5px 0 0;
+          font-size: 18px;
+          color: #555;
+        }
+        .details {
+          display: flex;
+          justify-content: space-around;
+          margin-bottom: 30px;
+          border-bottom: 1px solid #e5e5ea;
+          padding-bottom: 20px;
+        }
+        .detail {
+          text-align: center;
+        }
+        .detail h3 {
+          margin: 0;
+          font-size: 16px;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .detail p {
+          margin: 5px 0 0;
+          font-size: 20px;
+          font-weight: 500;
+          color: #333;
+        }
+        .day-section {
+          margin-bottom: 40px;
+        }
+        .day-section h2 {
+          font-size: 24px;
+          color: #333;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+          border-bottom: 2px dashed #00adef;
+        }
+        .plan-item {
+          margin-bottom: 15px;
+          padding: 15px;
+          background: #f9f9f9;
+          border-left: 5px solid #00adef;
+          border-radius: 8px;
+          transition: background 0.3s ease;
+        }
+        .plan-item:hover {
+          background: #f1faff;
+        }
+        .plan-item span.time {
+          font-weight: 700;
+          color: #007aff;
+          margin-right: 15px;
+          display: inline-block;
+          width: 90px;
+        }
+        .plan-item span.event {
+          color: #333;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
           <h1>Your Travel Plan</h1>
-          <h2>Destination: ${
-            plan.details.find((d) => d.name === "Destination").value
-          }</h2>
-          <h3>Duration: ${
-            plan.details.find((d) => d.name === "Duration").value
-          }</h3>
-          <h3>Expenses: ${
-            plan.details.find((d) => d.name === "Expenses").value
-          }</h3>
-    `;
-
-    plan.days.forEach((day) => {
-      htmlContent += `<h2>Day ${day.day}</h2>`;
-      day.plan.forEach((item) => {
-        htmlContent += `<p>${item.time}: ${item.event}</p>`;
-      });
-    });
-
-    htmlContent += `
-        </body>
-      </html>
-    `;
+          <p>Embark on a journey to ${destination}</p>
+        </div>
+        <div class="details">
+          <div class="detail">
+            <h3>Destination</h3>
+            <p>${destination}</p>
+          </div>
+          <div class="detail">
+            <h3>Duration</h3>
+            <p>${duration}</p>
+          </div>
+          <div class="detail">
+            <h3>Expenses</h3>
+            <p>${expenses}</p>
+          </div>
+        </div>
+        ${plan.days
+          .map(
+            (day) => `
+          <div class="day-section">
+            <h2>Day ${day.day}: ${day.activities[0].name}</h2>
+            ${day.plan
+              .map(
+                (item) => `
+              <div class="plan-item">
+                <span class="time">${item.time}</span>
+                <span class="event">${item.event}</span>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    </body>
+  </html>
+  `;
 
     return htmlContent;
   };
