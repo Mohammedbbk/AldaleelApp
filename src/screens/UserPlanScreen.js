@@ -464,11 +464,9 @@ class UserPlanScreen extends React.Component {
         </ScrollView>
 
         {/* Next Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.nextButton} onPress={this.handleNext}>
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.nextButton} onPress={this.handleNext}>
+          <Text style={styles.nextButtonText}>Next</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -478,9 +476,8 @@ export default UserPlanScreen;
 // Styles
 const styles = StyleSheet.create({
   wrapper: {
-    position: "relative",
-    width: "100%",
     backgroundColor: "#f5f5f5",
+    flex: 1,
   },
   container: {
     paddingBottom: 200,
@@ -491,7 +488,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
@@ -514,7 +510,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     flexShrink: 1,
-    padding: 8,
+    padding: 10,
+    paddingHorizontal: 15,
     gap: 20,
   },
   overallReview: {
@@ -627,16 +624,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nextButton: {
-    height: 57,
-    width: 122,
     backgroundColor: "#24BAEC",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
+    marginHorizontal: 20,
+    padding: 15,
+    borderRadius: 8,
+    position: "absolute",
+    bottom: 30,
+    left: 0,
+    right: 0,
   },
   nextButtonText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "500",
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

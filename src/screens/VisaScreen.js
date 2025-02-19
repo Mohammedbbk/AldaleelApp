@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   Image,
   TouchableOpacity,
-  ScrollViewBase,
   ScrollView,
 } from "react-native";
 
@@ -113,7 +112,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   closeButton: {
-    backgroundColor: "#00A6FF",
+    backgroundColor: "#24BAEC",
     marginHorizontal: 20,
     padding: 15,
     borderRadius: 8,
