@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 
 // Sample data - replace with actual data from API
 const plan = {
@@ -363,7 +365,41 @@ class UserPlanScreen extends React.Component {
   handleNext = () => {
     this.props.navigation.navigate("InformationScreen");
   };
-  handleShare = () => {};
+  handleShare = async () => {
+    const htmlContent = this.generatePdfContent();
+    const { uri } = await Print.printToFileAsync({ html: htmlContent });
+    await Sharing.shareAsync(uri);
+  };
+  generatePdfContent = () => {
+    let htmlContent = `
+      <html>
+        <body>
+          <h1>Your Travel Plan</h1>
+          <h2>Destination: ${
+            plan.details.find((d) => d.name === "Destination").value
+          }</h2>
+          <h3>Duration: ${
+            plan.details.find((d) => d.name === "Duration").value
+          }</h3>
+          <h3>Expenses: ${
+            plan.details.find((d) => d.name === "Expenses").value
+          }</h3>
+    `;
+
+    plan.days.forEach((day) => {
+      htmlContent += `<h2>Day ${day.day}</h2>`;
+      day.plan.forEach((item) => {
+        htmlContent += `<p>${item.time}: ${item.event}</p>`;
+      });
+    });
+
+    htmlContent += `
+        </body>
+      </html>
+    `;
+
+    return htmlContent;
+  };
 
   render() {
     return (
