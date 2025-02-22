@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
   Animated,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -631,7 +632,6 @@ export default UserPlanScreen;
 // Styles
 const styles = StyleSheet.create({
   wrapper: {
-    marginTop: StatusBar.currentHeight,
     backgroundColor: "#f5f5f5",
     flex: 1,
   },
