@@ -10,7 +10,7 @@ import {
   StatusBar,
 } from "react-native";
 
-import { SCREENS_CONTENT } from "./config/infoScreensContent";
+import { AI_RESPONSE } from "./config/AiResponse";
 
 class InfoBaseScreen extends React.Component {
   handleClose = () => {
@@ -19,7 +19,7 @@ class InfoBaseScreen extends React.Component {
 
   render() {
     const { contentKey } = this.props.route.params;
-    const content = SCREENS_CONTENT[contentKey];
+    const content = AI_RESPONSE.Information[contentKey];
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView>
