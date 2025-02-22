@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import {
   ScrollView,
   View,
@@ -6,9 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Animated,
   Alert,
-  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
