@@ -20,6 +20,7 @@ const Stack = createStackNavigator();
 class App extends React.Component {
   render() {
     return (
+      /*itenerary section*/
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
@@ -60,7 +61,9 @@ class App extends React.Component {
           />
         </Stack.Navigator>
       </NavigationContainer>
-    );
+    ); //include this line while commenting/decommenting
+
+    ///*sign in section*/
     // return (
     //   <NavigationContainer>
     //     <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
@@ -76,7 +79,7 @@ class App extends React.Component {
     //       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     //     </Stack.Navigator>
     //   </NavigationContainer>
-    // );
+    // ); //include this line while commenting/decommenting
   }
 }
 
