@@ -189,7 +189,7 @@ class UserPlanScreen extends React.Component {
   <html>
     <head>
       <meta charset="utf-8">
-      <title>Your Travel Plan</title>
+      <title>${destination} Travel Plan</title>
       <style>
         /* Import Roboto from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -282,7 +282,7 @@ class UserPlanScreen extends React.Component {
     <body>
       <div class="container">
         <div class="header">
-          <h1>Your Travel Plan</h1>
+          <h1>${destination} Travel Plan</h1>
           <p>Embark on a journey to ${destination}</p>
         </div>
         <div class="details">
