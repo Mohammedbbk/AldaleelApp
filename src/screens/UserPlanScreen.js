@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { AI_RESPONSE } from "./config/AiResponse";
+import * as FileSystem from "expo-file-system";
 
 // Sample data - replace with actual data from API
 const plan = AI_RESPONSE.UserPlan;
@@ -155,8 +156,25 @@ class UserPlanScreen extends React.Component {
   };
   handleShare = async () => {
     const htmlContent = this.generatePdfContent();
+    // Create the PDF file with a random name.
     const { uri } = await Print.printToFileAsync({ html: htmlContent });
-    await Sharing.shareAsync(uri);
+    // Define your custom file path (e.g., in the document directory).
+    const newPath =
+      FileSystem.documentDirectory +
+      "Al-Daleel_" +
+      plan.details
+        .find((detail) => {
+          return detail.name === "Destination";
+        })
+        .value.replaceAll(" ", "") +
+      "TravelPlan.pdf";
+    // Rename (move) the file to your custom path.
+    await FileSystem.moveAsync({
+      from: uri,
+      to: newPath,
+    });
+    // Share the file using the new path.
+    await Sharing.shareAsync(newPath);
   };
   generatePdfContent = () => {
     // Extract plan details
