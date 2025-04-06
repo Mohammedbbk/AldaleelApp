@@ -1,62 +1,59 @@
-// AuthProvider.js
-import React, { createContext, Component } from 'react';
+// src/AuthProvider.js
+import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// نصدر الـ Context حتى نتمكن من استخدامه في الشاشات
-export const AuthContext = createContext();
+// Create a new Context
+export const AuthContext = React.createContext();
 
-class AuthProvider extends Component {
-  state = {
-    userToken: null,  // في البداية null
-    isLoading: true,  // للتحقق من التوكن المحفوظ عند تشغيل التطبيق
-  };
-
-  componentDidMount() {
-    this.loadToken();
+export class AuthProvider extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      userToken: null,
+      isLoading: true
+    };
   }
 
-  // دالة لجلب التوكن من AsyncStorage عند تشغيل التطبيق
-  loadToken = async () => {
+  // Load token from AsyncStorage when component mounts
+  async componentDidMount() {
     try {
       const token = await AsyncStorage.getItem('userToken');
       this.setState({ userToken: token, isLoading: false });
     } catch (error) {
-      console.log('Error loading token:', error);
+      console.log('Error reading token:', error);
       this.setState({ isLoading: false });
     }
   }
 
-  // دالة لتخزين/تحديث التوكن أو حذفه (تسجيل الخروج)
+  // Method to set or remove the user token
   setUserToken = async (token) => {
     try {
       if (token) {
         await AsyncStorage.setItem('userToken', token);
         this.setState({ userToken: token });
       } else {
-        // لو كان null أو ''
         await AsyncStorage.removeItem('userToken');
         this.setState({ userToken: null });
       }
     } catch (error) {
       console.log('Error setting token:', error);
     }
-  }
+  };
 
   render() {
     const { userToken, isLoading } = this.state;
+    
+    // The value that will be available to consumer components
+    const authContext = {
+      userToken,
+      isLoading,
+      setUserToken: this.setUserToken
+    };
 
     return (
-      <AuthContext.Provider
-        value={{
-          userToken,       // قيمة التوكن الحالي
-          isLoading,       // هل ما زلنا نتحقق من وجود التوكن؟
-          setUserToken: this.setUserToken, 
-        }}
-      >
+      <AuthContext.Provider value={authContext}>
         {this.props.children}
       </AuthContext.Provider>
     );
   }
 }
-
-export default AuthProvider;

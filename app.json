@@ -1,5 +1,6 @@
 {
   "expo": {
+    "userInterfaceStyle": "automatic",
     "plugins": [
       [
         "expo-build-properties",
@@ -13,9 +14,15 @@
           "ios": {
             "newArchEnabled": true,
             "deploymentTarget": "15.1"
+          },
+          "web": {
+            "bundler": "metro"
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "newArchEnabled": true
+    }
   }
 }

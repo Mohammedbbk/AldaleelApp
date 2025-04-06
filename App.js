@@ -1,46 +1,29 @@
 // App.js
-
 import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import "./global.css";
 
-// استيراد الشاشات
-import SplashScreen from "./src/screens/SplashScreen";
-import OnboardScreen from "./src/screens/OnboardScreen";
-import LoginScreen from "./src/screens/LoginScreen";
-<<<<<<< HEAD
-import SignUpScreen from "./src/screens/SignUpScreen"; 
-=======
-import SignUpScreen from "./src/screens/SignUpScreen"; // <-- أضف هذا
->>>>>>> 645be697ec2159d4783a4847a9f641a263dcc45d
-import VerificationScreen from "./src/screens/VerificationScreen";
-import ForgotPasswordScreen from "./src/screens/ForgotPasswordScreen";
-import UserPlanScreen from "./src/screens/UserPlanScreen";
-import AssistantScreen from "./src/screens/AssistantScreen";
-import InformationScreen from "./src/screens/InformationScreen";
-import InfoBaseScreen from "./src/screens/InfoBaseScreen";
-<<<<<<< HEAD
-import CreateTripScreen from "./src/screens/CreateTripScreen";
+// Import screens
+import SplashScreen from "./src/screens/onboarding/SplashScreen";
+import OnboardScreen from "./src/screens/onboarding/OnboardScreen";
+import LoginScreen from "./src/screens/auth/LoginScreen";
+import SignUpScreen from "./src/screens/auth/SignUpScreen"; 
+import VerificationScreen from "./src/screens/auth/VerificationScreen";
+import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
+import UserPlanScreen from "./src/screens/trips/UserPlanScreen";
+import AssistantScreen from "./src/screens/assistant/AssistantScreen";
+import InformationScreen from "./src/screens/home/InformationScreen";
+import InfoBaseScreen from "./src/screens/home/InfoBaseScreen";
+import HomeScreen from "./src/screens/home/HomeScreen";
 
-//فقط لتجربة تشغيل التطبيق
-import HomeScreen from "./src/screens/HomeScreen";
-import TripStyleScreen from "./src/screens/TripStyleScreen";
-import TripDetailsScreen from "./src/screens/TripDetailsScreen";
+// Import the AuthProvider
+import { AuthProvider, AuthContext } from "./AuthProvider";
 
-TripDetailsScreen
-=======
-
-//فقط لتجربة تشغيل التطبيق
-import ForgotHomeScreen from "./src/screens/HomeScreen";
-
->>>>>>> 645be697ec2159d4783a4847a9f641a263dcc45d
-// سننشئ مكدّسين منفصلين: واحد لشاشات غير المسجّلين (Auth Stack)
-// وواحد محتمل لشاشات المستخدم المسجّل (App Stack) في حال أضفنا شاشة رئيسية مستقبلاً.
 const Stack = createStackNavigator();
 
-// مكدّس الشاشات الخاصة بالتعريف (Onboarding & Auth):
+// Auth Stack for unauthenticated users
 function AuthStack() {
   return (
     <Stack.Navigator
@@ -53,219 +36,110 @@ function AuthStack() {
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="Verification" component={VerificationScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-<<<<<<< HEAD
-      <Stack.Screen name="HomeScreen" component={HomeScreen} />
-      <Stack.Screen name="CreateTripScreen" component={CreateTripScreen} />
-      <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
-      <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
- <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
-  <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
-  <Stack.Screen name="InformationScreen" component={InformationScreen} />
-  <Stack.Screen
-    name="VisaScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "visa" }}
-  />
-  <Stack.Screen
-    name="LocalScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "local" }}
-  />
-  <Stack.Screen
-    name="CurrencyScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "currency" }}
-  />
-  <Stack.Screen
-    name="HealthScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "health" }}
-  />
-  <Stack.Screen
-    name="TransportationScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "transportation" }}
-  />
-  <Stack.Screen
-    name="LanguageScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "language" }}
-  />
-
-=======
->>>>>>> 645be697ec2159d4783a4847a9f641a263dcc45d
     </Stack.Navigator>
   );
 }
 
-<<<<<<< HEAD
-=======
-// مثال لشاشة رئيسية بعد تسجيل الدخول (Placeholder)
-import { Text } from "react-native";
-function HomeScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text style={{ fontSize: 20 }}>Welcome! You are logged in.</Text>
-    </View>
-  );
-}
->>>>>>> 645be697ec2159d4783a4847a9f641a263dcc45d
+// App Stack for authenticated users
+// Import trip-related screens
+import CreateTripScreen from "./src/screens/trips/CreateTripScreen";
+import TripStyleScreen from "./src/screens/trips/TripStyleScreen";
+import TripDetailsScreen from "./src/screens/trips/TripDetailsScreen";
+import TripScreen from "./src/screens/trips/TripList";
 
-// مكدّس الشاشات الخاصة بالمستخدم المسجّل
 function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-<<<<<<< HEAD
-      {/* أللمستخدم المسجل */}
       <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="CreateTripScreen" component={CreateTripScreen} />
+      <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
+      <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
+      <Stack.Screen name="InformationScreen" component={InformationScreen} />
+      <Stack.Screen name="Trips" component={TripScreen} />
+      <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
       <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
       <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
- <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
-  <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
-  <Stack.Screen name="InformationScreen" component={InformationScreen} />
-  <Stack.Screen
-    name="VisaScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "visa" }}
-  />
-  <Stack.Screen
-    name="LocalScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "local" }}
-  />
-  <Stack.Screen
-    name="CurrencyScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "currency" }}
-  />
-  <Stack.Screen
-    name="HealthScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "health" }}
-  />
-  <Stack.Screen
-    name="TransportationScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "transportation" }}
-  />
-  <Stack.Screen
-    name="LanguageScreen"
-    component={InfoBaseScreen}
-    initialParams={{ contentKey: "language" }}
-  />
-=======
-      {/* أي شاشة تريدها للمستخدم المسجل */}
-      <Stack.Screen name="Home" component={HomeScreen} />
->>>>>>> 645be697ec2159d4783a4847a9f641a263dcc45d
+      <Stack.Screen
+        name="VisaScreen"
+        component={InfoBaseScreen}
+        initialParams={{ contentKey: "visa" }}
+      />
+      <Stack.Screen
+        name="LocalScreen"
+        component={InfoBaseScreen}
+        initialParams={{ contentKey: "local" }}
+      />
+      <Stack.Screen
+        name="CurrencyScreen"
+        component={InfoBaseScreen}
+        initialParams={{ contentKey: "currency" }}
+      />
+      <Stack.Screen
+        name="HealthScreen"
+        component={InfoBaseScreen}
+        initialParams={{ contentKey: "health" }}
+      />
+      <Stack.Screen
+        name="TransportationScreen"
+        component={InfoBaseScreen}
+        initialParams={{ contentKey: "transportation" }}
+      />
+      <Stack.Screen
+        name="LanguageScreen"
+        component={InfoBaseScreen}
+        initialParams={{ contentKey: "language" }}
+      />
     </Stack.Navigator>
+  );
+}
+
+// Root navigator that conditionally renders Auth or App stack based on authentication state
+function RootNavigator() {
+  return (
+    <AuthContext.Consumer>
+      {({ userToken, isLoading }) => {
+        if (isLoading) {
+          return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+              <ActivityIndicator size="large" color="#00ADEF" />
+            </View>
+          );
+        }
+        
+        return userToken ? <AppStack /> : <AuthStack />;
+      }}
+    </AuthContext.Consumer>
+  );
+}
+
+// Add error boundary for navigation
+function NavigationErrorBoundary({ children }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <NavigationContainer
+        fallback={
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" color="#00ADEF" />
+          </View>
+        }
+        onStateChange={(state) => {
+          // Optional: Add navigation state logging for debugging
+          console.log('New navigation state:', state);
+        }}
+      >
+        {children}
+      </NavigationContainer>
+    </View>
   );
 }
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      userToken: null, // يخزّن هنا التوكن حال وجوده
-      isLoading: true, // لمعرفة هل نتحقق من AsyncStorage أم لا
-    };
-  }
-
-  // عند تشغيل التطبيق لأول مرة
-  async componentDidMount() {
-    try {
-      // فحص هل هناك userToken في AsyncStorage
-      const token = await AsyncStorage.getItem("userToken");
-      this.setState({ userToken: token, isLoading: false });
-    } catch (error) {
-      console.log("Error reading token:", error);
-      this.setState({ isLoading: false });
-    }
-  }
-
-  // دالة لتحديث التوكن في الواجهة + AsyncStorage
-  setUserToken = async (token) => {
-    try {
-      if (token) {
-        await AsyncStorage.setItem("userToken", token);
-        this.setState({ userToken: token });
-      } else {
-        // تسجيل خروج أو حذف التوكن
-        await AsyncStorage.removeItem("userToken");
-        this.setState({ userToken: null });
-      }
-    } catch (error) {
-      console.log("Error setting token:", error);
-    }
-  };
-
   render() {
-    const { userToken, isLoading } = this.state;
-
-    // أثناء التحقق من AsyncStorage
-    if (isLoading) {
-      // يمكن عرض شاشة تحميل بسيطة أو استخدم SplashScreen مباشرة
-      return (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color="#00ADEF" />
-        </View>
-      );
-    }
-
     return (
-      <NavigationContainer>
-        {/* إذا لا يوجد توكن => نعرض AuthStack (شاشات تسجيل الدخول/التسجيل/الترحيب) */}
-<<<<<<< HEAD
-        {/* إذا يوجد توكن => نعرض AppStack ( شاشة Home   شاشات للمستخدم المسجّل) */}
-=======
-        {/* إذا يوجد توكن => نعرض AppStack (مثلاً شاشة Home أو أي شاشات للمستخدم المسجّل) */}
->>>>>>> 645be697ec2159d4783a4847a9f641a263dcc45d
-        {userToken ? <AppStack /> : <AuthStack />}
-      </NavigationContainer>
-
-      // /*ITENERARY SECTION FOR TESTING ONLY*/
-      // <NavigationContainer>
-      //   <Stack.Navigator screenOptions={{ headerShown: false }}>
-      //     <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
-      //     <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
-      //     <Stack.Screen
-      //       name="InformationScreen"
-      //       component={InformationScreen}
-      //     />
-      //     <Stack.Screen
-      //       name="VisaScreen"
-      //       component={InfoBaseScreen}
-      //       initialParams={{ contentKey: "visa" }}
-      //     />
-      //     <Stack.Screen
-      //       name="LocalScreen"
-      //       component={InfoBaseScreen}
-      //       initialParams={{ contentKey: "local" }}
-      //     />
-      //     <Stack.Screen
-      //       name="CurrencyScreen"
-      //       component={InfoBaseScreen}
-      //       initialParams={{ contentKey: "currency" }}
-      //     />
-      //     <Stack.Screen
-      //       name="HealthScreen"
-      //       component={InfoBaseScreen}
-      //       initialParams={{ contentKey: "health" }}
-      //     />
-      //     <Stack.Screen
-      //       name="TransportationScreen"
-      //       component={InfoBaseScreen}
-      //       initialParams={{ contentKey: "transportation" }}
-      //     />
-      //     <Stack.Screen
-      //       name="LanguageScreen"
-      //       component={InfoBaseScreen}
-      //       initialParams={{ contentKey: "language" }}
-      //     />
-      //   </Stack.Navigator>
-      // </NavigationContainer>
+      <AuthProvider>
+        <NavigationErrorBoundary>
+          <RootNavigator />
+        </NavigationErrorBoundary>
+      </AuthProvider>
     );
   }
 }
