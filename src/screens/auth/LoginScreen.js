@@ -1,5 +1,5 @@
 // src/screens/LoginScreen.js
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -13,18 +13,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from 'react-native';
+} from "react-native";
 
 // أيقونات Ionicons
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 // استيراد AuthContext من ملف المزوّد (AuthProvider.js مثلاً)
-import { AuthContext } from '../../../AuthProvider';
+import { AuthContext } from "../../../AuthProvider";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 // ثابت خاص بعنوان الـAPI (غيّره حسب مشروعك)
-const LOGIN_API_URL = 'https://example.com/api/login';
+const LOGIN_API_URL = "http://10.0.2.2:5000/api/auth/login";
 
 class LoginScreen extends React.Component {
   // للسماح باستخدام this.context
@@ -33,17 +33,17 @@ class LoginScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
       isPasswordVisible: false,
-      loading: false,           // حالة التحميل
-      errorMessage: '',         // عرض رسالة خطأ إن وجدت
+      loading: false, // حالة التحميل
+      errorMessage: "", // عرض رسالة خطأ إن وجدت
     };
   }
 
   // زر الرجوع: ينقل المستخدم إلى شاشة Onboard
   handleBack = () => {
-    this.props.navigation.replace('Onboard');
+    this.props.navigation.replace("Onboard");
   };
 
   // التحقق من صحة الحقول قبل إرسال الطلب
@@ -51,12 +51,14 @@ class LoginScreen extends React.Component {
     const { email, password } = this.state;
     const emailRegex = /\S+@\S+\.\S+/;
     if (!emailRegex.test(email)) {
-      this.setState({ errorMessage: 'Please enter a valid email address.' });
+      this.setState({ errorMessage: "Please enter a valid email address." });
       return false;
     }
     // فحص طول كلمة المرور (8 حروف على الأقل)
     if (password.length < 8) {
-      this.setState({ errorMessage: 'Password must be at least 8 characters.' });
+      this.setState({
+        errorMessage: "Password must be at least 8 characters.",
+      });
       return false;
     }
     return true;
@@ -64,7 +66,7 @@ class LoginScreen extends React.Component {
 
   // عند الضغط على زر Sign In
   handleSignIn = async () => {
-    this.setState({ errorMessage: '' }); // مسح الأخطاء السابقة
+    this.setState({ errorMessage: "" }); // مسح الأخطاء السابقة
 
     // التحقق من صحة المدخلات
     if (!this.validateInputs()) return;
@@ -75,15 +77,15 @@ class LoginScreen extends React.Component {
 
       // الاتصال بالـAPI الوهمي
       const response = await fetch(LOGIN_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
-      
+
       // التحقق من حالة الرد
       if (!response.ok) {
-        const message = data?.message || 'Login failed. Please try again.';
+        const message = data?.message || "Login failed. Please try again.";
         throw new Error(message);
       }
 
@@ -92,12 +94,12 @@ class LoginScreen extends React.Component {
       // تحديث التوكن في AuthContext (سيقوم الـAuthProvider بتخزينه)
       this.context.setUserToken(token);
 
-      Alert.alert('Success', 'Logged in successfully!', [
+      Alert.alert("Success", "Logged in successfully!", [
         {
-          text: 'OK',
+          text: "OK",
           onPress: () => {
             // مثال: الانتقال لصفحة رئيسية أو شاشة Verification
-            this.props.navigation.replace('Home');
+            this.props.navigation.replace("Home");
           },
         },
       ]);
@@ -117,22 +119,22 @@ class LoginScreen extends React.Component {
 
   // شاشة ForgotPassword
   handleForgetPassword = () => {
-    this.props.navigation.navigate('ForgotPassword');
+    this.props.navigation.navigate("ForgotPassword");
   };
 
   // الانتقال لشاشة Sign Up
   handleSignUp = () => {
-    this.props.navigation.navigate('SignUp');
+    this.props.navigation.navigate("SignUp");
   };
 
   // تسجيل الدخول عبر Apple (تنبيه شكلي حاليًا)
   handleSignInApple = () => {
-    Alert.alert('Apple Sign In', 'Integration not implemented yet!');
+    Alert.alert("Apple Sign In", "Integration not implemented yet!");
   };
 
   // تسجيل الدخول عبر Google (تنبيه شكلي حاليًا)
   handleSignInGoogle = () => {
-    Alert.alert('Google Sign In', 'Integration not implemented yet!');
+    Alert.alert("Google Sign In", "Integration not implemented yet!");
   };
 
   // Add new handler for skip button
@@ -140,16 +142,16 @@ class LoginScreen extends React.Component {
     try {
       this.setState({ loading: true });
       if (!this.context) {
-        throw new Error('Authentication context is not available');
+        throw new Error("Authentication context is not available");
       }
-      await this.context.setUserToken('guest-token');
+      await this.context.setUserToken("guest-token");
       // Optionally navigate to another screen after successful skip
-      this.props.navigation.replace('Home');
+      this.props.navigation.replace("Home");
     } catch (error) {
-      console.warn('Skip signin error:', error);
+      console.warn("Skip signin error:", error);
       Alert.alert(
-        'Notice', 
-        'Unable to continue at the moment. Please try signing in.'
+        "Notice",
+        "Unable to continue at the moment. Please try signing in."
       );
     } finally {
       this.setState({ loading: false });
@@ -157,24 +159,24 @@ class LoginScreen extends React.Component {
   };
 
   render() {
-    const {
-      email,
-      password,
-      isPasswordVisible,
-      loading,
-      errorMessage,
-    } = this.state;
+    const { email, password, isPasswordVisible, loading, errorMessage } =
+      this.state;
 
     return (
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <ScrollView contentContainerStyle={styles.scrollContainer} bounces={false}>
-
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            bounces={false}
+          >
             {/* زر الرجوع ضمن دائرة شفافة */}
-            <TouchableOpacity style={styles.backButton} onPress={this.handleBack}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={this.handleBack}
+            >
               <View style={styles.backButtonCircle}>
                 <Ionicons name="chevron-back" size={24} color="#000" />
               </View>
@@ -182,10 +184,12 @@ class LoginScreen extends React.Component {
 
             {/* العنوان والنص الفرعي */}
             <Text style={styles.title}>Sign in now</Text>
-            <Text style={styles.subTitle}>Please sign in to continue our app</Text>
+            <Text style={styles.subTitle}>
+              Please sign in to continue our app
+            </Text>
 
             {/* رسالة الخطأ (إن وجدت) */}
-            {errorMessage !== '' && (
+            {errorMessage !== "" && (
               <Text style={styles.errorText}>{errorMessage}</Text>
             )}
 
@@ -218,7 +222,7 @@ class LoginScreen extends React.Component {
                 onPress={this.togglePasswordVisibility}
               >
                 <Ionicons
-                  name={isPasswordVisible ? 'eye-off' : 'eye'}
+                  name={isPasswordVisible ? "eye-off" : "eye"}
                   size={20}
                   color="#999"
                 />
@@ -258,25 +262,40 @@ class LoginScreen extends React.Component {
             <Text style={styles.orConnectText}>Or connect</Text>
 
             {/* زر Apple */}
-            <TouchableOpacity style={styles.appleButton} onPress={this.handleSignInApple}>
-              <Ionicons name="logo-apple" size={20} color="#000" style={{ marginRight: 8 }} />
+            <TouchableOpacity
+              style={styles.appleButton}
+              onPress={this.handleSignInApple}
+            >
+              <Ionicons
+                name="logo-apple"
+                size={20}
+                color="#000"
+                style={{ marginRight: 8 }}
+              />
               <Text style={styles.appleButtonText}>Sign in with Apple</Text>
             </TouchableOpacity>
 
             {/* زر Google */}
-            <TouchableOpacity style={styles.googleButton} onPress={this.handleSignInGoogle}>
-              <Ionicons name="logo-google" size={20} color="#DB4437" style={{ marginRight: 8 }} />
+            <TouchableOpacity
+              style={styles.googleButton}
+              onPress={this.handleSignInGoogle}
+            >
+              <Ionicons
+                name="logo-google"
+                size={20}
+                color="#DB4437"
+                style={{ marginRight: 8 }}
+              />
               <Text style={styles.googleButtonText}>Sign in with Google</Text>
             </TouchableOpacity>
 
             {/* Add Skip button at the top */}
-            <TouchableOpacity 
-              style={styles.skipButton} 
+            <TouchableOpacity
+              style={styles.skipButton}
               onPress={this.handleSkipSignIn}
             >
               <Text style={styles.skipButtonText}>Skip</Text>
             </TouchableOpacity>
-
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -288,16 +307,16 @@ class LoginScreen extends React.Component {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 20,
     marginTop: 60,
   },
@@ -305,130 +324,130 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.05)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#111',
+    fontWeight: "bold",
+    color: "#111",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subTitle: {
     fontSize: 14,
-    color: '#777',
+    color: "#777",
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
-    color: 'red',
+    color: "red",
     fontSize: 14,
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   inputContainer: {
-    width: '100%',
+    width: "100%",
     marginBottom: 15,
-    position: 'relative',
+    position: "relative",
   },
   input: {
-    width: '100%',
+    width: "100%",
     height: 50,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: "#F5F7FA",
     borderRadius: 10,
     paddingHorizontal: 15,
-    color: '#333',
+    color: "#333",
   },
   eyeButton: {
-    position: 'absolute',
+    position: "absolute",
     right: 15,
     top: 14,
   },
   forgetPasswordButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginBottom: 20,
   },
   forgetPasswordText: {
-    color: '#FF6E2C',
+    color: "#FF6E2C",
     fontSize: 14,
   },
   signInButton: {
-    width: '100%',
+    width: "100%",
     height: 50,
-    backgroundColor: '#00ADEF',
+    backgroundColor: "#00ADEF",
     borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   signInButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   signUpContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 20,
   },
   signUpText: {
-    color: '#777',
+    color: "#777",
     fontSize: 14,
   },
   signUpLink: {
-    color: '#FF6E2C',
+    color: "#FF6E2C",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   orConnectText: {
-    color: '#999',
+    color: "#999",
     fontSize: 14,
     marginBottom: 20,
   },
   appleButton: {
-    flexDirection: 'row',
-    width: '100%',
+    flexDirection: "row",
+    width: "100%",
     height: 48,
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#ddd",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 15,
   },
   appleButtonText: {
     fontSize: 15,
-    color: '#000',
-    fontWeight: '500',
+    color: "#000",
+    fontWeight: "500",
   },
   googleButton: {
-    flexDirection: 'row',
-    width: '100%',
+    flexDirection: "row",
+    width: "100%",
     height: 48,
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#ddd',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#ddd",
+    justifyContent: "center",
+    alignItems: "center",
   },
   googleButtonText: {
     fontSize: 15,
-    color: '#333',
-    fontWeight: '500',
+    color: "#333",
+    fontWeight: "500",
   },
   skipButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     right: 20,
     padding: 10,
   },
   skipButtonText: {
-    color: '#007AFF',
+    color: "#007AFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 export default LoginScreen;
