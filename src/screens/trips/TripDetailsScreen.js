@@ -177,7 +177,7 @@ const TripDetailsScreen = ({ route, navigation }) => {
       Alert.alert(
         'Trip Created',
         'Your adventure has been created successfully! Check your itinerary for details.',
-        [{ text: 'OK', onPress: () => navigation.navigate('TripSummary', { tripData: finalTripData }) }]
+        [{ text: 'OK', onPress: () => navigation.navigate('UserPlanScreen', { tripData: finalTripData }) }]
       );
     } catch (err) {
       console.error('Trip creation error:', err);
