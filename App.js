@@ -9,7 +9,7 @@ import "./global.css";
 import SplashScreen from "./src/screens/onboarding/SplashScreen";
 import OnboardScreen from "./src/screens/onboarding/OnboardScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
-import SignUpScreen from "./src/screens/auth/SignUpScreen"; 
+import SignUpScreen from "./src/screens/auth/SignUpScreen";
 import VerificationScreen from "./src/screens/auth/VerificationScreen";
 import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
 import UserPlanScreen from "./src/screens/trips/UserPlanScreen";
@@ -17,6 +17,7 @@ import AssistantScreen from "./src/screens/assistant/AssistantScreen";
 import InformationScreen from "./src/screens/home/InformationScreen";
 import InfoBaseScreen from "./src/screens/home/InfoBaseScreen";
 import HomeScreen from "./src/screens/home/HomeScreen";
+import ProfileSetting from "./src/screens/home/ProfileSetting";
 
 // Import the AuthProvider
 import { AuthProvider, AuthContext } from "./AuthProvider";
@@ -51,6 +52,7 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="ProfileSetting" component={ProfileSetting} />
       <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
       <Stack.Screen name="InformationScreen" component={InformationScreen} />
@@ -99,12 +101,18 @@ function RootNavigator() {
       {({ userToken, isLoading }) => {
         if (isLoading) {
           return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <ActivityIndicator size="large" color="#00ADEF" />
             </View>
           );
         }
-        
+
         return userToken ? <AppStack /> : <AuthStack />;
       }}
     </AuthContext.Consumer>
@@ -117,13 +125,15 @@ function NavigationErrorBoundary({ children }) {
     <View style={{ flex: 1 }}>
       <NavigationContainer
         fallback={
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
             <ActivityIndicator size="large" color="#00ADEF" />
           </View>
         }
         onStateChange={(state) => {
           // Optional: Add navigation state logging for debugging
-          console.log('New navigation state:', state);
+          console.log("New navigation state:", state);
         }}
       >
         {children}
