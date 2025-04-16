@@ -1,73 +1,166 @@
 // src/services/tripService.js
+import { API, ENDPOINTS } from '../config/constants';
+import { AI_RESPONSE } from '../config/AiResponse';
 
-import { API, ENDPOINTS } from '../config/constants'; // Ensure paths are correct
-import { AI_RESPONSE } from '../config/AiResponse'; // Ensure paths are correct
-
-// fetchWithTimeout function remains the same as before...
+// --- Utility: fetchWithTimeout ---
 const fetchWithTimeout = async (endpoint, options = {}) => {
     const controller = new AbortController();
     const timeoutDuration = options.timeout || API.TIMEOUT || 30000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+    const maxRetries = options.maxRetries || 1; // Default to 1 try, no retries
+    let lastError = null;
 
-    try {
-        const response = await fetch(`${API.BASE_URL}${endpoint}`, {
-            ...options,
-            signal: controller.signal,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
-        clearTimeout(timeoutId);
-        if (!response.ok) {
-            let errorBody = null;
-            try { errorBody = await response.json(); } catch (e) { /* ignore */ }
-            const errorMessage = errorBody?.message || errorBody?.error || `HTTP error! Status: ${response.status}`;
-            throw new Error(errorMessage);
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const url = API.BASE_URL ? `${API.BASE_URL}${endpoint}` : endpoint;
+            console.log(`[fetchWithTimeout] Requesting: ${options.method || 'GET'} ${url} (Attempt ${attempt + 1}/${maxRetries})`);
+            console.log(`[fetchWithTimeout] Fetching URL: ${url}`);
+            console.log(`[fetchWithTimeout] Options:`, JSON.stringify(options, null, 2));
+
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers,
+                },
+            });
+            
+            clearTimeout(timeoutId);
+            
+            // Handle network errors that result in valid responses but non-2xx status codes
+            if (!response.ok) {
+                let errorBody = null;
+                try { 
+                    errorBody = await response.json(); 
+                } catch (e) { 
+                    /* ignore parse errors */ 
+                }
+                const errorMessage = errorBody?.message || errorBody?.error || `HTTP error! Status: ${response.status}`;
+                const error = new Error(errorMessage);
+                error.status = response.status;
+                error.body = errorBody;
+                throw error;
+            }
+            
+            // Check for content type and return appropriate data
+            const contentType = response.headers.get('content-type');
+            if (response.status === 204 || !contentType) {
+                return null;
+            }
+            
+            // For JSON responses, parse and return
+            if (contentType.includes('application/json')) {
+                return await response.json();
+            }
+            
+            // For other types, return the raw text
+            return await response.text();
+            
+        } catch (error) {
+            clearTimeout(timeoutId);
+            lastError = error;
+            
+            // If abort/timeout, don't retry since it's unlikely to succeed with same timeout
+            if (error.name === 'AbortError') {
+                throw new Error(`Request timed out after ${timeoutDuration / 1000}s (${endpoint})`);
+            }
+            
+            // If more retries remaining, wait a bit and try again
+            if (attempt < maxRetries - 1) {
+                console.log(`Retrying request (${attempt + 1}/${maxRetries - 1}) after error:`, error.message);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
+                continue;
+            }
+            
+            // No more retries, throw the last error
+            throw error;
         }
-        const contentType = response.headers.get('content-type');
-        if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
-            return null;
-        }
-        return await response.json();
-    } catch (error) {
-        clearTimeout(timeoutId);
-        if (error.name === 'AbortError') {
-            throw new Error(`Request timed out (${endpoint})`);
-        }
-        throw error;
     }
+    
+    // This should never be reached due to the throw in the catch block,
+    // but just in case something weird happens:
+    throw lastError || new Error('Unknown error in fetchWithTimeout');
 };
 
+// --- Service Function: Fetch Visa Info ---
+export const WorkspaceVisaInfo = async (nationality, destination) => {
+  // ... (keep existing implementation) ...
+   if (!nationality || !destination) throw new Error('Missing nationality or destination for Visa Info');
+  try {
+      const res = await fetchWithTimeout(ENDPOINTS.VISA_REQUIREMENTS, {
+        method: 'POST',
+        body: JSON.stringify({ nationality, destination }),
+      });
+      
+      // Handle nested data structure
+      const responseData = res.data && res.data.status === 'success' ? res.data : res;
+      
+      if (!responseData || responseData.status !== 'success' || !responseData.visaRequirements) {
+          console.warn('Invalid response structure from Visa endpoint:', res);
+          throw new Error('Received invalid data structure for visa requirements');
+      }
+      return responseData.visaRequirements.content || responseData.visaRequirements.notes || JSON.stringify(responseData.visaRequirements);
+  } catch (error) {
+      console.error(`Error in WorkspaceVisaInfo (${nationality} -> ${destination}):`, error);
+      throw new Error(`Failed to fetch visa requirements: ${error.message}`);
+  }
+};
 
+// --- Service Function: Fetch Culture Insights ---
+export const WorkspaceCultureInsights = async (nationality, destination) => {
+  // ... (keep existing implementation) ...
+  if (!nationality || !destination) throw new Error('Missing nationality or destination for Culture Insights');
+   try {
+      const res = await fetchWithTimeout(ENDPOINTS.CULTURE_INSIGHTS, {
+        method: 'POST',
+        body: JSON.stringify({ nationality, destination }),
+      });
+      
+      // Handle nested data structure
+      const responseData = res.data && res.data.status === 'success' ? res.data : res;
+      
+      if (!responseData || responseData.status !== 'success' || !responseData.cultureInsights) {
+        console.warn('Invalid response structure from Culture endpoint:', res);
+        throw new Error('Received invalid data structure for culture insights');
+      }
+      return responseData.cultureInsights.content || responseData.cultureInsights.notes || JSON.stringify(responseData.cultureInsights);
+   } catch (error) {
+        console.error(`Error in WorkspaceCultureInsights (${nationality} -> ${destination}):`, error);
+        throw new Error(`Failed to fetch culture insights: ${error.message}`);
+   }
+};
+
+// --- Service Function: Create Trip Orchestration ---
 export const createTrip = async (tripData, callbacks = {}) => {
+    // ... (keep existing implementation) ...
     const {
         onLoadingChange,
         onLoadingMessageChange,
         onError,
         onSuccess,
     } = callbacks;
-
     const safeOnLoadingChange = typeof onLoadingChange === 'function' ? onLoadingChange : () => {};
     const safeOnLoadingMessageChange = typeof onLoadingMessageChange === 'function' ? onLoadingMessageChange : () => {};
     const safeOnError = typeof onError === 'function' ? onError : console.error;
     const safeOnSuccess = typeof onSuccess === 'function' ? onSuccess : () => {};
-
     try {
         safeOnLoadingChange(true);
         safeOnError('');
-
-        // --- Prepare Initial Data ---
-        // Initialize with defaults, then spread tripData over it
-        const finalTripData = {
+        const finalTripData = { /* ... construct finalTripData ... */
             destination: tripData.destination || 'Unknown',
-            duration: tripData.duration || 0, // Check if duration is captured earlier
+            destinationCity: tripData.destinationCity,
+            duration: tripData.duration || 0,
             budget: tripData.budget || 'Unknown',
+            budgetLevel: tripData.budgetLevel,
             interests: Array.isArray(tripData.interests) ? tripData.interests : [],
-            nationality: tripData.nationality || 'Unknown', // Check if nationality is captured earlier
-            startDate: tripData.startDate || null, // Check if dates are captured earlier
-            endDate: tripData.endDate || null,   // Check if dates are captured earlier
+            nationality: tripData.nationality || 'Unknown',
+            startDate: tripData.startDate || null,
+            endDate: tripData.endDate || null,
+            month: tripData.month,
+            year: tripData.year,
             travelStyle: tripData.travelStyle || 'Unknown',
+            travelerStyle: tripData.travelerStyle,
             specialRequirements: Array.isArray(tripData.specialRequirements) ? tripData.specialRequirements : [],
             additionalRequirement: (tripData.additionalRequirement || '').trim() || null,
             transportationPreference: Array.isArray(tripData.transportationPreference) ? tripData.transportationPreference : [],
@@ -76,145 +169,161 @@ export const createTrip = async (tripData, callbacks = {}) => {
             aiRecommendations: null,
             nearbyEvents: null,
             aiGenerationFailed: false,
-            // Spread the actual input data - this adds/overwrites fields like
-            // destinationCity, budgetLevel, travelerStyle, month, year etc.
             ...tripData,
         };
-
-        // --- Fetch Visa and Cultural Info Concurrently ---
+        // --- Fetch Visa/Culture ---
         safeOnLoadingMessageChange('Fetching visa & cultural info...');
         try {
-            // Use the most specific destination available for these calls
             const locationForQueries = finalTripData.destinationCity || finalTripData.destination;
-            const nationalityForQueries = finalTripData.nationality; // Make sure this is set somewhere!
-
-            const [visaResult, cultureResult] = await Promise.allSettled([
-                fetchWithTimeout(ENDPOINTS.VISA_REQUIREMENTS, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        nationality: nationalityForQueries, // Use potentially updated value
-                        destination: locationForQueries,    // Use potentially updated value
-                    }),
-                }),
-                fetchWithTimeout(ENDPOINTS.CULTURE_INSIGHTS, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        nationality: nationalityForQueries,
-                        destination: locationForQueries,
-                    }),
-                })
-            ]);
-
-            if (visaResult.status === 'fulfilled' && visaResult.value) {
-                finalTripData.visaRequirements = visaResult.value?.data?.visaRequirements || visaResult.value;
-                console.log('Visa requirements fetched:', finalTripData.visaRequirements);
-            } else {
-                console.warn('Visa requirements fetch failed:', visaResult.reason?.message || visaResult.reason);
+            const nationalityForQueries = finalTripData.nationality;
+            if (nationalityForQueries && nationalityForQueries !== 'Unknown' && locationForQueries && locationForQueries !== 'Unknown') {
+                 console.log(`Workspaceing Visa/Culture for: ${nationalityForQueries} -> ${locationForQueries}`);
+                 const [visaResult, cultureResult] = await Promise.allSettled([
+                    WorkspaceVisaInfo(nationalityForQueries, locationForQueries),
+                    WorkspaceCultureInsights(nationalityForQueries, locationForQueries)
+                 ]);
+                 if (visaResult.status === 'fulfilled' && visaResult.value) {
+                    finalTripData.visaRequirements = { content: visaResult.value, source: "LLM Information Service" };
+                 } else {
+                    console.warn('Visa requirements fetch failed:', visaResult.reason?.message || visaResult.reason);
+                    finalTripData.visaRequirements = { content: `Failed to load: ${visaResult.reason?.message || 'Unknown error'}`, source: "Error" };
+                 }
+                 if (cultureResult.status === 'fulfilled' && cultureResult.value) {
+                    finalTripData.cultureInsights = { content: cultureResult.value, source: "LLM Information Service" };
+                 } else {
+                    console.warn('Cultural insights fetch failed:', cultureResult.reason?.message || cultureResult.reason);
+                    finalTripData.cultureInsights = { content: `Failed to load: ${cultureResult.reason?.message || 'Unknown error'}`, source: "Error" };
+                 }
+            } else { /* ... handle missing params ... */
+                 console.warn('Skipping Visa/Culture fetch: Nationality or Destination missing/unknown.');
+                 finalTripData.visaRequirements = { content: "Requires Nationality and Destination.", source: "System" };
+                 finalTripData.cultureInsights = { content: "Requires Nationality and Destination.", source: "System" };
             }
-
-            if (cultureResult.status === 'fulfilled' && cultureResult.value) {
-                finalTripData.cultureInsights = cultureResult.value?.data?.cultureInsights || cultureResult.value;
-                console.log('Cultural insights fetched:', finalTripData.cultureInsights);
-            } else {
-                console.warn('Cultural insights fetch failed:', cultureResult.reason?.message || cultureResult.reason);
-            }
-        } catch (err) {
-            console.error('Unexpected error during concurrent visa/culture fetch:', err.message);
+        } catch (err) { /* ... handle concurrent fetch error ... */
+             console.error('Unexpected error during concurrent visa/culture fetch:', err.message);
+             finalTripData.visaRequirements = { content: `Failed to load: ${err.message}`, source: "Error" };
+             finalTripData.cultureInsights = { content: `Failed to load: ${err.message}`, source: "Error" };
         }
-
-        // --- Generate AI Recommendations ---
-        safeOnLoadingMessageChange('Generating travel recommendations...\nThis may take a minute if the server is starting up.');
+        // --- Generate AI Recs ---
+        safeOnLoadingMessageChange('Generating travel recommendations...');
         try {
-            // *** MODIFIED SECTION ***
-            // Construct payload using the correct fields from finalTripData
-            let travelDatesValue = null;
-            if (finalTripData.startDate && finalTripData.endDate) {
-                travelDatesValue = `${finalTripData.startDate} to ${finalTripData.endDate}`;
-            } else if (finalTripData.month && finalTripData.year) {
-                // Fallback if specific dates aren't available
-                travelDatesValue = `${finalTripData.month} ${finalTripData.year}`;
-            }
-
-            // **Important:** Where should `days` (duration) come from?
-            // Assuming it should have been passed in tripData. If not, AI might get 0.
-            // Ensure the screen asking for trip duration correctly sets `tripData.duration`.
-            const durationValue = finalTripData.duration > 0 ? finalTripData.duration : null; // Send null if duration is 0/invalid
-
-            const generationPayload = {
-                destination: finalTripData.destinationCity || finalTripData.destination, // Prefer destinationCity
-                days: durationValue, // Use calculated/passed duration
-                budget: finalTripData.budgetLevel || finalTripData.budget, // Prefer budgetLevel
+             const generationPayload = { /* ... construct payload ... */
+                destination: finalTripData.destinationCity || finalTripData.destination,
+                days: finalTripData.duration > 0 ? finalTripData.duration : null,
+                budget: typeof finalTripData.budget === 'string' && !isNaN(parseFloat(finalTripData.budget)) 
+                     ? parseFloat(finalTripData.budget) 
+                     : finalTripData.budgetLevel || finalTripData.budget,
                 interests: finalTripData.interests,
-                userCountry: finalTripData.nationality, // Ensure nationality is captured
-                travelDates: travelDatesValue, // Use combined/fallback dates
-                travelStyle: finalTripData.travelerStyle || finalTripData.travelStyle, // Prefer travelerStyle
-                // Add other fields if your AI prompt uses them (e.g., dietaryRestrictions)
-                // dietaryRestrictions: finalTripData.specialRequirements, // Example mapping
+                userCountry: finalTripData.nationality,
+                travelDates: (finalTripData.startDate && finalTripData.endDate) ? `${finalTripData.startDate} to ${finalTripData.endDate}` : (finalTripData.month && finalTripData.year) ? `${finalTripData.month} ${finalTripData.year}` : null,
+                travelStyle: finalTripData.travelerStyle || finalTripData.travelStyle,
             };
-
-            // Remove null/undefined fields from payload before sending
-            Object.keys(generationPayload).forEach(key => {
-                if (generationPayload[key] == null || (Array.isArray(generationPayload[key]) && generationPayload[key].length === 0) ) {
-                   // Remove null, undefined, or empty arrays if the API doesn't want them
-                   // Keep empty strings if the API expects them
-                   if (generationPayload[key] !== '') {
-                     delete generationPayload[key];
-                   }
-                }
-            });
-            // *** END OF MODIFIED SECTION ***
-
-            console.log("Sending to AI Generate:", JSON.stringify(generationPayload, null, 2));
-
-            const aiData = await fetchWithTimeout(ENDPOINTS.GENERATE, {
+             Object.keys(generationPayload).forEach(key => { const value = generationPayload[key]; if (value == null || (Array.isArray(value) && value.length === 0)) { delete generationPayload[key]; }});
+             console.log("Sending to AI Generate:", JSON.stringify(generationPayload, null, 2));
+             const aiData = await fetchWithTimeout(ENDPOINTS.GENERATE, { /* ... options ... */
                 method: 'POST',
-                timeout: API.AI_TIMEOUT || 90000,
+                timeout: API.AI_TIMEOUT || 120000,
                 body: JSON.stringify(generationPayload),
-            });
-
-            console.log("Received from AI Generate:", aiData);
-
-            AI_RESPONSE.updatePlan(aiData);
-            finalTripData.aiRecommendations = aiData;
-
-        } catch (err) {
+             });
+             console.log("Received from AI Generate:", aiData);
+             if (aiData?.status === 'success' && aiData?.data?.itinerary) {
+                 finalTripData.aiRecommendations = aiData.data.itinerary;
+                 AI_RESPONSE.updatePlan(aiData.data.itinerary);
+             } else {
+                  console.warn("AI Generation response structure not as expected or indicates failure:", aiData);
+                  throw new Error(aiData?.message || "AI generation failed or returned unexpected data.");
+             }
+        } catch (err) { /* ... handle AI error ... */
             console.warn('AI recommendations fetch failed:', err.message);
             finalTripData.aiGenerationFailed = true;
+            finalTripData.aiRecommendations = null;
         }
-
         // --- Fetch Events ---
         safeOnLoadingMessageChange('Finding events near your destination...');
-        if (finalTripData.startDate && finalTripData.endDate) {
-            try {
-                const eventsData = await fetchWithTimeout(ENDPOINTS.EVENTS, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        location: finalTripData.destinationCity || finalTripData.destination, // Use specific location
-                        startDate: finalTripData.startDate,
-                        endDate: finalTripData.endDate,
-                    }),
-                });
-                finalTripData.nearbyEvents = Array.isArray(eventsData) ? eventsData : (eventsData?.events || []);
-                console.log('Nearby events fetched:', finalTripData.nearbyEvents);
-            } catch (err) {
-                console.warn('Events fetch failed:', err.message);
-                finalTripData.nearbyEvents = [];
-            }
-        } else {
-             console.log('Skipping event fetch due to missing dates.');
-             finalTripData.nearbyEvents = [];
+        const hasSpecificDateRange = typeof finalTripData.startDate === 'string' && finalTripData.startDate.includes('-') && typeof finalTripData.endDate === 'string' && finalTripData.endDate.includes('-');
+        if (hasSpecificDateRange) {
+             try { /* ... fetch events ... */
+                 const eventsData = await fetchWithTimeout(ENDPOINTS.EVENTS, {
+                     method: 'POST',
+                     body: JSON.stringify({
+                         location: finalTripData.destinationCity || finalTripData.destination,
+                         startDate: `${finalTripData.startDate}T00:00:00Z`,
+                         endDate: `${finalTripData.endDate}T23:59:59Z`,
+                     }),
+                 });
+                 finalTripData.nearbyEvents = eventsData?._embedded?.events || eventsData?.events || [];
+                 console.log('Nearby events fetched:', finalTripData.nearbyEvents.length);
+             } catch (err) { /* ... handle event error ... */
+                  console.warn('Events fetch failed:', err.message);
+                  finalTripData.nearbyEvents = [];
+             }
+        } else { /* ... skip events ... */
+              console.log('Skipping event fetch due to missing specific date range.');
+              finalTripData.nearbyEvents = [];
         }
-
-        // --- Finalize and Callback ---
-        console.log('Final trip data prepared:', finalTripData);
+        // --- Finalize ---
+        console.log('Final trip data prepared:', JSON.stringify(finalTripData, null, 2));
         safeOnSuccess(finalTripData);
         return finalTripData;
-
-    } catch (err) {
+    } catch (err) { /* ... handle overall error ... */
         console.error('Error in createTrip orchestration:', err);
         safeOnError(err.message || 'An unknown error occurred during trip creation.');
-        return null; // Indicate failure
+        return null;
     } finally {
         safeOnLoadingChange(false);
     }
 };
+
+// ---> ADD THIS FUNCTION BACK <---
+export const getTrips = async ({ page = 1, limit = 10, filter = 'all', sort = 'date', search = '' }) => {
+    try {
+        // Build query params robustly
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
+        if (filter && filter !== 'all') {
+            params.append('status', filter); // Assuming backend uses 'status' for filtering
+        }
+        if (sort) {
+            // Adjust key based on backend expectation (e.g., 'createdAt', 'destinationName')
+            const sortKey = sort === 'date' ? 'created_at' : 'destination'; // Example backend keys
+            params.append('sortBy', sortKey);
+            params.append('sortOrder', sort === 'date' ? 'desc' : 'asc'); // Example sort order
+        }
+        if (search && search.trim() !== '') {
+            params.append('search', search.trim());
+        }
+
+        const endpointWithParams = `${ENDPOINTS.TRIPS}?${params.toString()}`;
+
+        // Call fetchWithTimeout (defined above in this file)
+        const response = await fetchWithTimeout(endpointWithParams, { method: 'GET' });
+
+        // Assuming backend returns { status: 'success', data: [...], pagination: {...} }
+        if (response && response.status === 'success' && Array.isArray(response.data)) {
+            return {
+                data: response.data,
+                pagination: response.pagination // Pass pagination info if backend provides it
+            };
+        } else {
+            console.warn("Invalid response structure from getTrips:", response);
+            // Return empty state rather than throwing error unless API failure is confirmed
+            return { data: [], pagination: null };
+        }
+    } catch (error) {
+        console.error('Error fetching trips from service:', error);
+        // Re-throw or return an error structure
+        throw new Error(`Failed to fetch trips: ${error.message}`);
+    }
+};
+
+// ---> UPDATE EXPORTS <---
+// Make sure to export all functions needed by other parts of the app
+// export {
+//   createTrip,
+//   WorkspaceVisaInfo,
+//   WorkspaceCultureInsights,
+//   getTrips // Add getTrips here
+//   // Add getTripById, updateTrip etc. if they exist and are needed
+// };
+// OR export individually if preferred (shown above with export keyword)

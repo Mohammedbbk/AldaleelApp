@@ -1,215 +1,201 @@
+// src/screens/trips/TripListScreen.js
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-    SafeAreaView,
-    View,
-    Text,
-    TouchableOpacity,
-    FlatList,
-    StatusBar,
-    ActivityIndicator,
-    ScrollView,
-    Alert
+    SafeAreaView, View, Text, TouchableOpacity, FlatList, StatusBar,
+    ActivityIndicator, ScrollView, Alert
 } from 'react-native';
 import { Filter, AlertCircle } from 'lucide-react-native';
 import { useColorScheme } from 'react-native';
-// import { supabase } from '../../config/supabaseClient';
 import SearchBar from '../../components/common/SearchBar';
 import TripCard from '../../components/home/TripCard';
 import FloatingBottomNav from '../../components/navigation/FloatingBottomNav';
 import i18n from '../../config/appConfig';
-import { fetchWithTimeout, API, ENDPOINTS } from '../../services/tripService';
+// ---> IMPORT getTrips FROM tripService <---
+import { getTrips } from '../../services/tripService';
+// Keep constants import if needed elsewhere, but API/ENDPOINTS not used directly now
+import { API, ENDPOINTS } from '../../config/constants';
 
-// Temporary mock data until API is ready
-const mockTripsData = [
-    {
-        id: '1',
-        destination: 'New York',
-        duration: '5 Days',
-        startDate: '2024-06-15',
-        endDate: '2024-06-20',
-        status: 'upcoming',
-        thumbnail: require('../../../assets/dubai.jpeg'),
-    },
-    {
-        id: '2',
-        destination: 'Paris',
-        duration: '7 Days',
-        startDate: '2024-07-01',
-        endDate: '2024-07-08',
-        status: 'planning',
-        thumbnail: require('../../../assets/paris.jpg'),
-    },
-    {
-        id: '3',
-        destination: 'Tokyo',
-        duration: '10 Days',
-        startDate: '2024-08-15',
-        endDate: '2024-08-25',
-        status: 'completed',
-        thumbnail: require('../../../assets/tokyo.jpg'),        // Replace with actual image URL
-    },
+// Define filter options
+const filterOptions = [
+    { id: 'all', i18nKey: 'all' },
+    { id: 'upcoming', i18nKey: 'upcoming' },
+    { id: 'past', i18nKey: 'past' },
+    // Add more filters as needed (e.g., shared, favorite)
 ];
+
 function TripListScreen({ navigation }) {
     const [searchText, setSearchText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [trips, setTrips] = useState([]);
     const [error, setError] = useState('');
+    const [selectedFilter, setSelectedFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('date'); // 'date' or 'destination'
+    // Add state for pagination if you implement infinite scroll/load more
+    // const [currentPage, setCurrentPage] = useState(1);
+    // const [paginationInfo, setPaginationInfo] = useState(null);
+
     const colorScheme = useColorScheme();
-    
-    // Fetch trips data
-    const fetchTrips = async () => {
+
+    // --- Updated fetchTrips using getTrips service ---
+    const fetchTripsData = useCallback(async (options = {}) => {
+        const {
+            page = 1, // Default to page 1
+            limit = 10, // Default limit
+            filter = selectedFilter,
+            sort = sortBy,
+            search = searchText,
+            append = false // Flag to append results for load more
+        } = options;
+
         setIsLoading(true);
         setError('');
         try {
-            // When ready, replace with this Supabase query
-            // const { data, error } = await supabase
-            //     .from('trips')
-            //     .select('*')
-            //     .order('created_at', { ascending: false });
-            
-            // if (error) throw error;
-            
-            // For now, using mock data
-            const response = await fetchWithTimeout(ENDPOINTS.TRIPS);
-            setTrips(response.data || mockTripsData);
+            const result = await getTrips({ page, limit, filter, sort, search });
+
+            if (result && result.data) {
+                 if (append) {
+                    // Logic for appending data (Load More) - ensure no duplicates
+                    setTrips(prevTrips => {
+                        const existingIds = new Set(prevTrips.map(t => t.id));
+                        const newTrips = result.data.filter(t => !existingIds.has(t.id));
+                        return [...prevTrips, ...newTrips];
+                    });
+                 } else {
+                     setTrips(result.data); // Replace data for initial load/filter/sort/search
+                 }
+                // setPaginationInfo(result.pagination); // Store pagination info
+                // setCurrentPage(page);
+            } else {
+                 // Handle case where API returns success but no data
+                 if (!append) setTrips([]);
+                 // setPaginationInfo(null);
+            }
         } catch (err) {
-            console.error('Error fetching trips:', err);
-            setError(i18n.t('trips.list.errors.fetchFailed'));
-            setTrips(mockTripsData); // Fallback to mock data
+            console.error('Error fetching trips in screen:', err);
+            setError(err.message || i18n.t('trips.list.errors.fetchFailed'));
+             if (!append) setTrips([]); // Clear trips on error if not appending
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [selectedFilter, sortBy, searchText]); // Dependencies for useCallback
 
+    // Initial fetch on mount
     useEffect(() => {
-        fetchTrips();
-    }, []);
-    const [selectedFilter, setSelectedFilter] = useState('all');
-    const [sortBy, setSortBy] = useState('date'); // 'date' or 'destination'
+        fetchTripsData({ page: 1 }); // Fetch initial data
+    }, []); // Run only once on mount
 
-    const filterOptions = [
-        { id: 'all', label: 'All' },
-        { id: 'upcoming', label: 'Upcoming' },
-        { id: 'planning', label: 'Planning' },
-        { id: 'completed', label: 'Completed' }
-    ];
+    // --- Handlers for Search, Filter, Sort ---
 
-    const handleSearch = useCallback(() => {
-        setIsLoading(true);
-        const filteredTrips = trips.filter(trip => 
-            trip.destination.toLowerCase().includes(searchText.toLowerCase()) ||
-            trip.duration.toLowerCase().includes(searchText.toLowerCase())
-        );
-        setTimeout(() => {
-            setTrips(filteredTrips);
-            setIsLoading(false);
-        }, 500);
-    }, [searchText, trips]);
-
-    useEffect(() => {
+    // Debounced effect for search triggering
+     useEffect(() => {
         const debounceTimer = setTimeout(() => {
-            if (searchText) handleSearch();
-            else fetchTrips(); // Reset to original data when search is empty
-        }, 300);
+            // Trigger fetch only when searchText changes (or filter/sort change via handlers)
+            // Pass current filter/sort state along with search text
+             fetchTripsData({ page: 1, search: searchText, filter: selectedFilter, sort: sortBy });
+        }, 500); // Adjust debounce delay as needed
 
         return () => clearTimeout(debounceTimer);
-    }, [searchText, handleSearch]);
+    }, [searchText, selectedFilter, sortBy, fetchTripsData]); // Re-run if search, filter, sort, or the fetch function itself changes
+
 
     const handleFilterChange = (filterId) => {
         setSelectedFilter(filterId);
-        if (filterId === 'all') {
-            fetchTrips(); // Reset to original data
-            return;
-        }
-        const filteredTrips = trips.filter(trip => trip.status === filterId);
-        setTrips(filteredTrips);
+        // fetchTripsData will be triggered by the useEffect above because selectedFilter changed
     };
 
     const handleSort = () => {
-        const sortedTrips = [...trips];
-        if (sortBy === 'date') {
-            sortedTrips.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-            setSortBy('destination');
-        } else {
-            sortedTrips.sort((a, b) => a.destination.localeCompare(b.destination));
-            setSortBy('date');
-        }
-        setTrips(sortedTrips);
+        const newSortBy = sortBy === 'date' ? 'destination' : 'date';
+        setSortBy(newSortBy);
+       // fetchTripsData will be triggered by the useEffect above because sortBy changed
     };
 
-    const handleTripAction = (actionType, tripId) => {
+    // --- Other functions (handleTripAction, renderTripItem) remain the same ---
+     const handleTripAction = (actionType, tripId) => {
         switch (actionType) {
             case 'view':
-                navigation.navigate('TripDetailsScreen', { tripId });
+                // Assuming UserPlanScreen displays details based on passed tripData?
+                // If you need to fetch details by ID, navigate differently
+                const tripToView = trips.find(t => t.id === tripId);
+                if (tripToView) {
+                    navigation.navigate('UserPlanScreen', { tripData: tripToView });
+                } else {
+                     Alert.alert("Error", "Could not find trip data.");
+                }
                 break;
             case 'edit':
                 console.log('Edit trip:', tripId);
+                 Alert.alert("Edit", "Edit functionality not yet implemented.");
                 break;
             case 'share':
                 console.log('Share trip:', tripId);
+                 Alert.alert("Share", "Share functionality not yet implemented.");
                 break;
             case 'delete':
                 console.log('Delete trip:', tripId);
+                 Alert.alert("Delete", "Delete functionality not yet implemented.");
                 break;
             default:
                 break;
         }
     };
 
-    const renderTripItem = ({ item }) => (
+     const renderTripItem = ({ item }) => (
         <TripCard
-            item={item}
-            onViewPress={() => handleTripAction('view', item.id)}
-            onEditPress={() => handleTripAction('edit', item.id)}
-            onSharePress={() => handleTripAction('share', item.id)}
-            onDeletePress={() => handleTripAction('delete', item.id)}
+            item={item} // Pass the whole item
+            // Pass handlers
+             onViewPress={() => handleTripAction('view', item.id)}
+             onEditPress={() => handleTripAction('edit', item.id)}
+             onSharePress={() => handleTripAction('share', item.id)}
+             onDeletePress={() => handleTripAction('delete', item.id)}
         />
     );
 
+    // --- Render logic remains largely the same ---
+    // Use `WorkspaceTripsData` in the retry button
     return (
-        <SafeAreaView className="flex-1 bg-gray-50">
-            <StatusBar barStyle="dark-content" backgroundColor="rgb(249 250 251)" />
+        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+            <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
             <View className="flex-1 px-4 pb-20">
                 <SearchBar
                     value={searchText}
                     onChangeText={setSearchText}
-                    placeholder="Search for a trip..."
-                    onSearchPress={handleSearch}
+                    placeholder={i18n.t('trips.list.searchPlaceholder')}
+                    // onSearchPress removed as search triggers via useEffect
                     containerClassName="my-4"
                 />
 
                 <View className="mb-4">
+                    {/* Title and Sort Button */}
                     <View className="flex-row justify-between items-center mb-4">
-                        <Text 
+                         <Text
                             className={`text-xl font-bold ${colorScheme === 'dark' ? 'text-white' : 'text-black'}`}
                             accessibilityRole="header"
                         >
                             {i18n.t('trips.list.title')}
                         </Text>
-                        <TouchableOpacity onPress={handleSort} className="flex-row items-center">
+                         <TouchableOpacity onPress={handleSort} className="flex-row items-center p-1">
                             <Filter size={20} color="#3B82F6" />
-                            <Text className="text-sm text-blue-500 font-medium ml-2">
-                                {i18n.t('trips.list.sortBy')} {i18n.t(`trips.list.sortOptions.${sortBy}`)}
+                            <Text className="text-sm text-blue-500 font-medium ml-1.5">
+                                {i18n.t('trips.list.sortBy')} {i18n.t(`trips.list.sortOptions.${sortBy === 'date' ? 'date' : 'destination'}`)}
                             </Text>
                         </TouchableOpacity>
                     </View>
-                    
-                    <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false} 
-                        className="mb-4"
+
+                    {/* Filter Buttons */}
+                     <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        className="-mx-1 mb-4" // Add negative margin to align edges visually
+                        contentContainerStyle={{ paddingHorizontal: 4 }} // Add padding inside scroll
                     >
                         {filterOptions.map((option) => (
                             <TouchableOpacity
                                 key={option.id}
                                 onPress={() => handleFilterChange(option.id)}
-                                className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === option.id ? 'bg-blue-500' : 'bg-gray-200'}`}
+                                className={`px-4 py-2 rounded-full mx-1 ${selectedFilter === option.id ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'}`}
                             >
-                                <Text 
+                                <Text
                                     className={`${selectedFilter === option.id ? 'text-white' : colorScheme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected: selectedFilter === option.id }}
-                                    accessibilityLabel={i18n.t(`trips.list.filters.${option.id}`)}
                                 >
                                     {i18n.t(`trips.list.filters.${option.id}`)}
                                 </Text>
@@ -218,54 +204,59 @@ function TripListScreen({ navigation }) {
                     </ScrollView>
                 </View>
 
-                {isLoading ? (
+                {/* List Area */}
+                {isLoading && trips.length === 0 ? ( // Show loader only on initial load
                     <View className="flex-1 justify-center items-center">
                         <ActivityIndicator size="large" color="#3B82F6" />
                     </View>
-                ) : trips.length === 0 ? (
+                ) : !isLoading && trips.length === 0 ? ( // Show empty/error state
                     <View className="flex-1 justify-center items-center">
-                        <View className="flex-1 justify-center items-center">
-                            <AlertCircle size={40} color={colorScheme === 'dark' ? '#fff' : '#6b7280'} />
-                            <Text className={`text-lg mt-4 ${colorScheme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
-                                {i18n.t('trips.list.noTripsFound')}
-                            </Text>
-                            {error ? (
-                                <TouchableOpacity 
-                                    className="mt-4 bg-blue-500 px-4 py-2 rounded-lg"
-                                    onPress={fetchTrips}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={i18n.t('trips.list.retry')}
-                                >
-                                    <Text className="text-white font-medium">{i18n.t('trips.list.retry')}</Text>
-                                </TouchableOpacity>
-                            ) : null}
-                        </View>
+                         <AlertCircle size={40} color={colorScheme === 'dark' ? '#9CA3AF' : '#6b7280'} />
+                         <Text className={`text-lg mt-4 text-center ${colorScheme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                             {error ? error : i18n.t('trips.list.noTripsFound')}
+                         </Text>
+                         {error ? (
+                            <TouchableOpacity
+                                className="mt-6 bg-blue-500 px-5 py-2.5 rounded-lg shadow"
+                                onPress={() => fetchTripsData({ page: 1 })} // Retry initial fetch
+                            >
+                                <Text className="text-white font-medium">{i18n.t('trips.list.retry')}</Text>
+                            </TouchableOpacity>
+                         ) : null}
                     </View>
-                ) : (
+                ) : ( // Show list
                     <FlatList
                         data={trips}
                         renderItem={renderTripItem}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item) => item.id?.toString()} // Ensure key is string
                         contentContainerStyle={{ paddingBottom: 80 }}
                         showsVerticalScrollIndicator={false}
+                        // Add onRefresh and onEndReached for pull-to-refresh/load-more
+                        // onRefresh={() => fetchTripsData({ page: 1 })}
+                        // refreshing={isLoading}
+                        // onEndReached={() => {
+                        //    if (paginationInfo && currentPage < paginationInfo.total) {
+                        //        fetchTripsData({ page: currentPage + 1, append: true });
+                        //    }
+                        // }}
+                        // onEndReachedThreshold={0.5}
+                        // ListFooterComponent={isLoading && trips.length > 0 ? <ActivityIndicator /> : null}
                     />
                 )}
 
-                <TouchableOpacity 
-                    className="bg-blue-500 py-4 rounded-full items-center my-5 shadow-lg"
+                {/* Create Button - Outside FlatList */}
+                 <TouchableOpacity
+                    className="bg-blue-500 py-3.5 rounded-full items-center my-4 shadow-lg mx-4" // Adjust margins
                     onPress={() => navigation.navigate('CreateTrip')}
-                    style={{ marginBottom: 70 }}
                 >
-                    <Text 
-                        className="text-white text-lg font-bold"
-                        accessibilityRole="button"
-                    >
+                    <Text className="text-white text-lg font-bold">
                         {i18n.t('trips.list.createNew')}
                     </Text>
                 </TouchableOpacity>
 
-                <FloatingBottomNav activeRouteName="Trips" />
             </View>
+             {/* Floating Nav - Positioned relative to SafeAreaView */}
+             <FloatingBottomNav activeRouteName="Trips" />
         </SafeAreaView>
     );
 };

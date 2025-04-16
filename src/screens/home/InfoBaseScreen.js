@@ -7,48 +7,160 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  ActivityIndicator, // Added ActivityIndicator import
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
-import { AI_RESPONSE } from "../../config/AiResponse";
+// Assuming these helpers are correctly defined in tripService.js
+import { WorkspaceVisaInfo, WorkspaceCultureInsights } from '../../services/tripService';
 
 const InfoBaseScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { contentKey } = route.params;
-  const content = AI_RESPONSE.Information[contentKey];
+  // Default to empty object if route.params is undefined
+  const { contentKey, nationality, destination } = route.params || {};
 
+  // State for dynamic content fetching
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [dynamicContent, setDynamicContent] = React.useState(null);
+
+  // Attempt to load static fallback info (title/image) gracefully
+  const staticInfo = (() => {
+    try {
+      // Make sure the path to AiResponse is correct relative to this file
+      return require('../../config/AiResponse').AI_RESPONSE.Information[contentKey];
+    } catch {
+      // Return null or a default object if AiResponse or the key doesn't exist
+      return null;
+    }
+  })();
+
+  // Effect to fetch dynamic content for specific keys
+  React.useEffect(() => {
+    let cancelled = false; // Flag to prevent state update on unmounted component
+
+    async function fetchContent() {
+      // Only fetch for 'visa' or 'local' keys
+      if (contentKey === 'visa' || contentKey === 'local') {
+        // Check if required context is available
+        if (!nationality || !destination) {
+          if (!cancelled) setError('Missing nationality or destination required for this information.');
+          if (!cancelled) setIsLoading(false);
+          return;
+        }
+
+        // Reset state and start loading
+        if (!cancelled) setIsLoading(true);
+        if (!cancelled) setError("");
+        if (!cancelled) setDynamicContent(null);
+
+        try {
+          let content;
+          // Call the appropriate service function
+          if (contentKey === 'visa') {
+            content = await WorkspaceVisaInfo(nationality, destination);
+          } else { // contentKey === 'local'
+            content = await WorkspaceCultureInsights(nationality, destination);
+          }
+          if (!cancelled) setDynamicContent(content); // Update state with fetched content
+        } catch (e) {
+          if (!cancelled) setError(e.message || `Failed to fetch ${contentKey} information.`);
+        } finally {
+          if (!cancelled) setIsLoading(false); // Stop loading regardless of outcome
+        }
+      } else {
+        // For other contentKeys, reset loading/error states, dynamic content remains null
+        if (!cancelled) setDynamicContent(null);
+        if (!cancelled) setError("");
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    fetchContent();
+
+    // Cleanup function to set cancelled flag when component unmounts
+    return () => {
+      cancelled = true;
+    };
+  }, [contentKey, nationality, destination]); // Dependencies for the effect
+
+  // Handler to close the screen
   const handleClose = () => {
+    // Consider navigation.goBack() if it's always modal-like,
+    // or navigate specifically if needed.
     navigation.navigate("InformationScreen");
   };
 
+  // --- RENDER LOGIC ---
+
+  // Determine Title: Use static title if available, otherwise generate default
+  const screenTitle = staticInfo?.title || (contentKey === 'visa' ? 'Visa Requirements' : contentKey === 'local' ? 'Local Customs' : 'Information');
+
+  // Determine Image: Use static image if available
+  const screenImage = staticInfo?.image;
+
   return (
-    <SafeAreaView className="flex-1 bg-white mt-[StatusBar.currentHeight]">
-      <ScrollView>
+    // Use SafeAreaView for notches/status bars
+    <SafeAreaView className="flex-1 bg-white">
+      {/* // Use device status bar setting
+      <StatusBar barStyle="dark-content" /> */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}> {/* Add padding for Close button */}
         {/* Title */}
-        <Text className="text-lg font-bold text-center mt-5 mb-5">
-          {content.title}
+        <Text className="text-xl font-bold text-center mt-5 mb-5 px-4">
+          {screenTitle}
         </Text>
 
-        {/* Image */}
-        <Image
-          source={content.image}
-          className="w-full h-[200px] my-[30px]"
-          resizeMode="contain"
-        />
+        {/* Image (Optional) */}
+        {screenImage && (
+          <Image
+            source={screenImage} // Use require() for local images
+            className="w-full h-[200px] my-[20px]" // Adjusted margin
+            resizeMode="contain"
+          />
+        )}
 
-        {/* Requirements content */}
-        <View className="p-5 pb-[150px]">
-          <Text className="text-sm leading-5 text-[#333]">
-            {content.text.replace(/\./g, ".\n\n")}
-          </Text>
+        {/* Content Area */}
+        <View className="p-5">
+          {/* Logic for Visa/Local (Dynamic) */}
+          {(contentKey === 'visa' || contentKey === 'local') && (
+            <>
+              {isLoading ? (
+                <View className="items-center justify-center py-10">
+                  <ActivityIndicator size="large" color="#0EA5E9" />
+                  <Text className="text-base text-sky-600 mt-3">Loading...</Text>
+                </View>
+              ) : error ? (
+                 <View className="items-center justify-center py-10 px-4 bg-red-50 rounded-lg border border-red-200">
+                   <Text className="text-base text-red-600 text-center">{error}</Text>
+                 </View>
+              ) : dynamicContent ? (
+                // Display fetched dynamic content
+                <Text className="text-base leading-relaxed text-gray-700">
+                  {dynamicContent}
+                </Text>
+              ) : (
+                 // Should ideally not be reached if loading/error/content covers all cases
+                <Text className="text-base text-gray-500">No information available.</Text>
+              )}
+            </>
+          )}
+
+          {/* Logic for Other Keys (Static Fallback) */}
+          {contentKey !== 'visa' && contentKey !== 'local' && (
+            <Text className="text-base text-gray-500 italic">
+              Detailed dynamic information for this topic is coming soon. General info may be available elsewhere in the app.
+              {/* Optionally display staticInfo.text here as a fallback? */}
+              {/* {staticInfo?.text ? `\n\n${staticInfo.text}` : ''} */}
+            </Text>
+          )}
         </View>
       </ScrollView>
 
-      {/* Close Button */}
+      {/* Close Button (Positioned) */}
       <TouchableOpacity
-        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0"
-        activeOpacity={0.9}
+        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0 shadow-md" // Added shadow
+        activeOpacity={0.8} // Slightly less opacity change
         onPress={handleClose}
       >
         <Text className="text-white text-center text-base font-semibold">

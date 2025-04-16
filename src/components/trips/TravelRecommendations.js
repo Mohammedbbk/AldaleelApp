@@ -29,6 +29,20 @@ export function TravelRecommendations({ recommendations, isLoading, error }) {
     );
   }
 
+  // Handle both structured and raw string responses
+  if (typeof recommendations === 'string' || recommendations.content || recommendations.additionalInfo) {
+    const content = recommendations.additionalInfo || recommendations.content || recommendations;
+    return (
+      <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
+        <View className="flex-row items-center mb-3">
+          <Ionicons name="compass-outline" size={24} className="text-blue-600 mr-2" />
+          <Text className="text-lg font-semibold">Travel Recommendations</Text>
+        </View>
+        <Text className="text-base">{content}</Text>
+      </View>
+    );
+  }
+
   const sections = [
     { title: 'Must-Visit Places', icon: 'location', data: recommendations.places },
     { title: 'Local Tips', icon: 'bulb', data: recommendations.tips },
@@ -42,7 +56,6 @@ export function TravelRecommendations({ recommendations, isLoading, error }) {
         <Ionicons name="compass-outline" size={24} className="text-blue-600 mr-2" />
         <Text className="text-lg font-semibold">Travel Recommendations</Text>
       </View>
-
       {sections.map((section, sectionIndex) => (
         section.data && section.data.length > 0 && (
           <View key={sectionIndex} className="mb-4 last:mb-0">
@@ -50,7 +63,6 @@ export function TravelRecommendations({ recommendations, isLoading, error }) {
               <Ionicons name={`${section.icon}-outline`} size={20} className="text-gray-600 mr-2" />
               <Text className="text-base font-medium text-gray-800">{section.title}</Text>
             </View>
-
             {section.data.map((item, index) => (
               <View 
                 key={index} 
@@ -62,7 +74,6 @@ export function TravelRecommendations({ recommendations, isLoading, error }) {
           </View>
         )
       ))}
-
       {recommendations.additionalInfo && (
         <View className="mt-3 p-3 bg-blue-50 rounded-md">
           <Text className="text-sm text-blue-800">{recommendations.additionalInfo}</Text>

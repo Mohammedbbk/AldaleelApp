@@ -26,6 +26,6 @@ export const ENDPOINTS = {
   VISA_REQUIREMENTS: '/proxy/visa-requirements', // Matches proxyRoutes.js
   CULTURE_INSIGHTS: '/proxy/culture-insights', // Matches proxyRoutes.js
   GENERATE: '/trips/generate', // Matches tripRoutes.js
-  EVENTS: '/events', // Matches eventRoutes.js
-  // ACCOMMODATIONS: '/accommodations', // Example if needed
+  EVENTS: '/events', // Matches eventRoutes.js mounted directly under /api
+  TRIPS: '/trips', // Matches tripRoutes.js mounted under /api
 };
