@@ -22,7 +22,9 @@
       ]
     ],
     "extra": {
-      "newArchEnabled": true
+      "newArchEnabled": true,
+      "pixabayApiKey": "37167624-962bcc95217a10e4e71e30ea3"
+
     },
     "ios": {
       "bundleIdentifier": "com.anonymous.aldaleel-app"

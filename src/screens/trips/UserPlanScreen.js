@@ -5,10 +5,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Animated,
-  Platform,
+  // Image, // Image seems unused now
+  ActivityIndicator, // Keep for potential future loading states
+  // Animated, // Animated seems unused now
+  Platform, // Keep for Platform checks
+  StyleSheet, // Add StyleSheet
+  Alert, // Use Alert for better error display
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,13 +18,11 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { AI_RESPONSE } from '../../config/AiResponse';
-// Make sure QueryClient and QueryClientProvider are imported in App.js
-import { useQuery } from '@tanstack/react-query';
+import { AI_RESPONSE } from '../../config/AiResponse'; // Keep for fallback/comparison if needed
 
 // Import components
 import { VisaRequirements } from '../../components/trips/VisaRequirements';
-import { CultureInsights } from '../../components/trips/CultureInsights'; // Import the new component
+import { CultureInsights } from '../../components/trips/CultureInsights';
 import { NearbyEvents } from '../../components/trips/NearbyEvents';
 import { TravelRecommendations } from '../../components/trips/TravelRecommendations';
 import { DetailItem } from '../../components/shared/DetailItem';
@@ -30,90 +30,22 @@ import { ActivityItem } from '../../components/shared/ActivityItem';
 import { Accordion } from '../../components/shared/Accordion';
 
 // --- Static Content / Maps ---
-
 const detailEmojis = {
   Destination: '✈️',
   Duration: '⏳',
   Expenses: '💵',
 };
 
-// --- Helper Functions ---
-
-// Assuming the structure inside the aiGenerationFailed block is corrected
-function usePlanData(route) {
-  return useMemo(() => {
-    if (route.params?.tripData) {
-      const tripData = route.params.tripData;
-      // Base plan data structure
-      const planData = {
-        details: [
-          { name: 'Destination', value: tripData.destinationCity },
-          { name: 'Duration', value: `${tripData.month} ${tripData.year}` },
-          { name: 'Expenses', value: tripData.budgetLevel || 'Moderate' },
-        ],
-        days: [], // Default empty days
-        visaRequirements: tripData.visaRequirements,
-        nearbyEvents: tripData.nearbyEvents,
-        recommendations: {
-          places: tripData.recommendations?.places || [],
-          tips: tripData.recommendations?.tips || [],
-          culturalNotes: tripData.recommendations?.culturalNotes || [],
-          safetyTips: tripData.recommendations?.safetyTips || []
-        }
-      };
-
-      // Handle AI generation failure case
-      if (tripData.aiGenerationFailed) {
-        planData.days = [
-          { // Corrected structure for Day 1 placeholder
-            day: 1,
-            activities: [
-              {
-                time: 'All day',
-                name: 'Custom itinerary will be generated',
-              }
-            ],
-            plan: [
-              {
-                time: 'Note',
-                event:
-                  'Your custom itinerary will be generated soon. Check back later!',
-              }
-            ]
-          }
-        ];
-        // Return the planData with placeholder days
-        return planData;
-      } else {
-        // Handle successful AI generation (using AI_RESPONSE for now)
-        // In a real scenario, tripData itself might contain the aiPlan days/plan
-        const aiPlan = AI_RESPONSE.UserPlan; // Assuming AI_RESPONSE.UserPlan has { details, days, ... }
-        // Merge the dynamic data (like visa/events) with the potentially static AI plan structure
-        return {
-          ...aiPlan, // Takes details, days, etc. from AI_RESPONSE
-          // Overwrite/add dynamic data received from the API/previous steps
-          details: planData.details, // Use details derived from tripData
-          visaRequirements: tripData.visaRequirements,
-          nearbyEvents: tripData.nearbyEvents,
-          recommendations: planData.recommendations, // Use recommendations derived from tripData
-        };
-      }
-      // This return statement might be unreachable depending on the else block logic,
-      // but included for completeness if the else block didn't return.
-      // return planData;
-    }
-    // Fallback if no route.params.tripData
-    return AI_RESPONSE.UserPlan;
-  }, [route.params]);
-}
-
-
+// --- Helper Function for PDF Generation ---
+// (generatePdfContent remains the same as you provided, including defensive checks)
 function generatePdfContent(plan) {
-    const destination = plan.details.find((d) => d.name === 'Destination')?.value || 'N/A';
-    const duration = plan.details.find((d) => d.name === 'Duration')?.value || 'N/A';
-    const expenses = plan.details.find((d) => d.name === 'Expenses')?.value || 'N/A';
+    // Ensure plan and plan.details exist
+    const details = plan?.details || [];
+    const destination = details.find((d) => d.name === 'Destination')?.value || 'N/A';
+    const duration = details.find((d) => d.name === 'Duration')?.value || 'N/A';
+    const expenses = details.find((d) => d.name === 'Expenses')?.value || 'N/A';
+    const days = Array.isArray(plan?.days) ? plan.days : []; // Ensure days is an array
 
-    // (Keep the same HTML/CSS structure)
     const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -150,18 +82,28 @@ function generatePdfContent(plan) {
             <div class="detail"><h3>Duration</h3><p>${duration}</p></div>
             <div class="detail"><h3>Expenses</h3><p>${expenses}</p></div>
           </div>
-          {/* Check if plan.days exists before mapping */}
-          ${plan?.days?.map((day) => `
-            <div class="day-section">
-              {/* Check if day.activities exists and has elements */}
-              <h2>Day ${day.day}: ${day.activities?.[0]?.name || 'Activities'}</h2>
-              {/* Check if day.plan exists before mapping */}
-              ${day?.plan?.map((item) => `
-                <div class="plan-item">
-                  <span class="time">${item.time}</span>
-                  <span class="event">${item.event}</span>
-                </div>`).join('') || ''}
-            </div>`).join('') || ''}
+          ${days.map((day) => {
+            // Ensure day and its properties exist
+            const dayNumber = day?.day || '?';
+            const dayActivities = Array.isArray(day?.activities) ? day.activities : [];
+            const dayPlan = Array.isArray(day?.plan) ? day.plan : [];
+            const dayTitle = dayActivities[0]?.name || 'Activities'; // Use first activity name or default
+
+            return `
+              <div class="day-section">
+                <h2>Day ${dayNumber}: ${dayTitle}</h2>
+                ${dayPlan.map((item) => {
+                  // Ensure item and its properties exist
+                  const itemTime = item?.time || 'N/A';
+                  const itemEvent = item?.event || 'No details';
+                  return `
+                    <div class="plan-item">
+                      <span class="time">${itemTime}</span>
+                      <span class="event">${itemEvent}</span>
+                    </div>`;
+                }).join('')}
+              </div>`;
+          }).join('')}
         </div>
       </body>
     </html>`;
@@ -169,284 +111,355 @@ function generatePdfContent(plan) {
 }
 
 
+// --- Component ---
 export function UserPlanScreen() {
-  const { t } = useTranslation();
-  const navigation = useNavigation();
-  const route = useRoute();
+  const { t } = useTranslation(); // Hook called at top level - OK
+  const navigation = useNavigation(); // Hook called at top level - OK
+  const route = useRoute(); // Hook called at top level - OK
 
-  // Updated useQuery with object signature
-  // NOTE: Ensure QueryClientProvider is wrapping your app in App.js or similar
-  const { data: plan, isLoading, error } = useQuery({
-    queryKey: ['plan', route.params?.tripData?.id],
-    queryFn: () => usePlanData(route),
-    enabled: !!route.params?.tripData,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-  });
+  // State for features potentially loaded separately
+  // You might fetch these using useQuery if they aren't part of tripData
+  const [isLoadingCulture, setIsLoadingCulture] = useState(false);
+  const [cultureError, setCultureError] = useState(null);
+  const [isLoadingVisa, setIsLoadingVisa] = useState(false); // Added for consistency
+  const [visaError, setVisaError] = useState(null); // Added for consistency
 
-  // Add state for Culture Insights loading/error (assuming not handled by main query)
-  const [isLoadingCulture, setIsLoadingCulture] = useState(false); // State for Culture Insights loading
-  const [cultureError, setCultureError] = useState(null); // State for Culture Insights error
 
-  // Handlers (remain the same)
+  // --- Process route params directly using useMemo ---
+  // This replaces useQuery and usePlanData for transforming route params
+  const plan = useMemo(() => { // Hook called at top level - OK
+    const tripData = route.params?.tripData;
+
+    // Handle case where tripData is missing entirely
+    if (!tripData) {
+      console.warn('UserPlanScreen: No tripData found in route params.');
+      // Return a default structure or potentially the last known AI_RESPONSE as fallback
+      return AI_RESPONSE.UserPlan || { details: [], days: [], visaRequirements: null, nearbyEvents: [], recommendations: {} };
+    }
+
+    console.log("UserPlanScreen received tripData:", tripData);
+
+    // Base plan data structure from tripData
+    const basePlan = {
+      details: [
+        // Use more robust checks for potentially missing fields in tripData
+        { name: 'Destination', value: tripData.destinationCity || tripData.destination || 'N/A' },
+        { name: 'Duration', value: tripData.month && tripData.year ? `${tripData.month} ${tripData.year}` : (tripData.duration ? `${tripData.duration} days` : 'N/A') },
+        { name: 'Expenses', value: tripData.budgetLevel || tripData.budget || 'N/A' },
+      ],
+      days: [], // Default empty days, will be populated below
+      visaRequirements: tripData.visaRequirements || null, // Default to null
+      cultureInsights: tripData.cultureInsights || null, // Default to null
+      nearbyEvents: Array.isArray(tripData.nearbyEvents) ? tripData.nearbyEvents : [], // Default to empty array
+      // Ensure recommendations structure exists
+      recommendations: {
+        places: Array.isArray(tripData.recommendations?.places) ? tripData.recommendations.places : [],
+        tips: Array.isArray(tripData.recommendations?.tips) ? tripData.recommendations.tips : [],
+        culturalNotes: Array.isArray(tripData.recommendations?.culturalNotes) ? tripData.recommendations.culturalNotes : [],
+        safetyTips: Array.isArray(tripData.recommendations?.safetyTips) ? tripData.recommendations.safetyTips : []
+      }
+    };
+
+    // Handle AI generation failure case
+    if (tripData.aiGenerationFailed) {
+      console.log("AI Generation failed, using placeholder itinerary.");
+      basePlan.days = [
+        {
+          day: 1,
+          activities: [{ time: 'All day', name: 'Custom Itinerary Pending' }],
+          plan: [{ time: 'Note', event: 'Your custom itinerary experienced an issue during generation. You can try editing or check back later.' }]
+        }
+      ];
+    } else if (tripData.aiRecommendations) {
+        // *** IMPORTANT: Use the actual AI data if generation succeeded ***
+        // Assuming tripData.aiRecommendations has the same structure as AI_RESPONSE.UserPlan expected before
+        // Make sure the structure from your /generate endpoint matches this expectation
+        const aiPlanData = tripData.aiRecommendations;
+        console.log("Using successful AI Recommendations:", aiPlanData);
+
+        // Ensure aiPlanData and its nested properties exist and are arrays
+        basePlan.days = Array.isArray(aiPlanData?.itinerary)
+         ? aiPlanData.itinerary.map((day, index) => {
+             const safeDay = day && typeof day === 'object' ? day : {};
+             const activitiesArray = Array.isArray(safeDay.activities) ? safeDay.activities : [];
+             return {
+                day: index + 1, // Or use day.day if provided by AI
+                activities: [{ // Adjust if AI provides different structure
+                    time: safeDay.startTime || 'N/A',
+                    name: safeDay.title || 'N/A'
+                }],
+                plan: activitiesArray.map(activity => {
+                    const safeActivity = activity && typeof activity === 'object' ? activity : {};
+                    return {
+                        time: safeActivity.time || 'N/A',
+                        event: safeActivity.description || 'N/A'
+                    };
+                })
+            };
+          })
+         : []; // Default to empty array if aiPlanData.itinerary is not an array
+
+         // Optionally merge/update details from aiPlanData if needed
+         // basePlan.details = ... merge logic ...
+
+    } else {
+       console.log("No AI recommendations data found, showing empty itinerary.");
+       // No AI data and not failed, keep days as empty array or show different placeholder
+       basePlan.days = [
+           {
+             day: 1,
+             activities: [{ time: 'N/A', name: 'No Itinerary Data' }],
+             plan: [{ time: 'Note', event: 'No itinerary data was generated for this trip.' }]
+           }
+       ];
+    }
+
+    return basePlan;
+
+  }, [route.params?.tripData]); // Depend on tripData object
+
+
+  // --- Event Handlers ---
+  // (Keep the same handlers: handleBack, handleHome, handleEditPlan, handleNext, handleShare)
   const handleBack = useCallback(() => {
     if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate('MainScreen'); // Adjust 'MainScreen' if your home route is different
+    else navigation.navigate('Home'); // Use actual home route name from App.js
   }, [navigation]);
 
-  const handleHome = useCallback(() => navigation.navigate('MainScreen'), [navigation]); // Adjust 'MainScreen'
-  const handleEditPlan = useCallback(() => navigation.navigate('AssistantScreen'), [navigation]); // Adjust 'AssistantScreen'
-  const handleNext = useCallback(() => navigation.navigate('InformationScreen'), [navigation]); // Adjust 'InformationScreen'
+  const handleHome = useCallback(() => navigation.navigate('Home'), [navigation]); // Use actual home route name
+  const handleEditPlan = useCallback(() => navigation.navigate('AssistantScreen'), [navigation]); // Ensure route exists
+  const handleNext = useCallback(() => navigation.navigate('InformationScreen'), [navigation]); // Ensure route exists
 
   const handleShare = useCallback(async () => {
-     if (!plan) return; // Exit if plan data isn't loaded
+     if (!plan) {
+        Alert.alert("Error", "Plan data is not available to share.");
+        return;
+     };
 
     const htmlContent = generatePdfContent(plan);
     try {
         const { uri } = await Print.printToFileAsync({ html: htmlContent });
 
-        const destinationName = plan.details.find(d => d.name === 'Destination')?.value || 'TravelPlan';
-        const safeFilename = destinationName.replace(/[^a-zA-Z0-9]/g, '_'); // Replace non-alphanumeric with underscore
+        const details = plan?.details || [];
+        const destinationName = details.find(d => d.name === 'Destination')?.value || 'TravelPlan';
+        const safeFilename = destinationName.replace(/[^a-zA-Z0-9]/g, '_');
         const newPath = `${FileSystem.documentDirectory}AlDaleel_${safeFilename}.pdf`;
+
+        // Ensure directory exists (optional, usually handled by FileSystem)
+        // await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory, { intermediates: true });
 
         await FileSystem.moveAsync({ from: uri, to: newPath });
 
         if (!(await Sharing.isAvailableAsync())) {
-          alert(`Sharing isn't available on this platform`);
+          Alert.alert("Sharing Error", "Sharing isn't available on this platform.");
           return;
         }
 
         await Sharing.shareAsync(newPath, {
             mimeType: 'application/pdf',
             dialogTitle: 'Share your Travel Plan',
-            UTI: 'com.adobe.pdf' // Add UTI for better iOS compatibility
+            UTI: 'com.adobe.pdf' // UTI for better iOS compatibility
         });
     } catch (error) {
         console.error("Error sharing PDF:", error);
-        alert("Failed to share PDF. Please try again."); // User-friendly error
+        Alert.alert("Sharing Failed", "Failed to generate or share PDF. Please try again."); // User-friendly error
     }
   }, [plan]); // Dependency: re-create if plan changes
 
   // --- Render Logic ---
 
-  if (isLoading) {
-    return (
-      <SafeAreaView className="flex-1 bg-neutral-100 justify-center items-center">
-        <ActivityIndicator size="large" color="#0284c7" />
-        {/* Use translation keys if available */}
-        <Text className="mt-4 text-gray-600">{t('common.loading', 'Loading...')}</Text>
-      </SafeAreaView>
-    );
-  }
+  // Removed the top-level isLoading/error check related to useQuery
 
-  if (error) {
-    console.error("React Query Error:", error); // Log the actual error
-    return (
-      <SafeAreaView className="flex-1 bg-neutral-100 justify-center items-center p-4">
-         {/* Use translation keys if available */}
-        <Text className="text-red-500 mb-4 text-center">{t('errors.failedToLoad', 'Failed to load trip plan. Please try again.')}</Text>
-        <TouchableOpacity
-          className="bg-blue-500 px-4 py-2 rounded-lg"
-          onPress={() => navigation.goBack()}
-        >
-           {/* Use translation keys if available */}
-          <Text className="text-white">{t('common.goBack', 'Go Back')}</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-
-  // Check if plan data is available after loading and no error
+  // Check if plan data (derived from route.params) is available.
+  // This check happens after useMemo runs.
   if (!plan) {
+      // This case might be hit if route.params.tripData was initially undefined
+      // and the fallback in useMemo was also nullish.
       return (
-        <SafeAreaView className="flex-1 bg-neutral-100 justify-center items-center p-4">
-            <Text className="text-gray-600 mb-4 text-center">Trip plan data is not available.</Text>
+        <SafeAreaView style={styles.centeredScreen}>
+            <Text style={styles.errorText}>Trip plan data is not available.</Text>
             <TouchableOpacity
-            className="bg-blue-500 px-4 py-2 rounded-lg"
-            onPress={() => navigation.goBack()}
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
             >
-            <Text className="text-white">{t('common.goBack', 'Go Back')}</Text>
+              <Text style={styles.backButtonText}>{t('common.goBack', 'Go Back')}</Text>
             </TouchableOpacity>
         </SafeAreaView>
       );
   }
 
   // --- Main Render ---
+  // Uses the 'plan' object derived directly from route.params via useMemo
   return (
-    <SafeAreaView className="flex-1 bg-neutral-100">
+    <SafeAreaView style={styles.safeArea}>
       {/* Header */}
-      <View className="bg-white flex-row items-center justify-between py-2 px-4 border-b border-neutral-200">
+      <View style={styles.header}>
          {/* Header Left Buttons */}
-         <View className="flex-row items-center gap-4">
+         <View style={styles.headerButtons}>
             <TouchableOpacity
               onPress={handleBack}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={styles.hitSlop} // Use defined hitSlop
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.backButton', 'Go Back')}
             >
-                <Ionicons name="chevron-back" size={24} className="text-blue-600" />
+                <Ionicons name="chevron-back" size={24} style={styles.iconColor} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleHome}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={styles.hitSlop}
               accessibilityRole="button"
               accessibilityLabel={t('accessibility.homeButton', 'Go Home')}
             >
-                <Ionicons name="home-outline" size={24} className="text-blue-600" />
+                <Ionicons name="home-outline" size={24} style={styles.iconColor} />
             </TouchableOpacity>
         </View>
 
         {/* Header Title (Centered) */}
-        <View className="absolute left-0 right-0 top-0 bottom-0 items-center justify-center pointer-events-none">
-          <Text className="text-lg font-semibold text-black">
-            {/* Use translation keys if available */}
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>
             {t('plan.title', 'Your Plan')}
           </Text>
         </View>
 
          {/* Header Right Buttons */}
-        <View className="flex-row items-center gap-4">
+        <View style={styles.headerButtons}>
           <TouchableOpacity
             onPress={handleShare}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={styles.hitSlop}
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.shareButton', 'Share Plan')}
           >
-            <Ionicons name="share-outline" size={24} className="text-blue-600" />
+            <Ionicons name="share-outline" size={24} style={styles.iconColor} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={handleEditPlan}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            hitSlop={styles.hitSlop}
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.editButton', 'Edit Plan')}
           >
-            <Ionicons name="pencil-outline" size={24} className="text-blue-600" />
+            <Ionicons name="pencil-outline" size={24} style={styles.iconColor} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Body */}
       <ScrollView
-        className="flex-1"
-        contentContainerClassName="p-4 pb-32" // Added pb-32 for padding below Next button
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Plan Details */}
-        {/* Add checks for plan and plan.details */}
-        {plan?.details && (
-            <View className="flex-row justify-center bg-white p-3 my-3 rounded-lg shadow-md">
-            <View className="flex-col justify-between items-start">
+        <View style={styles.detailsContainer}>
+            <View style={styles.detailsColumn}>
                 {plan.details.map((detail, index) => (
-                <DetailItem key={`${index}-label`} label={detail.name} value={null} />
+                  <DetailItem key={`${index}-label`} label={detail.name} value={null} />
                 ))}
             </View>
-            <View className="flex-col justify-between items-center px-3">
+            <View style={styles.detailsEmojiColumn}>
                 {plan.details.map((detail, index) => (
-                <View key={`${index}-emoji`} className="p-2.5 items-center justify-center h-[44px]">
-                    <Text className="text-base">{detailEmojis[detail.name] || ''}</Text>
-                </View>
+                  <View key={`${index}-emoji`} style={styles.emojiWrapper}>
+                      <Text style={styles.emojiText}>{detailEmojis[detail.name] || ''}</Text>
+                  </View>
                 ))}
             </View>
-            <View className="flex-col justify-between items-start">
+            <View style={styles.detailsColumn}>
                 {plan.details.map((detail, index) => (
-                <DetailItem key={`${index}-value`} label={null} value={detail.value} />
+                  <DetailItem key={`${index}-value`} label={null} value={detail.value} />
                 ))}
             </View>
-            </View>
-        )}
+        </View>
 
 
         {/* --- Dynamic Sections --- */}
         {/* Only render sections if data exists */}
 
-        {plan?.visaRequirements && (
+        {/* Render VisaRequirements if data is available */}
+        {plan.visaRequirements != null && (
             <VisaRequirements
-            visaData={plan.visaRequirements}
-            isLoading={isLoadingVisa}
-            error={visaError}
-          />
-        )}
-
-        {/* Culture Insights Section */}
-        {(isLoadingCulture || cultureError || plan?.cultureInsights) && (
-          <CultureInsights
-            cultureData={plan.cultureInsights} // Assuming culture data is fetched and stored similarly
-            isLoading={isLoadingCulture}      // Need to add state for this
-            error={cultureError}            // Need to add state for this
-          />
-        )}
-
-        {/* Nearby Events Section */}
-        {plan?.recommendations && (
-            <TravelRecommendations
-            recommendations={plan.recommendations}
-            isLoading={false}
-            error={null}
+              visaData={plan.visaRequirements}
+              isLoading={isLoadingVisa} // Use state if fetched separately
+              error={visaError} // Use state if fetched separately
             />
         )}
 
+        {/* Render CultureInsights if data is available */}
+        {plan.cultureInsights != null && (
+            <CultureInsights
+              cultureData={plan.cultureInsights}
+              isLoading={isLoadingCulture} // Use state if fetched separately
+              error={cultureError} // Use state if fetched separately
+            />
+        )}
 
-        {plan?.nearbyEvents && (
+         {/* Render TravelRecommendations if data is available */}
+         {plan.recommendations && (plan.recommendations.places?.length > 0 || plan.recommendations.tips?.length > 0 || plan.recommendations.culturalNotes?.length > 0 || plan.recommendations.safetyTips?.length > 0) && (
+            <TravelRecommendations
+              recommendations={plan.recommendations}
+              // Assuming recommendations data loading is part of the main plan data now
+              isLoading={false}
+              error={null}
+            />
+        )}
+
+        {/* Render NearbyEvents if data is available */}
+        {plan.nearbyEvents?.length > 0 && (
             <NearbyEvents
-            eventsData={plan.nearbyEvents}
-            isLoading={false}
-            error={null}
+              eventsData={plan.nearbyEvents}
+               // Assuming events data loading is part of the main plan data now
+              isLoading={false}
+              error={null}
             />
         )}
 
 
         {/* Itinerary Days */}
-        {/* Add check for plan.days */}
-        {plan?.days?.map((day, index) => (
-          <View key={index} className="mb-5">
-             {/* Use translation keys if available */}
-            <Text className="text-sm font-normal text-neutral-700 mb-1.5 ml-1">
+        {/* Map over plan.days (which is guaranteed to be an array by useMemo) */}
+        {plan.days.map((day, index) => (
+          <View key={`day-${index}`} style={styles.dayContainer}>
+            <Text style={styles.dayLabel}>
               {t('plan.day', 'Day {{number}}', { number: day.day })}
             </Text>
-            {/* Add check for day.activities */}
-            {day.activities && (
-                <View className="bg-cyan-500 rounded-lg overflow-hidden shadow-md">
+            {/* Ensure day.activities is an array before mapping */}
+            {(Array.isArray(day.activities) && day.activities.length > 0) ? (
+                <View style={styles.activitiesContainer}>
                 {day.activities.map((activity, idx) => (
                     <Accordion
-                    key={idx}
-                    title={
-                        <ActivityItem time={activity.time} name={activity.name} />
-                    }
+                      key={`activity-${idx}`}
+                      title={<ActivityItem time={activity.time} name={activity.name} />}
                     >
-                    {/* Accordion Content */}
-                    {/* Add check for day.plan */}
-                    {day.plan?.map((item, i) => (
-                        <View
-                        key={i}
-                        className="flex-row gap-2 justify-between p-3 border-b border-neutral-200 last:border-b-0"
-                        >
-                        <Text className="text-neutral-500 w-16 pr-2 border-r border-neutral-300">
-                            {item.time}
-                        </Text>
-                        <Text className="flex-1 text-neutral-800">
-                            {item.event}
-                        </Text>
-                        </View>
-                    ))}
+                      {/* Accordion Content: Map over day.plan */}
+                      {(Array.isArray(day.plan) && day.plan.length > 0) ? (
+                         day.plan.map((item, i) => (
+                            <View key={`plan-${i}`} style={styles.planItem}>
+                              <Text style={styles.planTime}>{item.time}</Text>
+                              <Text style={styles.planEvent}>{item.event}</Text>
+                            </View>
+                          ))
+                        ) : (
+                           <Text style={styles.noPlanText}>No detailed plan for this activity.</Text>
+                        )
+                      }
                     </Accordion>
                 ))}
                 </View>
-            )}
+              ) : (
+                 <Text style={styles.noActivityText}>No activities scheduled for this day.</Text>
+              )
+            }
           </View>
         ))}
       </ScrollView>
 
       {/* Next Button */}
-      <View className="absolute bottom-0 left-0 right-0 p-5 pb-8 bg-transparent pointer-events-box">
-          {/* Ensure button is pressable */}
+      <View style={styles.nextButtonContainer}>
           <TouchableOpacity
-            className="bg-sky-500 py-4 px-5 rounded-lg shadow"
+            style={styles.nextButton}
             onPress={handleNext}
             activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={t('accessibility.nextButton', 'Next Step')}
           >
-            <Text className="text-white text-center text-base font-semibold">
-                {/* Use translation keys if available */}
+            <Text style={styles.nextButtonText}>
               {t('common.next', 'Next')}
             </Text>
           </TouchableOpacity>
@@ -455,5 +468,39 @@ export function UserPlanScreen() {
   );
 }
 
-// Add default export
+// --- Styles --- (Using StyleSheet for better organization)
+const styles = StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: '#F4F4F5' }, // bg-neutral-100
+    centeredScreen: { flex: 1, backgroundColor: '#F4F4F5', justifyContent: 'center', alignItems: 'center', padding: 16 },
+    errorText: { color: '#EF4444', marginBottom: 16, textAlign: 'center' }, // text-red-500 mb-4 text-center
+    backButton: { backgroundColor: '#3B82F6', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }, // bg-blue-500 px-4 py-2 rounded-lg
+    backButtonText: { color: '#FFFFFF' }, // text-white
+    header: { backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }, // bg-white flex-row items-center justify-between py-2 px-4 border-b border-neutral-200
+    headerButtons: { flexDirection: 'row', alignItems: 'center', gap: 16 }, // flex-row items-center gap-4
+    iconColor: { color: '#2563EB'}, // text-blue-600 (Applied via style prop)
+    headerTitleContainer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' },
+    headerTitle: { fontSize: 18, fontWeight: '600', color: '#000000' }, // text-lg font-semibold text-black
+    hitSlop: { top: 10, bottom: 10, left: 10, right: 10 },
+    scrollView: { flex: 1 },
+    scrollViewContent: { padding: 16, paddingBottom: 96 }, // p-4 pb-32 (Adjust paddingBottom as needed)
+    detailsContainer: { flexDirection: 'row', justifyContent: 'center', backgroundColor: '#FFFFFF', padding: 12, marginVertical: 12, borderRadius: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 2, }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 }, // flex-row justify-center bg-white p-3 my-3 rounded-lg shadow-md
+    detailsColumn: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'flex-start' },
+    detailsEmojiColumn: { flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12 },
+    emojiWrapper: { padding: 10, alignItems: 'center', justifyContent: 'center', height: 44 }, // p-2.5 items-center justify-center h-[44px] (Approximation)
+    emojiText: { fontSize: 16 }, // text-base
+    dayContainer: { marginBottom: 20 }, // mb-5
+    dayLabel: { fontSize: 14, fontWeight: '400', color: '#3F3F46', marginBottom: 6, marginLeft: 4 }, // text-sm font-normal text-neutral-700 mb-1.5 ml-1
+    activitiesContainer: { backgroundColor: '#06B6D4', borderRadius: 8, overflow: 'hidden', shadowColor: "#000", shadowOffset: { width: 0, height: 2, }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 }, // bg-cyan-500 rounded-lg overflow-hidden shadow-md
+    planItem: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }, // flex-row gap-2 justify-between p-3 border-b border-neutral-200 last:border-b-0
+    planTime: { color: '#71717A', width: 64, paddingRight: 8, borderRightWidth: 1, borderRightColor: '#D4D4D8' }, // text-neutral-500 w-16 pr-2 border-r border-neutral-300
+    planEvent: { flex: 1, color: '#27272A' }, // flex-1 text-neutral-800
+    noPlanText: { padding: 12, color: '#71717A', fontStyle: 'italic' },
+    noActivityText: { padding: 12, color: '#71717A', fontStyle: 'italic', textAlign: 'center' },
+    nextButtonContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 32, backgroundColor: 'transparent', pointerEvents: 'box-none' }, // absolute bottom-0 left-0 right-0 p-5 pb-8 bg-transparent pointer-events-box
+    nextButton: { backgroundColor: '#0EA5E9', paddingVertical: 16, paddingHorizontal: 20, borderRadius: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 1, }, shadowOpacity: 0.2, shadowRadius: 1.41, elevation: 2 }, // bg-sky-500 py-4 px-5 rounded-lg shadow
+    nextButtonText: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontWeight: '600' }, // text-white text-center text-base font-semibold
+});
+
+
+// Default export for the screen
 export default UserPlanScreen;

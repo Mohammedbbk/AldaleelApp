@@ -57,16 +57,15 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="ProfileSetting" component={ProfileSetting} /> // Kept from upstream
-      <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} /> // Kept from stash
-      <Stack.Screen name="AssistantScreen" component={AssistantScreen} /> // Kept from stash
+      <Stack.Screen name="ProfileSetting" component={ProfileSetting} />
+      <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
+      <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
       <Stack.Screen name="InformationScreen" component={InformationScreen} />
-      <Stack.Screen name="Trips" component={TripListScreen} /> // Kept from stash
-      <Stack.Screen name="CreateTrip" component={CreateTripScreen} /> // Kept from stash
-      <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} /> // Kept from stash
-      <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} /> // Kept from stash
+      <Stack.Screen name="Trips" component={TripListScreen} />
+      <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
+      <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
+      <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
       
-      {/* Information screens with content keys */}
       <Stack.Screen
         name="VisaScreen"
         component={InfoBaseScreen}

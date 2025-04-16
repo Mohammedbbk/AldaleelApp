@@ -3,8 +3,8 @@
 // TODO: Use environment variables for BASE_URL
 export const API = {
   // Assuming backend gateway runs on port 8000 locally
-  BASE_URL: 'http://localhost:8000/api', 
-  TIMEOUT: 120000, // 2 minutes to account for cold start
+  BASE_URL: 'https://aldaleelapp-mcp.onrender.com/api',
+    TIMEOUT: 120000, // 2 minutes to account for cold start
 };
 
 export const SPECIAL_REQUIREMENTS = [
