@@ -1,59 +1,63 @@
-// src/AuthProvider.js
-import React from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// handling token
+import React, { createContext, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Create a new Context
-export const AuthContext = React.createContext();
+// Create context
+export const AuthContext = createContext();
 
-export class AuthProvider extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      userToken: null,
-      isLoading: true
+export const AuthProvider = ({ children }) => {
+  const [userToken, setUserTokenState] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load token from AsyncStorage on app start
+  useEffect(() => {
+    const loadToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        if (token) {
+          setUserTokenState(token);
+          console.log("Loaded token:", token);
+        } else {
+          console.log("No token found in AsyncStorage.");
+        }
+      } catch (e) {
+        console.error("Error loading token", e);
+      } finally {
+        setIsLoading(false);
+      }
     };
-  }
 
-  // Load token from AsyncStorage when component mounts
-  async componentDidMount() {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      this.setState({ userToken: token, isLoading: false });
-    } catch (error) {
-      console.log('Error reading token:', error);
-      this.setState({ isLoading: false });
-    }
-  }
+    loadToken();
+  }, []);
 
-  // Method to set or remove the user token
-  setUserToken = async (token) => {
+  // Save token to state & AsyncStorage
+  const setUserToken = async (token) => {
     try {
       if (token) {
-        await AsyncStorage.setItem('userToken', token);
-        this.setState({ userToken: token });
+        await AsyncStorage.setItem("userToken", token);
+        console.log("Token saved:", token);
       } else {
-        await AsyncStorage.removeItem('userToken');
-        this.setState({ userToken: null });
+        await AsyncStorage.removeItem("userToken");
+        console.log("Token removed from AsyncStorage.");
       }
-    } catch (error) {
-      console.log('Error setting token:', error);
+      setUserTokenState(token);
+    } catch (e) {
+      console.error("Error saving token:", e);
     }
   };
 
-  render() {
-    const { userToken, isLoading } = this.state;
-    
-    // The value that will be available to consumer components
-    const authContext = {
-      userToken,
-      isLoading,
-      setUserToken: this.setUserToken
-    };
+  // Logout function
+  const logout = async () => {
+    await setUserToken(null);
+  };
 
-    return (
-      <AuthContext.Provider value={authContext}>
-        {this.props.children}
-      </AuthContext.Provider>
-    );
-  }
-}
+  return (
+    <AuthContext.Provider
+      value={{ userToken, setUserToken, logout, isLoading }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export default AuthProvider;
