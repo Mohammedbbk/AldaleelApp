@@ -1,14 +1,16 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export function NearbyEvents({ eventsData, isLoading, error }) {
+  const { t } = useTranslation();
   if (isLoading) {
     return (
       <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
         <View className="flex-row items-center mb-2">
           <Ionicons name="calendar-outline" size={24} className="text-blue-600 mr-2" />
-          <Text className="text-lg font-semibold">Nearby Events</Text>
+          <Text className="text-lg font-semibold">{t('events.nearby')}</Text>
         </View>
         <ActivityIndicator size="small" color="#0284c7" />
       </View>
@@ -20,10 +22,10 @@ export function NearbyEvents({ eventsData, isLoading, error }) {
       <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
         <View className="flex-row items-center mb-2">
           <Ionicons name="alert-circle-outline" size={24} className="text-red-600 mr-2" />
-          <Text className="text-lg font-semibold">Nearby Events</Text>
+          <Text className="text-lg font-semibold">{t('events.nearby')}</Text>
         </View>
         <Text className="text-red-600">
-          {error || 'Unable to load nearby events. Please try again later.'}
+          {error || t('events.errors.loadFailed')}
         </Text>
       </View>
     );
@@ -34,7 +36,7 @@ export function NearbyEvents({ eventsData, isLoading, error }) {
       <View className="flex-row items-center justify-between mb-3">
         <View className="flex-row items-center">
           <Ionicons name="calendar-outline" size={24} className="text-blue-600 mr-2" />
-          <Text className="text-lg font-semibold">Nearby Events</Text>
+          <Text className="text-lg font-semibold">{t('events.nearby')}</Text>
         </View>
       </View>
 
@@ -49,6 +51,14 @@ export function NearbyEvents({ eventsData, isLoading, error }) {
             className="mx-2 bg-gray-50 rounded-lg overflow-hidden shadow-sm"
             style={{ width: 280 }}
             activeOpacity={0.7}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel={t('events.accessibility.eventCard', {
+              name: event.name,
+              date: event.date,
+              time: event.time,
+              location: event.location
+            })}
           >
             <View className="p-3">
               <View className="flex-row items-center justify-between mb-2">

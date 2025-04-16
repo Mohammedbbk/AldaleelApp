@@ -19,7 +19,7 @@ import { debounce } from 'lodash'; // Using lodash debounce for better handling
 
 // --- Configuration ---
 // IMPORTANT: Store API keys securely in a real app (env variables, config)!
-const OPENWEATHERMAP_API_KEY = '3f141daba7c7fb2740e27f544145b76f'; // <--- REPLACE WITH YOUR ACTUAL KEY
+import { OPENWEATHERMAP_API_KEY } from '../../config/keys';
 
 // Constants remain the same (except removing COUNTRY specific ones)
 const MONTHS = [
@@ -32,7 +32,7 @@ const YEARS = ['2025', '2026', '2027', '2028'];
 const TRAVELER_STYLES = ['Solo', 'Family', 'Friends'];
 const BUDGET_LEVELS = ['Economy', 'Moderate', 'Luxury'];
 
-const CreateTripScreen = ({ navigation, route }) => {
+export function CreateTripScreen({ navigation, route }) {
   // State hooks - Adjusted for city search
   const [destination, setDestination] = useState(''); // Will hold "City, Country" string for display
   const [searchQuery, setSearchQuery] = useState('');

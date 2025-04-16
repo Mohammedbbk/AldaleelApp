@@ -7,16 +7,20 @@ import {
     FlatList,
     StatusBar,
     ActivityIndicator,
-    ScrollView
+    ScrollView,
+    Alert
 } from 'react-native';
-import { Filter } from 'lucide-react-native';
+import { Filter, AlertCircle } from 'lucide-react-native';
+import { useColorScheme } from 'react-native';
+// import { supabase } from '../../config/supabaseClient';
+import SearchBar from '../../components/common/SearchBar';
+import TripCard from '../../components/home/TripCard';
+import FloatingBottomNav from '../../components/navigation/FloatingBottomNav';
+import i18n from '../../config/appConfig';
+import { fetchWithTimeout, API, ENDPOINTS } from '../../services/tripService';
 
-import SearchBar from '../components/common/SearchBar';
-import TripCard from '../components/home/TripCard';
-import FloatingBottomNav from '../components/home/FloatingBottomNav';
-
-// Mock data for trips
-const createdTripsData = [
+// Temporary mock data until API is ready
+const mockTripsData = [
     {
         id: '1',
         destination: 'New York',
@@ -45,11 +49,41 @@ const createdTripsData = [
         thumbnail: require('../../../assets/tokyo.jpg'),        // Replace with actual image URL
     },
 ];
-
-const TripScreen = ({ navigation }) => {
+function TripListScreen({ navigation }) {
     const [searchText, setSearchText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [trips, setTrips] = useState(createdTripsData);
+    const [trips, setTrips] = useState([]);
+    const [error, setError] = useState('');
+    const colorScheme = useColorScheme();
+    
+    // Fetch trips data
+    const fetchTrips = async () => {
+        setIsLoading(true);
+        setError('');
+        try {
+            // When ready, replace with this Supabase query
+            // const { data, error } = await supabase
+            //     .from('trips')
+            //     .select('*')
+            //     .order('created_at', { ascending: false });
+            
+            // if (error) throw error;
+            
+            // For now, using mock data
+            const response = await fetchWithTimeout(ENDPOINTS.TRIPS);
+            setTrips(response.data || mockTripsData);
+        } catch (err) {
+            console.error('Error fetching trips:', err);
+            setError(i18n.t('trips.list.errors.fetchFailed'));
+            setTrips(mockTripsData); // Fallback to mock data
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTrips();
+    }, []);
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [sortBy, setSortBy] = useState('date'); // 'date' or 'destination'
 
@@ -62,7 +96,7 @@ const TripScreen = ({ navigation }) => {
 
     const handleSearch = useCallback(() => {
         setIsLoading(true);
-        const filteredTrips = createdTripsData.filter(trip => 
+        const filteredTrips = trips.filter(trip => 
             trip.destination.toLowerCase().includes(searchText.toLowerCase()) ||
             trip.duration.toLowerCase().includes(searchText.toLowerCase())
         );
@@ -70,12 +104,12 @@ const TripScreen = ({ navigation }) => {
             setTrips(filteredTrips);
             setIsLoading(false);
         }, 500);
-    }, [searchText]);
+    }, [searchText, trips]);
 
     useEffect(() => {
         const debounceTimer = setTimeout(() => {
             if (searchText) handleSearch();
-            else setTrips(createdTripsData);
+            else fetchTrips(); // Reset to original data when search is empty
         }, 300);
 
         return () => clearTimeout(debounceTimer);
@@ -84,10 +118,10 @@ const TripScreen = ({ navigation }) => {
     const handleFilterChange = (filterId) => {
         setSelectedFilter(filterId);
         if (filterId === 'all') {
-            setTrips(createdTripsData);
+            fetchTrips(); // Reset to original data
             return;
         }
-        const filteredTrips = createdTripsData.filter(trip => trip.status === filterId);
+        const filteredTrips = trips.filter(trip => trip.status === filterId);
         setTrips(filteredTrips);
     };
 
@@ -146,11 +180,16 @@ const TripScreen = ({ navigation }) => {
 
                 <View className="mb-4">
                     <View className="flex-row justify-between items-center mb-4">
-                        <Text className="text-xl font-bold text-black">Created Trips</Text>
+                        <Text 
+                            className={`text-xl font-bold ${colorScheme === 'dark' ? 'text-white' : 'text-black'}`}
+                            accessibilityRole="header"
+                        >
+                            {i18n.t('trips.list.title')}
+                        </Text>
                         <TouchableOpacity onPress={handleSort} className="flex-row items-center">
                             <Filter size={20} color="#3B82F6" />
                             <Text className="text-sm text-blue-500 font-medium ml-2">
-                                Sort by {sortBy === 'date' ? 'destination' : 'date'}
+                                {i18n.t('trips.list.sortBy')} {i18n.t(`trips.list.sortOptions.${sortBy}`)}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -166,8 +205,13 @@ const TripScreen = ({ navigation }) => {
                                 onPress={() => handleFilterChange(option.id)}
                                 className={`px-4 py-2 rounded-full mr-2 ${selectedFilter === option.id ? 'bg-blue-500' : 'bg-gray-200'}`}
                             >
-                                <Text className={`${selectedFilter === option.id ? 'text-white' : 'text-gray-700'}`}>
-                                    {option.label}
+                                <Text 
+                                    className={`${selectedFilter === option.id ? 'text-white' : colorScheme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: selectedFilter === option.id }}
+                                    accessibilityLabel={i18n.t(`trips.list.filters.${option.id}`)}
+                                >
+                                    {i18n.t(`trips.list.filters.${option.id}`)}
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -180,7 +224,22 @@ const TripScreen = ({ navigation }) => {
                     </View>
                 ) : trips.length === 0 ? (
                     <View className="flex-1 justify-center items-center">
-                        <Text className="text-gray-500 text-lg">No trips found</Text>
+                        <View className="flex-1 justify-center items-center">
+                            <AlertCircle size={40} color={colorScheme === 'dark' ? '#fff' : '#6b7280'} />
+                            <Text className={`text-lg mt-4 ${colorScheme === 'dark' ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {i18n.t('trips.list.noTripsFound')}
+                            </Text>
+                            {error ? (
+                                <TouchableOpacity 
+                                    className="mt-4 bg-blue-500 px-4 py-2 rounded-lg"
+                                    onPress={fetchTrips}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={i18n.t('trips.list.retry')}
+                                >
+                                    <Text className="text-white font-medium">{i18n.t('trips.list.retry')}</Text>
+                                </TouchableOpacity>
+                            ) : null}
+                        </View>
                     </View>
                 ) : (
                     <FlatList
@@ -197,7 +256,12 @@ const TripScreen = ({ navigation }) => {
                     onPress={() => navigation.navigate('CreateTrip')}
                     style={{ marginBottom: 70 }}
                 >
-                    <Text className="text-white text-lg font-bold">Create New</Text>
+                    <Text 
+                        className="text-white text-lg font-bold"
+                        accessibilityRole="button"
+                    >
+                        {i18n.t('trips.list.createNew')}
+                    </Text>
                 </TouchableOpacity>
 
                 <FloatingBottomNav activeRouteName="Trips" />
@@ -206,4 +270,4 @@ const TripScreen = ({ navigation }) => {
     );
 };
 
-export default TripScreen;
+export default TripListScreen;

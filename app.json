@@ -23,6 +23,9 @@
     ],
     "extra": {
       "newArchEnabled": true
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.aldaleel-app"
     }
   }
 }

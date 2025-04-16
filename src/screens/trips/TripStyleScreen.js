@@ -6,33 +6,26 @@ import {
   Text,
   SafeAreaView,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   StatusBar,
   Alert,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import i18n from '../../config/appConfig';
+import { INTERESTS, TRIP_PACES } from '../../config/tripConstants';
 
-const INTERESTS = [
-  { label: 'Culture', emoji: '🏛️' },
-  { label: 'Nature', emoji: '🌲' },
-  { label: 'Food', emoji: '🍽️' },
-  { label: 'Shopping', emoji: '🛍️' },
-  { label: 'Adventure', emoji: '🗺️' },
-  { label: 'Relaxation', emoji: '🧘‍♂️' },
-];
-
-const TRIP_PACES = ['Relaxed', 'Balanced', 'Intense'];
-
-const TripStyleScreen = ({ navigation, route }) => {
+export function TripStyleScreen({ navigation, route }) {
   const stepOneData = route.params?.stepOneData || {};
-
+  const colorScheme = useColorScheme();
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [selectedTripPace, setSelectedTripPace] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const isFormValid = selectedInterests.length > 0 && selectedTripPace !== '';
 
   const toggleInterest = (interest) => {
+    setValidationError('');
     if (selectedInterests.includes(interest)) {
       setSelectedInterests(selectedInterests.filter((i) => i !== interest));
     } else {
@@ -42,7 +35,7 @@ const TripStyleScreen = ({ navigation, route }) => {
 
   const handleNextStep = () => {
     if (!isFormValid) {
-      Alert.alert('Missing Fields', 'Please select at least one interest and pace.');
+      setValidationError(i18n.t('tripStyle.validation.missingFields'));
       return;
     }
     const mergedData = {
@@ -54,49 +47,56 @@ const TripStyleScreen = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <StatusBar barStyle="dark-content" />
 
-      {/* الهيدر */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={28} color="#000" />
+      {/* Header */}
+      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
+        <TouchableOpacity
+          className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={28} color={colorScheme === 'dark' ? '#fff' : '#000'} />
         </TouchableOpacity>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Trip Style</Text>
+        <View className="flex-1 items-center">
+          <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+            {i18n.t('tripStyle.title')}
+          </Text>
         </View>
-        <Text style={styles.stepIndicator}>Step 2/3</Text>
+        <Text className="text-base text-orange-500 font-semibold">
+          {i18n.t('tripStyle.stepIndicator')}
+        </Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* الاهتمامات */}
-        <Text style={styles.sectionTitle}>Choose your interests</Text>
-        <View style={styles.interestsContainer}>
+      <ScrollView className="px-5 pb-24">
+        {/* Interests Section */}
+        <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-5">
+          {i18n.t('tripStyle.interests.title')}
+        </Text>
+        {validationError && (
+          <Text className="text-red-500 mb-4">{validationError}</Text>
+        )}
+        <View className="space-y-3">
           {INTERESTS.map((item) => {
-            const isSelected = selectedInterests.includes(item.label);
+            const isSelected = selectedInterests.includes(item.value);
             return (
               <TouchableOpacity
-                key={item.label}
-                style={[
-                  styles.interestButton,
-                  { borderColor: isSelected ? '#FF8C00' : '#00BFFF' },
-                ]}
-                onPress={() => toggleInterest(item.label)}
+                key={item.value}
+                className={`flex-row items-center justify-between p-4 rounded-lg border-2 ${isSelected ? 'border-orange-500 bg-orange-50 dark:bg-orange-900' : 'border-blue-400 dark:border-blue-600'}`}
+                onPress={() => toggleInterest(item.value)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={i18n.t(`tripStyle.interests.${item.value}`)}
               >
-                {/* اليسار: الإيموجي والنص */}
-                <View style={styles.interestInfo}>
-                  <Text style={styles.interestEmoji}>{item.emoji}</Text>
-                  <Text style={[styles.interestText, isSelected && styles.selectedInterestText]}>
-                    {item.label}
+                <View className="flex-row items-center">
+                  <Text className="text-lg mr-2">{item.emoji}</Text>
+                  <Text className={`text-base ${isSelected ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {i18n.t(`tripStyle.interests.${item.value}`)}
                   </Text>
                 </View>
-                {/* اليمين: مربّع الاختيار */}
-                <View
-                  style={[
-                    styles.checkbox,
-                    { borderColor: isSelected ? '#FF8C00' : '#00BFFF' },
-                  ]}
-                >
+                <View className={`w-6 h-6 rounded border-2 items-center justify-center ${isSelected ? 'border-orange-500 bg-orange-50 dark:bg-orange-900' : 'border-blue-400 dark:border-blue-600'}`}>
                   {isSelected && <Ionicons name="checkmark" size={16} color="#FF8C00" />}
                 </View>
               </TouchableOpacity>
@@ -104,22 +104,27 @@ const TripStyleScreen = ({ navigation, route }) => {
           })}
         </View>
 
-        {/* سرعات الرحلة */}
-        <Text style={[styles.sectionTitle, { marginTop: 40 }]}>Trip Pace</Text>
-        <View style={styles.pacesContainer}>
+        {/* Trip Pace Section */}
+        <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-10">
+          {i18n.t('tripStyle.pace.title')}
+        </Text>
+        <View className="flex-row justify-between">
           {TRIP_PACES.map((pace) => {
-            const isSelected = selectedTripPace === pace;
+            const isSelected = selectedTripPace === pace.value;
             return (
               <TouchableOpacity
-                key={pace}
-                style={[
-                  styles.paceButton,
-                  { borderColor: isSelected ? '#FF8C00' : '#00BFFF' },
-                ]}
-                onPress={() => setSelectedTripPace(pace)}
+                key={pace.value}
+                className={`flex-1 mx-2 py-4 rounded-full border-2 items-center ${isSelected ? 'border-orange-500 bg-orange-50 dark:bg-orange-900' : 'border-blue-400 dark:border-blue-600'}`}
+                onPress={() => {
+                  setValidationError('');
+                  setSelectedTripPace(pace.value);
+                }}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={i18n.t(`tripStyle.pace.${pace.value}`)}
               >
-                <Text style={[styles.paceText, isSelected && styles.selectedPaceText]}>
-                  {pace}
+                <Text className={`text-base ${isSelected ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
+                  {i18n.t(`tripStyle.pace.${pace.value}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -127,183 +132,33 @@ const TripStyleScreen = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      {/* شريط التنقل السفلي */}
-      <View style={styles.bottomNavigation}>
+      {/* Bottom Navigation */}
+      <View className="absolute bottom-8 left-5 right-5 flex-row items-center justify-center">
         <TouchableOpacity
-          style={styles.homeButton}
+          className="absolute left-0 w-15 h-15 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
           onPress={() => navigation.navigate('HomePage')}
+          accessibilityRole="button"
+          accessibilityLabel="Go to home"
         >
-          <FontAwesome name="home" size={24} color="#333" />
+          <FontAwesome name="home" size={24} color={colorScheme === 'dark' ? '#fff' : '#333'} />
         </TouchableOpacity>
-        {/* زر "التالي" يبقى دائماً باللون الأزرق */}
         <TouchableOpacity
-          style={styles.nextButton}
+          className={`flex-row items-center justify-center px-8 py-4 rounded-full ${isFormValid ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-700'}`}
           onPress={handleNextStep}
           disabled={!isFormValid}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !isFormValid }}
+          accessibilityLabel={i18n.t('tripStyle.buttons.next')}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Text className="text-white font-medium mr-2">
+            {i18n.t('tripStyle.buttons.next')}
+          </Text>
           <Ionicons name="chevron-forward" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
-};
+}
 
+// Add default export at the end of the file
 export default TripStyleScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleContainer: { flex: 1, alignItems: 'center' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#000' },
-  stepIndicator: { fontSize: 16, color: '#FF8C00', fontWeight: '600' },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginVertical: 16,
-  },
-
-  // =========== الاهتمامات ===========
-  interestsContainer: {},
-  interestButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    borderWidth: 2,
-    borderRadius: 8,
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    width: '80%',
-    alignSelf: 'center',
-    backgroundColor: '#FFF',
-  },
-  interestInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  interestEmoji: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  interestText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  selectedInterestText: {
-    fontWeight: '600',
-    color: '#000',
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderWidth: 2,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFF',
-  },
-
-  // =========== سرعات الرحلة ===========
-  pacesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-  },
-  paceButton: {
-    width: '28%',
-    borderWidth: 2,
-    borderRadius: 25,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-  },
-  paceText: {
-    fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
-  },
-  selectedPaceText: {
-    fontWeight: '600',
-    color: '#000',
-  },
-
-  // =========== شريط التنقل السفلي ===========
-  bottomNavigation: {
-    position: 'absolute',
-    bottom: 30,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  homeButton: {
-    position: 'absolute',
-    left: 0,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  // زر "التالي" يبقى دائمًا باللون الأزرق
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#00BFFF',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#00BFFF',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  
-});

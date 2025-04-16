@@ -1,344 +1,169 @@
-// // src/screens/VerificationScreen.js
-// import React from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   TouchableOpacity,
-//   TextInput,
-//   Dimensions,
-//   SafeAreaView,
-//   ScrollView,
-//   KeyboardAvoidingView,
-//   Platform,
-// } from 'react-native';
-// import Ionicons from 'react-native-vector-icons/Ionicons';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  Alert,
+  ActivityIndicator,
+  Keyboard,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-// const { width } = Dimensions.get('window');
+export default function VerificationScreen({ navigation, route }) {
+  const { verificationType = 'email', contact = '' } = route.params || {};
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [isResendActive, setIsResendActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const inputRefs = useRef([]);
 
-// class VerificationScreen extends React.Component {
-//   constructor(props) {
-//     super(props);
-//     this.state = {
-//       digit1: '',
-//       digit2: '',
-//       digit3: '',
-//       digit4: '',
-//       resendTimer: 90, // 90 seconds countdown
-//     };
+  useEffect(() => {
+    const timer = timeLeft > 0 && !isResendActive && 
+      setInterval(() => setTimeLeft(current => current - 1), 1000);
+    if (timeLeft === 0) setIsResendActive(true);
+    return () => clearInterval(timer);
+  }, [timeLeft, isResendActive]);
 
-//     // References for automatic field navigation
-//     this.input2Ref = null;
-//     this.input3Ref = null;
-//     this.input4Ref = null;
-//   }
+  const handleOtpChange = (text, index) => {
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+    setError('');
 
-//   componentDidMount() {
-//     this.startTimer();
-//   }
+    // Auto-advance to next input
+    if (text && index < 5) {
+      inputRefs.current[index + 1].focus();
+    }
+  };
 
-//   componentWillUnmount() {
-//     // تنظيف المؤقت عند مغادرة الشاشة
-//     if (this.timerInterval) clearInterval(this.timerInterval);
-//   }
+  const handleKeyPress = (e, index) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1].focus();
+    }
+  };
 
-//   // بدء العد التنازلي
-//   startTimer = () => {
-//     this.timerInterval = setInterval(() => {
-//       this.setState((prevState) => {
-//         if (prevState.resendTimer <= 1) {
-//           // إذا وصل الصفر نوقف العداد
-//           clearInterval(this.timerInterval);
-//           return { resendTimer: 0 };
-//         }
-//         return { resendTimer: prevState.resendTimer - 1 };
-//       });
-//     }, 1000);
-//   };
+  const handleResendCode = async () => {
+    if (!isResendActive) return;
+    
+    setLoading(true);
+    try {
+      // Implement your resend code logic here
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setTimeLeft(60);
+      setIsResendActive(false);
+      Alert.alert('Success', 'Verification code has been resent.');
+    } catch (err) {
+      setError('Failed to resend code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-//   // تنسيق الوقت على شكل mm:ss
-//   formatTime = (seconds) => {
-//     const m = Math.floor(seconds / 60);
-//     const s = seconds % 60;
-//     const mm = m < 10 ? `0${m}` : m;
-//     const ss = s < 10 ? `0${s}` : s;
-//     return `${mm}:${ss}`;
-//   };
+  const handleVerify = async () => {
+    Keyboard.dismiss();
+    const otpString = otp.join('');
+    
+    if (otpString.length !== 6) {
+      setError('Please enter all digits');
+      return;
+    }
 
-//   // عند الضغط على زر Verify
-//   handleVerify = () => {
-//     const { digit1, digit2, digit3, digit4 } = this.state;
-//     const otp = `${digit1}${digit2}${digit3}${digit4}`;
-//     // منطق التحقق الفعلي (اتصال بخادم) أو مجرد تنبيه
-//     alert(`Entered OTP code is: ${otp}`);
-//     // مثال: الانتقال لشاشة أخرى
-//     // this.props.navigation.replace('Login');
-//   };
-
-//   // إعادة إرسال الكود (مثال)
-//   handleResendCode = () => {
-//     // يمكنك استدعاء API لإرسال كود جديد
-//     alert('OTP code has been resent!');
-//     this.setState({ resendTimer: 90 }, () => {
-//       // إعادة بدء المؤقت
-//       this.startTimer();
-//     });
-//   };
-
-//   // إدخال رقم في الحقل الأول
-//   handleChangeDigit1 = (value) => {
-//     this.setState({ digit1: value }, () => {
-//       if (value.length === 1 && this.input2Ref) {
-//         this.input2Ref.focus();
-//       }
-//     });
-//   };
-
-//   // إدخال رقم في الحقل الثاني
-//   handleChangeDigit2 = (value) => {
-//     this.setState({ digit2: value }, () => {
-//       if (value.length === 1 && this.input3Ref) {
-//         this.input3Ref.focus();
-//       }
-//     });
-//   };
-
-//   // إدخال رقم في الحقل الثالث
-//   handleChangeDigit3 = (value) => {
-//     this.setState({ digit3: value }, () => {
-//       if (value.length === 1 && this.input4Ref) {
-//         this.input4Ref.focus();
-//       }
-//     });
-//   };
-
-//   // إدخال رقم في الحقل الرابع
-//   handleChangeDigit4 = (value) => {
-//     this.setState({ digit4: value });
-//   };
-
-//   // زر الرجوع
-//   handleBack = () => {
-//     // الرجوع لشاشة سابقة أو replace
-//     this.props.navigation.replace('SignUp');
-//   };
-
-//   render() {
-//     const { digit1, digit2, digit3, digit4, resendTimer } = this.state;
-
-//     return (
-//       <SafeAreaView style={styles.safeArea}>
-//         <KeyboardAvoidingView
-//           style={{ flex: 1 }}
-//           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-//         >
-//           <ScrollView contentContainerStyle={styles.container} bounces={false}>
-
-//             {/* زر الرجوع */}
-//             <TouchableOpacity style={styles.backButton} onPress={this.handleBack}>
-//               <View style={styles.backButtonCircle}>
-//                 <Ionicons name="chevron-back" size={24} color="#000" />
-//               </View>
-//             </TouchableOpacity>
-
-//             {/* العنوان */}
-//             <Text style={styles.title}>OTP Verification</Text>
-
-//             {/* النص الإرشادي */}
-//             <Text style={styles.subTitle}>
-//               Please check your email {'\n'}
-//               Abdullah@uj.edu.sa to see the verification code
-//             </Text>
-
-//             {/* تسمية الحقول */}
-//             <Text style={styles.label}>OTP Code</Text>
-
-//             {/* الحاوية الخاصة بحقوق إدخال الكود */}
-//             <View style={styles.otpContainer}>
-//               {/* الحقل الأول */}
-//               <TextInput
-//                 style={styles.otpInput}
-//                 keyboardType="number-pad"
-//                 maxLength={1}
-//                 value={digit1}
-//                 onChangeText={this.handleChangeDigit1}
-//                 autoFocus
-//                 returnKeyType="next"
-//               />
-//               {/* الحقل الثاني */}
-//               <TextInput
-//                 style={styles.otpInput}
-//                 keyboardType="number-pad"
-//                 maxLength={1}
-//                 value={digit2}
-//                 onChangeText={this.handleChangeDigit2}
-//                 ref={(ref) => (this.input2Ref = ref)}
-//                 returnKeyType="next"
-//               />
-//               {/* الحقل الثالث */}
-//               <TextInput
-//                 style={styles.otpInput}
-//                 keyboardType="number-pad"
-//                 maxLength={1}
-//                 value={digit3}
-//                 onChangeText={this.handleChangeDigit3}
-//                 ref={(ref) => (this.input3Ref = ref)}
-//                 returnKeyType="next"
-//               />
-//               {/* الحقل الرابع */}
-//               <TextInput
-//                 style={styles.otpInput}
-//                 keyboardType="number-pad"
-//                 maxLength={1}
-//                 value={digit4}
-//                 onChangeText={this.handleChangeDigit4}
-//                 ref={(ref) => (this.input4Ref = ref)}
-//                 returnKeyType="done"
-//               />
-//             </View>
-
-//             {/* زر Verify */}
-//             <TouchableOpacity style={styles.verifyButton} onPress={this.handleVerify}>
-//               <Text style={styles.verifyButtonText}>Verify</Text>
-//             </TouchableOpacity>
-
-//             {/* إعادة إرسال الكود + المؤقت */}
-//             <View style={styles.resendContainer}>
-//               <Text style={styles.resendText}>Resend code to</Text>
-//               {resendTimer > 0 ? (
-//                 <Text style={styles.timerText}>{this.formatTime(resendTimer)}</Text>
-//               ) : (
-//                 <TouchableOpacity onPress={this.handleResendCode}>
-//                   <Text style={[styles.timerText, { color: '#FF6E2C' }]}>
-//                     Resend
-//                   </Text>
-//                 </TouchableOpacity>
-//               )}
-//             </View>
-
-//           </ScrollView>
-//         </KeyboardAvoidingView>
-//       </SafeAreaView>
-//     );
-//   }
-// }
-
-// export default VerificationScreen;
-
-// const styles = StyleSheet.create({
-//   safeArea: {
-//     flex: 1,
-//     backgroundColor: '#fff',
-//   },
-//   container: {
-//     paddingHorizontal: 20,
-//     paddingTop: 10,
-//     paddingBottom: 20,
-//     alignItems: 'center',
-//   },
-//   backButton: {
-//     alignSelf: 'flex-start',
-//     marginBottom: 20,
-//     marginTop: 50,
-//   },
-//   backButtonCircle: {
-//     width: 40,
-//     height: 40,
-//     borderRadius: 20,
-//     backgroundColor: 'rgba(0,0,0,0.05)',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   title: {
-//     fontSize: 20,
-//     color: '#111',
-//     fontWeight: 'bold',
-//     marginBottom: 10,
-//     textAlign: 'center',
-//   },
-//   subTitle: {
-//     fontSize: 14,
-//     color: '#777',
-//     marginBottom: 25,
-//     textAlign: 'center',
-//     lineHeight: 20,
-//   },
-//   label: {
-//     fontSize: 14,
-//     color: '#555',
-//     alignSelf: 'flex-start',
-//     marginBottom: 10,
-//   },
-//   otpContainer: {
-//     width: '100%',
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     marginBottom: 30,
-//   },
-//   otpInput: {
-//     width: width * 0.15,  // تحكم في عرض الحقل
-//     height: 50,
-//     backgroundColor: '#F5F7FA',
-//     borderRadius: 10,
-//     textAlign: 'center',
-//     fontSize: 18,
-//     color: '#111',
-//   },
-//   verifyButton: {
-//     width: '100%',
-//     height: 50,
-//     backgroundColor: '#00ADEF',
-//     borderRadius: 10,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginBottom: 30,
-//   },
-//   verifyButtonText: {
-//     color: '#fff',
-//     fontSize: 16,
-//     fontWeight: 'bold',
-//   },
-//   resendContainer: {
-//     flexDirection: 'row',
-//     width: '100%',
-//     justifyContent: 'space-between',
-//   },
-//   resendText: {
-//     fontSize: 14,
-//     color: '#777',
-//   },
-//   timerText: {
-//     fontSize: 14,
-//     color: '#777',
-//   },
-// });
-
-// src/screens/auth/VerificationScreen.js
-
-import React from "react";
-import { View, Text, Button } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-
-const VerifyEmailScreen = () => {
-  const navigation = useNavigation();
-
-  const handleContinue = () => {
-    navigation.replace("Home"); // Or the screen you want after verification
+    setLoading(true);
+    try {
+      // Implement your verification logic here
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      navigation.replace('Home');
+    } catch (err) {
+      setError('Invalid verification code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View className="flex-1 items-center justify-center bg-white px-4">
-      <Text className="text-2xl font-bold mb-4 text-center">
-        Verify Your Email
-      </Text>
-      <Text className="text-base text-gray-600 text-center mb-6">
-        We’ve sent you a link to verify your email. Please check your inbox or
-        spam folder.
-      </Text>
+    <SafeAreaView className="flex-1 bg-white">
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <Button title="I've Verified My Email" onPress={handleContinue} />
-    </View>
+      {/* Header */}
+      <View className="px-6 py-4 flex-row items-center border-b border-gray-100">
+        <TouchableOpacity
+          className="p-2"
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <View className="flex-1 items-center">
+          <Text className="text-xl font-bold text-[#1b1e28] -ml-8">Verification</Text>
+        </View>
+      </View>
+
+      <View className="px-6 pt-8">
+        {/* Title and Description */}
+        <Text className="text-2xl font-bold text-[#1b1e28] mb-3">
+          Enter verification code
+        </Text>
+        <Text className="text-gray-500 mb-8">
+          We've sent a verification code to your {verificationType}:
+          <Text className="font-medium text-[#1b1e28]"> {contact}</Text>
+        </Text>
+
+        {/* OTP Input Fields */}
+        <View className="flex-row justify-between mb-8">
+          {otp.map((digit, index) => (
+            <TextInput
+              key={index}
+              ref={ref => inputRefs.current[index] = ref}
+              className={`w-12 h-14 text-center text-xl font-bold rounded-xl
+                ${error ? 'border-2 border-red-400' : 'border border-gray-200'}
+                ${digit ? 'bg-gray-50' : 'bg-white'}`}
+              maxLength={1}
+              keyboardType="number-pad"
+              value={digit}
+              onChangeText={text => handleOtpChange(text, index)}
+              onKeyPress={e => handleKeyPress(e, index)}
+            />
+          ))}
+        </View>
+
+        {/* Error Message */}
+        {error ? (
+          <Text className="text-red-500 text-center mb-4">{error}</Text>
+        ) : null}
+
+        {/* Resend Timer */}
+        <View className="flex-row justify-center items-center mb-8">
+          <Text className="text-gray-500">
+            Didn't receive the code? 
+          </Text>
+          <TouchableOpacity 
+            onPress={handleResendCode}
+            disabled={!isResendActive || loading}
+          >
+            <Text className={`font-medium ${isResendActive ? 'text-[#24baec]' : 'text-gray-400'}`}>
+              {isResendActive ? ' Resend' : ` Wait ${timeLeft}s`}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Verify Button */}
+        <TouchableOpacity
+          className={`py-4 rounded-xl items-center
+            ${loading ? 'bg-gray-100' : 'bg-[#24baec]'}`}
+          onPress={handleVerify}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#24baec" />
+          ) : (
+            <Text className="text-white font-semibold text-lg">Verify</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
-};
-
-export default VerifyEmailScreen;
+}

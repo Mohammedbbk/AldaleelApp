@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  StyleSheet,
   View,
   Text,
   SafeAreaView,
@@ -9,125 +8,55 @@ import {
   ScrollView,
   StatusBar,
 } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
-import { AI_RESPONSE } from "../config/AiResponse";
+import { AI_RESPONSE } from "../../config/AiResponse";
 
-class InfoBaseScreen extends React.Component {
-  handleClose = () => {
-    this.props.navigation.navigate("InformationScreen");
+const InfoBaseScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { contentKey } = route.params;
+  const content = AI_RESPONSE.Information[contentKey];
+
+  const handleClose = () => {
+    navigation.navigate("InformationScreen");
   };
 
-  render() {
-    const { contentKey } = this.props.route.params;
-    const content = AI_RESPONSE.Information[contentKey];
-    return (
-      <SafeAreaView style={styles.container}>
-        <ScrollView>
-          {/* Title */}
-          <Text style={styles.title}>{content.title}</Text>
+  return (
+    <SafeAreaView className="flex-1 bg-white mt-[StatusBar.currentHeight]">
+      <ScrollView>
+        {/* Title */}
+        <Text className="text-lg font-bold text-center mt-5 mb-5">
+          {content.title}
+        </Text>
 
-          {/* Image */}
-          <Image
-            source={content.image}
-            style={styles.image}
-            resizeMode="contain"
-          />
+        {/* Image */}
+        <Image
+          source={content.image}
+          className="w-full h-[200px] my-[30px]"
+          resizeMode="contain"
+        />
 
-          {/* Requirements content */}
-          <View style={styles.contentContainer}>
-            <Text style={styles.requirementText}>
-              {content.text.replace(/\./g, ".\n\n")}
-            </Text>
-          </View>
-        </ScrollView>
+        {/* Requirements content */}
+        <View className="p-5 pb-[150px]">
+          <Text className="text-sm leading-5 text-[#333]">
+            {content.text.replace(/\./g, ".\n\n")}
+          </Text>
+        </View>
+      </ScrollView>
 
-        {/* Close Button */}
-        <TouchableOpacity
-          style={styles.closeButton}
-          activeOpacity={0.9}
-          onPress={() => this.handleClose()}
-        >
-          <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-}
-
-const styles = StyleSheet.create({
-  container: {
-    marginTop: StatusBar.currentHeight,
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  time: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  signalIcon: {
-    width: 17,
-    height: 11,
-    backgroundColor: "#000",
-    marginRight: 5,
-  },
-  wifiIcon: {
-    width: 15,
-    height: 11,
-    backgroundColor: "#000",
-    marginRight: 5,
-  },
-  batteryIcon: {
-    width: 24,
-    height: 11,
-    backgroundColor: "#000",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  image: {
-    width: "100%",
-    height: 200,
-    marginVertical: 30,
-  },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 150,
-  },
-  requirementText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#333",
-  },
-  closeButton: {
-    backgroundColor: "#24BAEC",
-    marginHorizontal: 20,
-    padding: 15,
-    borderRadius: 8,
-    position: "absolute",
-    bottom: 30,
-    left: 0,
-    right: 0,
-  },
-  closeButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
+      {/* Close Button */}
+      <TouchableOpacity
+        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0"
+        activeOpacity={0.9}
+        onPress={handleClose}
+      >
+        <Text className="text-white text-center text-base font-semibold">
+          Close
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+};
 
 export default InfoBaseScreen;

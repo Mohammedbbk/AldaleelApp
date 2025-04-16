@@ -3,21 +3,32 @@ import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "./global.css";
 
-// Import screens
+// Import screens - Onboarding
 import SplashScreen from "./src/screens/onboarding/SplashScreen";
 import OnboardScreen from "./src/screens/onboarding/OnboardScreen";
+
+// Import screens - Authentication
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import SignUpScreen from "./src/screens/auth/SignUpScreen";
 import VerificationScreen from "./src/screens/auth/VerificationScreen";
 import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
-import UserPlanScreen from "./src/screens/trips/UserPlanScreen";
-import AssistantScreen from "./src/screens/assistant/AssistantScreen";
+
+// Import screens - Main app
+import HomeScreen from "./src/screens/home/HomeScreen";
 import InformationScreen from "./src/screens/home/InformationScreen";
 import InfoBaseScreen from "./src/screens/home/InfoBaseScreen";
-import HomeScreen from "./src/screens/home/HomeScreen";
-import ProfileSetting from "./src/screens/home/ProfileSetting";
+import ProfileSetting from "./src/screens/home/ProfileSetting"; // Kept from upstream
+import AssistantScreen from "./src/screens/assistant/AssistantScreen"; // Kept from stash
+
+// Import screens - Trip related
+import UserPlanScreen from "./src/screens/trips/UserPlanScreen"; // Kept from stash
+import CreateTripScreen from "./src/screens/trips/CreateTripScreen"; // Kept from stash
+import TripStyleScreen from "./src/screens/trips/TripStyleScreen"; // Kept from stash
+import { TripDetailsScreen } from "./src/screens/trips/TripDetailsScreen"; // Kept from stash
+import TripListScreen from "./src/screens/trips/TripListScreen"; // Kept from stash
 
 // Import the AuthProvider
 import { AuthProvider, AuthContext } from "./AuthProvider";
@@ -42,24 +53,20 @@ function AuthStack() {
 }
 
 // App Stack for authenticated users
-// Import trip-related screens
-import CreateTripScreen from "./src/screens/trips/CreateTripScreen";
-import TripStyleScreen from "./src/screens/trips/TripStyleScreen";
-import TripDetailsScreen from "./src/screens/trips/TripDetailsScreen";
-import TripScreen from "./src/screens/trips/TripList";
-
 function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="ProfileSetting" component={ProfileSetting} />
-      <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
-      <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
+      <Stack.Screen name="ProfileSetting" component={ProfileSetting} /> // Kept from upstream
+      <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} /> // Kept from stash
+      <Stack.Screen name="AssistantScreen" component={AssistantScreen} /> // Kept from stash
       <Stack.Screen name="InformationScreen" component={InformationScreen} />
-      <Stack.Screen name="Trips" component={TripScreen} />
-      <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
-      <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
-      <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
+      <Stack.Screen name="Trips" component={TripListScreen} /> // Kept from stash
+      <Stack.Screen name="CreateTrip" component={CreateTripScreen} /> // Kept from stash
+      <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} /> // Kept from stash
+      <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} /> // Kept from stash
+      
+      {/* Information screens with content keys */}
       <Stack.Screen
         name="VisaScreen"
         component={InfoBaseScreen}
@@ -101,12 +108,10 @@ function RootNavigator() {
       {({ userToken, isLoading }) => {
         if (isLoading) {
           return (
-            <View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
+            <View 
+              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+              accessibilityLabel="Loading" // Kept accessibility from stash
+              accessibilityRole="progressbar" // Kept accessibility from stash
             >
               <ActivityIndicator size="large" color="#00ADEF" />
             </View>
@@ -125,8 +130,10 @@ function NavigationErrorBoundary({ children }) {
     <View style={{ flex: 1 }}>
       <NavigationContainer
         fallback={
-          <View
+          <View 
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            accessibilityLabel="Navigation loading" // Kept accessibility from stash
+            accessibilityRole="progressbar" // Kept accessibility from stash
           >
             <ActivityIndicator size="large" color="#00ADEF" />
           </View>
@@ -142,14 +149,19 @@ function NavigationErrorBoundary({ children }) {
   );
 }
 
+// Create a QueryClient instance
+const queryClient = new QueryClient();
+
 class App extends React.Component {
   render() {
     return (
-      <AuthProvider>
-        <NavigationErrorBoundary>
-          <RootNavigator />
-        </NavigationErrorBoundary>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <NavigationErrorBoundary>
+            <RootNavigator />
+          </NavigationErrorBoundary>
+        </AuthProvider>
+      </QueryClientProvider>
     );
   }
 }

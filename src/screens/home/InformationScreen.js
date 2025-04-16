@@ -4,12 +4,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Image,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 //pictures
 import visa from "../../../assets/Information_pictures/Visa.png";
@@ -52,213 +52,133 @@ const titles = [
   },
 ];
 
-class InformationScreen extends React.Component {
-  //handlers
-  handleBack = () => {
-    this.props.navigation.navigate("UserPlanScreen");
+const InformationScreen = () => {
+  const navigation = useNavigation();
+
+  const handleBack = () => {
+    navigation.navigate("UserPlanScreen");
   };
-  handleHome = () => {
+
+  const handleHome = () => {
     //TBD
   };
-  handleEditPlan = () => {
-    this.props.navigation.navigate("AssistantScreen");
-  };
-  handleNext = () => {
-    this.props.navigation.navigate("InformationScreen");
-  };
-  handleShare = () => {};
 
-  handleSubScreens = (pageNumber) => {
+  const handleEditPlan = () => {
+    navigation.navigate("AssistantScreen");
+  };
+
+  const handleShare = () => {
+    // Implementation pending
+  };
+
+  const handleSubScreens = (pageNumber) => {
     switch (pageNumber) {
       case 1:
-        this.props.navigation.navigate("VisaScreen");
+        navigation.navigate("VisaScreen");
         break;
       case 2:
-        this.props.navigation.navigate("LocalScreen");
+        navigation.navigate("LocalScreen");
         break;
       case 3:
-        this.props.navigation.navigate("CurrencyScreen");
+        navigation.navigate("CurrencyScreen");
         break;
       case 4:
-        this.props.navigation.navigate("HealthScreen");
+        navigation.navigate("HealthScreen");
         break;
       case 5:
-        this.props.navigation.navigate("TransportationScreen");
+        navigation.navigate("TransportationScreen");
         break;
       case 6:
-        this.props.navigation.navigate("LanguageScreen");
+        navigation.navigate("LanguageScreen");
         break;
-
       default:
         Alert.alert("Error", "Something went wrong, try again later");
         break;
     }
   };
 
-  render() {
-    return (
-      <SafeAreaView style={styles.wrapper}>
-        {/* Header Section */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.titleText}>Information Hub</Text>
-          <View style={styles.headerButton}>
-            <TouchableOpacity>
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleBack}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Ionicons
-                name="home-outline"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleHome}
-              />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.headerButton}>
-            <TouchableOpacity>
-              <Ionicons
-                name="share-outline"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleShare}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Ionicons
-                name="pencil-outline"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleEditPlan}
-              />
-            </TouchableOpacity>
-          </View>
+  return (
+    <SafeAreaView className="flex-1 bg-[#f5f5f5]">
+      {/* Header Section */}
+      <View className="flex-row items-center justify-between py-2.5 bg-white border-b border-[#E5E5EA]">
+        <Text className="text-[17px] font-semibold text-black text-center absolute left-0 right-0">
+          Information Hub
+        </Text>
+        <View className="flex-row justify-end p-2.5 px-[15px] gap-5">
+          <TouchableOpacity>
+            <Ionicons
+              name="chevron-back"
+              size={24}
+              color="#007AFF"
+              onPress={handleBack}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Ionicons
+              name="home-outline"
+              size={24}
+              color="#007AFF"
+              onPress={handleHome}
+            />
+          </TouchableOpacity>
         </View>
+        <View className="flex-row justify-end p-2.5 px-[15px] gap-5">
+          <TouchableOpacity>
+            <Ionicons
+              name="share-outline"
+              size={24}
+              color="#007AFF"
+              onPress={handleShare}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Ionicons
+              name="pencil-outline"
+              size={24}
+              color="#007AFF"
+              onPress={handleEditPlan}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-        {/* Body */}
-        <ScrollView
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.informationWrapper}>
-            {titles.map((item) => (
-              <TouchableOpacity
-                key={item.number}
-                style={styles.informationContainer}
-                activeOpacity={0.9}
-                onPress={() => this.handleSubScreens(item.number)}
-              >
-                <Image style={styles.informationImage} source={item.image} />
-                <Text style={styles.informationTitle}>{item.title}</Text>
-                <Ionicons name="chevron-forward" size={24} color={"#007AFF"} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-        {/* Next Button */}
-        <TouchableOpacity style={styles.nextButton} onPress={this.handleNext}>
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-}
+      {/* Body */}
+      <ScrollView
+        className="pb-[200px] px-2.5"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="flex-col items-stretch pt-5 gap-5">
+          {titles.map((item) => (
+            <TouchableOpacity
+              key={item.number}
+              className="flex-row justify-between items-center p-[5px] bg-white rounded-[20px] overflow-hidden shadow-md"
+              activeOpacity={0.9}
+              onPress={() => handleSubScreens(item.number)}
+            >
+              <Image
+                className="rounded-[20px] bg-[#555] h-[130px] w-[100px]"
+                source={item.image}
+              />
+              <Text className="text-[18px] font-normal text-center text-black flex-1 p-2.5">
+                {item.title}
+              </Text>
+              <Ionicons name="chevron-forward" size={24} color={"#007AFF"} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+      
+      {/* Next Button */}
+      <TouchableOpacity
+        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0"
+        onPress={() => navigation.navigate("InformationScreen")}
+      >
+        <Text className="text-white text-center text-base font-semibold">
+          Next
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+};
+
 export default InformationScreen;
-
-// Styles
-const styles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: "#f5f5f5",
-    flex: 1,
-  },
-  container: {
-    paddingBottom: 200,
-    paddingInline: 10,
-  },
-  headerContainer: {
-    backgroundColor: "white",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
-  },
-  titleText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#000000",
-    textAlign: "center",
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
-  headerButton: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    padding: 10,
-    paddingHorizontal: 15,
-    gap: 20,
-  },
-  informationWrapper: {
-    flexDirection: "column",
-    alignItems: "strech",
-    paddingTop: 20,
-    gap: 20,
-  },
-  informationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 5,
-    backgroundColor: "white",
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowRadius: 6,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowColor: "#000",
-    elevation: 3,
-  },
-  informationImage: {
-    borderRadius: 20,
-    backgroundColor: "#555",
-    height: 130,
-    width: 100,
-  },
-  informationTitle: {
-    fontSize: 18,
-    fontWeight: 400,
-    textAlign: "center",
-    color: "black",
-    flex: 1,
-    padding: 10,
-  },
-  buttonContainer: {
-    position: "absolute",
-    zIndex: 1,
-    bottom: 100,
-    width: "100%",
-    alignItems: "center",
-  },
-  nextButton: {
-    backgroundColor: "#24BAEC",
-    marginHorizontal: 20,
-    padding: 15,
-    borderRadius: 8,
-    position: "absolute",
-    bottom: 30,
-    left: 0,
-    right: 0,
-  },
-  nextButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
