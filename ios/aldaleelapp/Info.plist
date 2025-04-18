@@ -43,6 +43,16 @@
       <false/>
       <key>NSAllowsLocalNetworking</key>
       <true/>
+      <key>NSExceptionDomains</key>
+      <dict>
+          <key>aldaleelapp-mcp.onrender.com</key>
+          <dict>
+              <key>NSIncludesSubdomains</key>
+              <true/>
+              <key>NSExceptionAllowsInsecureHTTPLoads</key>
+              <false/>
+           </dict>
+      </dict>
     </dict>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

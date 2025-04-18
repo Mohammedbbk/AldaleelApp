@@ -4,25 +4,23 @@ import { AI_RESPONSE } from '../config/AiResponse';
 
 // --- Utility: fetchWithTimeout ---
 const fetchWithTimeout = async (endpoint, options = {}) => {
-    const controller = new AbortController();
-    const timeoutDuration = options.timeout || API.TIMEOUT || 30000;
-    const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
-    const maxRetries = options.maxRetries || 1; // Default to 1 try, no retries
+    const { timeout = API.TIMEOUT || 30000, maxRetries = 3, ...fetchOpts } = options;
     let lastError = null;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
         try {
             const url = API.BASE_URL ? `${API.BASE_URL}${endpoint}` : endpoint;
-            console.log(`[fetchWithTimeout] Requesting: ${options.method || 'GET'} ${url} (Attempt ${attempt + 1}/${maxRetries})`);
-            console.log(`[fetchWithTimeout] Fetching URL: ${url}`);
-            console.log(`[fetchWithTimeout] Options:`, JSON.stringify(options, null, 2));
+            console.log(`[fetchWithTimeout] Requesting: ${fetchOpts.method || 'GET'} ${url} (Attempt ${attempt + 1}/${maxRetries})`);
+            console.log(`[fetchWithTimeout] Options:`, JSON.stringify(fetchOpts, null, 2));
 
             const response = await fetch(url, {
-                ...options,
+                ...fetchOpts,
                 signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
-                    ...options.headers,
+                    ...fetchOpts.headers,
                 },
             });
             
@@ -50,7 +48,7 @@ const fetchWithTimeout = async (endpoint, options = {}) => {
             }
             
             // For JSON responses, parse and return
-            if (contentType.includes('application/json')) {
+            if (contentType && contentType.includes('application/json')) {
                 return await response.json();
             }
             
@@ -59,17 +57,19 @@ const fetchWithTimeout = async (endpoint, options = {}) => {
             
         } catch (error) {
             clearTimeout(timeoutId);
+            console.error('[fetchWithTimeout] Fetch Error Details:', { name: error.name, message: error.message, stack: error.stack });
             lastError = error;
             
             // If abort/timeout, don't retry since it's unlikely to succeed with same timeout
             if (error.name === 'AbortError') {
-                throw new Error(`Request timed out after ${timeoutDuration / 1000}s (${endpoint})`);
+                throw new Error(`Request timed out after ${timeout / 1000}s (${endpoint})`);
             }
             
             // If more retries remaining, wait a bit and try again
             if (attempt < maxRetries - 1) {
-                console.log(`Retrying request (${attempt + 1}/${maxRetries - 1}) after error:`, error.message);
-                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
+                const backoff = 500 * (attempt + 1);
+                console.log(`[fetchWithTimeout] Retrying in ${backoff}ms...`);
+                await new Promise(resolve => setTimeout(resolve, backoff));
                 continue;
             }
             

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'; // Added useCallback
+import React, { useState, useCallback, useEffect } from 'react'; // Added useEffect
 import {
     View,
     Text,
@@ -63,6 +63,31 @@ export function TripDetailsScreen({ route, navigation }) {
     const [selectedRequirements, setSelectedRequirements] = useState([]);
     const [additionalRequirement, setAdditionalRequirement] = useState('');
     const [selectedTransport, setSelectedTransport] = useState([]);
+
+    // --- TEST FETCH ---
+    useEffect(() => {
+        const testFetch = async () => {
+            console.log('[Test Fetch] Attempting fetch to https://httpbin.org/get...');
+            try {
+                const response = await fetch('https://httpbin.org/get');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('[Test Fetch] Success:', data);
+                Alert.alert('Test Fetch Success', 'Successfully fetched from httpbin.org');
+            } catch (error) {
+                console.error('[Test Fetch] Failed:', error);
+                Alert.alert('Test Fetch Failed', `Failed to fetch from httpbin.org: ${error.message}`);
+                 if (error.message.includes('Network request failed')) {
+                    console.warn('[Test Fetch] Encountered "Network request failed". This might indicate a general network issue within the app environment.');
+                 }
+            }
+        };
+
+        testFetch();
+    }, []); // Empty dependency array ensures this runs only once on mount
+    // --- END TEST FETCH ---
 
     // Use useCallback for functions passed to TouchableOpacity to prevent unnecessary re-renders
     const toggleRequirement = useCallback((value) => {
