@@ -139,82 +139,78 @@ export function UserPlanScreen() {
 
     console.log("UserPlanScreen received tripData:", tripData);
 
-    // Base plan data structure from tripData
-    const basePlan = {
-      details: [
-        // Use more robust checks for potentially missing fields in tripData
-        { name: 'Destination', value: tripData.destinationCity || tripData.destination || 'N/A' },
-        { name: 'Duration', value: tripData.month && tripData.year ? `${tripData.month} ${tripData.year}` : (tripData.duration ? `${tripData.duration} days` : 'N/A') },
-        { name: 'Expenses', value: tripData.budgetLevel || tripData.budget || 'N/A' },
-      ],
-      days: [], // Default empty days, will be populated below
-      visaRequirements: tripData.visaRequirements || null, // Default to null
-      cultureInsights: tripData.cultureInsights || null, // Default to null
-      nearbyEvents: Array.isArray(tripData.nearbyEvents) ? tripData.nearbyEvents : [], // Default to empty array
-      // Ensure recommendations structure exists
-      recommendations: {
-        places: Array.isArray(tripData.recommendations?.places) ? tripData.recommendations.places : [],
-        tips: Array.isArray(tripData.recommendations?.tips) ? tripData.recommendations.tips : [],
-        culturalNotes: Array.isArray(tripData.recommendations?.culturalNotes) ? tripData.recommendations.culturalNotes : [],
-        safetyTips: Array.isArray(tripData.recommendations?.safetyTips) ? tripData.recommendations.safetyTips : []
+    // 1) Try to parse the AI JSON (string inside additionalInfo)
+    let ai = null;
+    const raw = tripData.aiRecommendations?.additionalInfo;
+    if (raw && typeof raw === 'string') {
+      try {
+        ai = JSON.parse(raw);
+      } catch (err) {
+        console.warn('Failed to parse AI recommendations JSON:', err);
       }
-    };
-
-    // Handle AI generation failure case
-    if (tripData.aiGenerationFailed) {
-      console.log("AI Generation failed, using placeholder itinerary.");
-      basePlan.days = [
-        {
-          day: 1,
-          activities: [{ time: 'All day', name: 'Custom Itinerary Pending' }],
-          plan: [{ time: 'Note', event: 'Your custom itinerary experienced an issue during generation. You can try editing or check back later.' }]
-        }
-      ];
-    } else if (tripData.aiRecommendations) {
-        // *** IMPORTANT: Use the actual AI data if generation succeeded ***
-        // Assuming tripData.aiRecommendations has the same structure as AI_RESPONSE.UserPlan expected before
-        // Make sure the structure from your /generate endpoint matches this expectation
-        const aiPlanData = tripData.aiRecommendations;
-        console.log("Using successful AI Recommendations:", aiPlanData);
-
-        // Ensure aiPlanData and its nested properties exist and are arrays
-        basePlan.days = Array.isArray(aiPlanData?.itinerary)
-         ? aiPlanData.itinerary.map((day, index) => {
-             const safeDay = day && typeof day === 'object' ? day : {};
-             const activitiesArray = Array.isArray(safeDay.activities) ? safeDay.activities : [];
-             return {
-                day: index + 1, // Or use day.day if provided by AI
-                activities: [{ // Adjust if AI provides different structure
-                    time: safeDay.startTime || 'N/A',
-                    name: safeDay.title || 'N/A'
-                }],
-                plan: activitiesArray.map(activity => {
-                    const safeActivity = activity && typeof activity === 'object' ? activity : {};
-                    return {
-                        time: safeActivity.time || 'N/A',
-                        event: safeActivity.description || 'N/A'
-                    };
-                })
-            };
-          })
-         : []; // Default to empty array if aiPlanData.itinerary is not an array
-
-         // Optionally merge/update details from aiPlanData if needed
-         // basePlan.details = ... merge logic ...
-
-    } else {
-       console.log("No AI recommendations data found, showing empty itinerary.");
-       // No AI data and not failed, keep days as empty array or show different placeholder
-       basePlan.days = [
-           {
-             day: 1,
-             activities: [{ time: 'N/A', name: 'No Itinerary Data' }],
-             plan: [{ time: 'Note', event: 'No itinerary data was generated for this trip.' }]
-           }
-       ];
+    } else if (tripData.aiRecommendations?.additionalInfo) {
+      ai = tripData.aiRecommendations.additionalInfo;
     }
 
-    return basePlan;
+    // 2) Build base details
+    const details = [
+      {
+        name: 'Destination',
+        value: tripData.destinationCity || tripData.destination || 'N/A',
+      },
+      {
+        name: 'Duration',
+        value:
+          tripData.duration
+            ? `${tripData.duration} days`
+            : 'N/A',
+      },
+      {
+        name: 'Expenses',
+        value: tripData.budgetLevel || tripData.budget || 'N/A',
+      },
+    ];
+
+    // 3) Decide which visa/culture to show (prefer separately fetched, else AI)
+    const visaRequirements =
+      tripData.visaRequirements ?? ai?.visaRequirements ?? null;
+    const cultureInsights =
+      tripData.cultureInsights ?? ai?.localCustoms ?? null;
+
+    // 4) Daily itinerary
+    const days = Array.isArray(ai?.dailyItinerary)
+      ? ai.dailyItinerary.map((d, i) => ({
+          day: d.day || i + 1,
+          morning: d.morning || { activities: [] },
+          afternoon: d.afternoon || { activities: [] },
+          evening: d.evening || { activities: [] },
+        }))
+      : [];
+
+    // 5) Other AI sections
+    const currencyInfo = ai?.currencyInfo ?? null;
+    const healthAndSafety = ai?.healthAndSafety ?? null;
+    const transportation = ai?.transportation ?? null;
+    const languageBasics = ai?.languageBasics ?? null;
+    const weatherInfo = ai?.weatherInfo ?? null;
+
+    // 6) Nearby events from tripData
+    const nearbyEvents = Array.isArray(tripData.nearbyEvents)
+      ? tripData.nearbyEvents
+      : [];
+
+    return {
+      details,
+      visaRequirements,
+      cultureInsights,
+      days,
+      currencyInfo,
+      healthAndSafety,
+      transportation,
+      languageBasics,
+      weatherInfo,
+      nearbyEvents,
+    };
 
   }, [route.params?.tripData]); // Depend on tripData object
 
@@ -491,7 +487,7 @@ const styles = StyleSheet.create({
     dayContainer: { marginBottom: 20 }, // mb-5
     dayLabel: { fontSize: 14, fontWeight: '400', color: '#3F3F46', marginBottom: 6, marginLeft: 4 }, // text-sm font-normal text-neutral-700 mb-1.5 ml-1
     activitiesContainer: { backgroundColor: '#06B6D4', borderRadius: 8, overflow: 'hidden', shadowColor: "#000", shadowOffset: { width: 0, height: 2, }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 }, // bg-cyan-500 rounded-lg overflow-hidden shadow-md
-    planItem: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }, // flex-row gap-2 justify-between p-3 border-b border-neutral-200 last:border-b-0
+    planItem: { flexDirection: 'row', gap: 8, justifyContent: 'space-between', padding: 12, borderBottomWidth: 1, borderBottomColor: '#E5E5E5' }, // flex-row gap-2 justify-between p-3 border-b border-neutral-200
     planTime: { color: '#71717A', width: 64, paddingRight: 8, borderRightWidth: 1, borderRightColor: '#D4D4D8' }, // text-neutral-500 w-16 pr-2 border-r border-neutral-300
     planEvent: { flex: 1, color: '#27272A' }, // flex-1 text-neutral-800
     noPlanText: { padding: 12, color: '#71717A', fontStyle: 'italic' },

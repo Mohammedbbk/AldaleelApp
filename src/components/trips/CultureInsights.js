@@ -1,50 +1,62 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export function CultureInsights({ cultureData, isLoading, error }) {
   if (isLoading) {
     return (
-      <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-        <View className="flex-row items-center mb-2">
-          <Ionicons name="earth-outline" size={24} className="text-purple-600 mr-2" />
-          <Text className="text-lg font-semibold">Cultural Insights</Text>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <Ionicons name="earth-outline" size={24} color="#9333EA" />
+          <Text style={styles.title}>Cultural Insights</Text>
         </View>
-        <ActivityIndicator size="small" color="#9333ea" />
-        <Text className="text-sm text-gray-500 mt-1">Fetching cultural information...</Text>
+        <ActivityIndicator size="small" color="#9333EA" />
       </View>
     );
   }
 
-  if (error || !cultureData || !cultureData.content) {
+  // flatten nested content / additionalInfo
+  const raw =
+    cultureData?.content ??
+    cultureData?.additionalInfo ??
+    '';
+
+  if (error || !raw) {
     return (
-      <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-        <View className="flex-row items-center mb-2">
-          <Ionicons name="alert-circle-outline" size={24} className="text-red-600 mr-2" />
-          <Text className="text-lg font-semibold">Cultural Information</Text>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
+          <Text style={styles.title}>Cultural Insights</Text>
         </View>
-        <Text className="text-red-600">
-          {error || 'Unable to load cultural insights. Please try again later.'}
+        <Text style={styles.errorText}>
+          {error || 'Unable to load cultural insights.'}
         </Text>
       </View>
     );
   }
 
-  // Basic rendering of the content string. Consider parsing Markdown or structured data if the LLM provides it.
   return (
-    <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-      <View className="flex-row items-center mb-3">
-        <Ionicons name="earth-outline" size={24} className="text-purple-600 mr-2" />
-        <Text className="text-lg font-semibold">Cultural Insights</Text>
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
+        <Ionicons name="earth-outline" size={24} color="#9333EA" />
+        <Text style={styles.title}>Cultural Insights</Text>
       </View>
-      <ScrollView style={{ maxHeight: 300 }}> 
-        <Text className="text-base text-gray-700 leading-relaxed">
-          {cultureData.content}
-        </Text>
+      <ScrollView style={styles.scroll}>
+        <Text style={styles.bodyText}>{raw}</Text>
       </ScrollView>
-      {cultureData.source && (
-         <Text className="text-xs text-gray-400 mt-2 text-right">Source: {cultureData.source}</Text>
+      {cultureData?.source && (
+        <Text style={styles.source}>Source: {cultureData.source}</Text>
       )}
     </View>
   );
 }
+
+const styles = {
+  card: { backgroundColor: '#FFF', padding: 16, borderRadius: 8, marginBottom: 16 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: '600', marginLeft: 8 },
+  scroll: { maxHeight: 180, marginBottom: 8 },
+  bodyText: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  source: { fontSize: 12, color: '#6B7280', textAlign: 'right' },
+  errorText: { fontSize: 14, color: '#EF4444' },
+};

@@ -5,80 +5,86 @@ import { Ionicons } from '@expo/vector-icons';
 export function VisaRequirements({ visaData, isLoading, error }) {
   if (isLoading) {
     return (
-      <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-        <View className="flex-row items-center mb-2">
-          <Ionicons name="document-text-outline" size={24} className="text-blue-600 mr-2" />
-          <Text className="text-lg font-semibold">Visa Requirements</Text>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <Ionicons name="document-text-outline" size={24} color="#0284C7" />
+          <Text style={styles.title}>Visa Requirements</Text>
         </View>
-        <ActivityIndicator size="small" color="#0284c7" />
+        <ActivityIndicator size="small" color="#0284C7" />
       </View>
     );
   }
 
   if (error || !visaData) {
     return (
-      <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-        <View className="flex-row items-center mb-2">
-          <Ionicons name="alert-circle-outline" size={24} className="text-red-600 mr-2" />
-          <Text className="text-lg font-semibold">Visa Information</Text>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <Ionicons name="alert-circle-outline" size={24} color="#EF4444" />
+          <Text style={styles.title}>Visa Requirements</Text>
         </View>
-        <Text className="text-red-600">
-          {error || 'Unable to load visa requirements. Please try again later.'}
+        <Text style={styles.errorText}>
+          {error || 'Unable to load visa requirements.'}
         </Text>
       </View>
     );
   }
 
-  // Handle both structured and raw string responses
-  if (typeof visaData === 'string' || visaData.content) {
-    const content = visaData.content || visaData;
+  // flatten both structured and raw
+  const raw = typeof visaData === 'string'
+    ? visaData
+    : visaData.content ?? visaData.additionalInfo ?? '';
+
+  if (raw) {
     return (
-      <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-        <View className="flex-row items-center mb-3">
-          <Ionicons name="document-text-outline" size={24} className="text-blue-600 mr-2" />
-          <Text className="text-lg font-semibold">Visa Requirements</Text>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <Ionicons name="document-text-outline" size={24} color="#0284C7" />
+          <Text style={styles.title}>Visa Requirements</Text>
         </View>
-        <Text className="text-base">{content}</Text>
+        <Text style={styles.bodyText}>{raw}</Text>
       </View>
     );
   }
 
+  // fully structured object
   return (
-    <View className="bg-white p-4 rounded-lg shadow-sm mb-4">
-      <View className="flex-row items-center mb-3">
-        <Ionicons name="document-text-outline" size={24} className="text-blue-600 mr-2" />
-        <Text className="text-lg font-semibold">Visa Requirements</Text>
+    <View style={styles.card}>
+      <View style={styles.headerRow}>
+        <Ionicons name="document-text-outline" size={24} color="#0284C7" />
+        <Text style={styles.title}>Visa Requirements</Text>
       </View>
-      {/* Visa Type */}
-      <View className="mb-3">
-        <Text className="text-sm font-medium text-gray-600 mb-1">Type:</Text>
-        <Text className="text-base">{visaData.type || 'Not specified'}</Text>
-      </View>
-      {/* Processing Time */}
-      <View className="mb-3">
-        <Text className="text-sm font-medium text-gray-600 mb-1">Processing Time:</Text>
-        <Text className="text-base">{visaData.processingTime || 'Not specified'}</Text>
-      </View>
-      {/* Required Documents */}
-      <View className="mb-3">
-        <Text className="text-sm font-medium text-gray-600 mb-1">Required Documents:</Text>
-        {visaData.requiredDocuments && visaData.requiredDocuments.length > 0 ? (
-          visaData.requiredDocuments.map((doc, index) => (
-            <View key={index} className="flex-row items-center mt-1">
-              <Ionicons name="checkmark-circle" size={16} className="text-green-600 mr-2" />
-              <Text className="text-base">{doc}</Text>
+      <Text style={styles.label}>Type:</Text>
+      <Text style={styles.bodyText}>{visaData.type || 'N/A'}</Text>
+      <Text style={styles.label}>Processing Time:</Text>
+      <Text style={styles.bodyText}>{visaData.processingTime || 'N/A'}</Text>
+      <Text style={styles.label}>Required Documents:</Text>
+      {Array.isArray(visaData.requiredDocuments)
+        ? visaData.requiredDocuments.map((doc, i) => (
+            <View key={i} style={styles.dotRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.bodyText}>{doc}</Text>
             </View>
           ))
-        ) : (
-          <Text className="text-base">No document information available</Text>
-        )}
-      </View>
-      {/* Additional Notes */}
+        : <Text style={styles.bodyText}>N/A</Text>
+      }
       {visaData.notes && (
-        <View className="mt-2 p-3 bg-blue-50 rounded-md">
-          <Text className="text-sm text-blue-800">{visaData.notes}</Text>
-        </View>
+        <Text style={styles.notes}>{visaData.notes}</Text>
       )}
     </View>
   );
 }
+
+const styles = {
+  card: {
+    backgroundColor: '#FFF', padding: 16, borderRadius: 8, marginBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', marginBottom: 8,
+  },
+  title: { fontSize: 18, fontWeight: '600', marginLeft: 8 },
+  label: { marginTop: 12, fontSize: 14, fontWeight: '500' },
+  bodyText: { fontSize: 14, color: '#374151', marginTop: 4 },
+  errorText: { fontSize: 14, color: '#EF4444', marginTop: 4 },
+  dotRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  notes: { marginTop: 12, fontStyle: 'italic', color: '#2563EB' },
+};
