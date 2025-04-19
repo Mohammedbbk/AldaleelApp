@@ -85,7 +85,21 @@ export const translations = {
       luxury: 'Luxury',
     },
     tripDetails: tripDetailsTranslations.en.tripDetails,
-
+    plan: {
+      title: 'Your Plan',
+      day: 'Day {{number}}',
+    },
+    common: {
+      next: 'Next',
+      goBack: 'Go Back',
+    },
+    accessibility: {
+      backButton: 'Go Back',
+      homeButton: 'Go Home',
+      shareButton: 'Share Plan',
+      editButton: 'Edit Plan',
+      nextButton: 'Next Step',
+    },
   },
   ar: {
     trips: {
@@ -163,6 +177,21 @@ export const translations = {
       luxury: 'فاخر',
     },
     tripDetails: tripDetailsTranslations.ar?.tripDetails || {},
+    plan: {
+      title: 'خطتك',
+      day: 'اليوم {{number}}',
+    },
+    common: {
+      next: 'التالي',
+      goBack: 'العودة',
+    },
+    accessibility: {
+      backButton: 'العودة للخلف',
+      homeButton: 'الذهاب للرئيسية',
+      shareButton: 'مشاركة الخطة',
+      editButton: 'تعديل الخطة',
+      nextButton: 'الخطوة التالية',
+    },
   },
 };
 

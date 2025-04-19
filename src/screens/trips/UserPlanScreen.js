@@ -11,6 +11,7 @@ import {
   Platform, // Keep for Platform checks
   StyleSheet, // Add StyleSheet
   Alert, // Use Alert for better error display
+  Linking, // Import Linking for URLs
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +25,6 @@ import { AI_RESPONSE } from '../../config/AiResponse'; // Keep for fallback/comp
 import { VisaRequirements } from '../../components/trips/VisaRequirements';
 import { CultureInsights } from '../../components/trips/CultureInsights';
 import { NearbyEvents } from '../../components/trips/NearbyEvents';
-import { TravelRecommendations } from '../../components/trips/TravelRecommendations';
 import { DetailItem } from '../../components/shared/DetailItem';
 import { ActivityItem } from '../../components/shared/ActivityItem';
 import { Accordion } from '../../components/shared/Accordion';
@@ -34,6 +34,18 @@ const detailEmojis = {
   Destination: '✈️',
   Duration: '⏳',
   Expenses: '💵',
+};
+
+const sectionIcons = {
+    currencyInfo: 'cash-outline',
+    healthAndSafety: 'medkit-outline',
+    transportation: 'car-sport-outline',
+    languageBasics: 'language-outline',
+    weatherInfo: 'partly-sunny-outline',
+    localCustoms: 'earth-outline', // Reuse for consistency if needed elsewhere
+    visaRequirements: 'document-text-outline', // Reuse for consistency
+    nearbyEvents: 'calendar-outline',
+    dailyItinerary: 'map-outline',
 };
 
 // --- Helper Function for PDF Generation ---
@@ -69,6 +81,13 @@ function generatePdfContent(plan) {
           .plan-item:hover { background: #f1faff; }
           .plan-item span.time { font-weight: 700; color: #007aff; margin-right: 15px; display: inline-block; width: 90px; }
           .plan-item span.event { color: #333; }
+          /* Add styles for new sections */
+          .section-block { margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 5px solid #6A0DAD; } /* Example purple accent */
+          .section-block h2 { font-size: 20px; color: #333; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+          .section-block p, .section-block li { color: #555; line-height: 1.6; }
+          .section-block ul { padding-left: 20px; list-style-type: disc; }
+          .section-block .key-value { margin-bottom: 10px; }
+          .section-block .key-value strong { color: #007aff; margin-right: 5px; }
         </style>
       </head>
       <body>
@@ -104,6 +123,73 @@ function generatePdfContent(plan) {
                 }).join('')}
               </div>`;
           }).join('')}
+
+          <!-- Visa Requirements -->
+          ${plan.visaRequirements ? `
+            <div class="section-block">
+              <h2>Visa Requirements</h2>
+              <p>${typeof plan.visaRequirements === 'string' ? plan.visaRequirements : (plan.visaRequirements.content || plan.visaRequirements.notes || 'See app for details')}</p>
+            </div>
+          ` : ''}
+
+          <!-- Culture Insights -->
+          ${plan.cultureInsights ? `
+            <div class="section-block">
+              <h2>Culture Insights</h2>
+              <p>${typeof plan.cultureInsights === 'string' ? plan.cultureInsights : (plan.cultureInsights.content || 'See app for details')}</p>
+            </div>
+          ` : ''}
+
+          <!-- Currency Info -->
+          ${plan.currencyInfo ? `
+            <div class="section-block">
+              <h2>Currency & Payments</h2>
+              ${plan.currencyInfo.currency ? `<div class="key-value"><strong>Currency:</strong> ${plan.currencyInfo.currency}</div>` : ''}
+              ${plan.currencyInfo.exchangeRate ? `<div class="key-value"><strong>Exchange Rate:</strong> ${plan.currencyInfo.exchangeRate}</div>` : ''}
+              ${plan.currencyInfo.paymentMethods ? `<div class="key-value"><strong>Payment Methods:</strong> ${plan.currencyInfo.paymentMethods}</div>` : ''}
+              ${plan.currencyInfo.tipping ? `<div class="key-value"><strong>Tipping:</strong> ${plan.currencyInfo.tipping}</div>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Health & Safety -->
+          ${plan.healthAndSafety ? `
+            <div class="section-block">
+              <h2>Health & Safety</h2>
+              ${plan.healthAndSafety.vaccinations ? `<div class="key-value"><strong>Vaccinations:</strong> ${plan.healthAndSafety.vaccinations}</div>` : ''}
+              ${plan.healthAndSafety.precautions ? `<p><strong>Precautions:</strong> ${plan.healthAndSafety.precautions}</p>` : ''}
+              ${Array.isArray(plan.healthAndSafety.safetyTips) ? `<h3>Safety Tips:</h3><ul>${plan.healthAndSafety.safetyTips.map(tip => `<li>${tip}</li>`).join('')}</ul>` : ''}
+              ${plan.healthAndSafety.emergencyContacts ? `<h3>Emergency Contacts:</h3><ul>${Object.entries(plan.healthAndSafety.emergencyContacts).map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`).join('')}</ul>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Transportation -->
+          ${plan.transportation ? `
+            <div class="section-block">
+              <h2>Transportation</h2>
+              ${plan.transportation.gettingAround ? `<p>${plan.transportation.gettingAround}</p>` : ''}
+              ${Array.isArray(plan.transportation.options) ? `<h3>Options:</h3><ul>${plan.transportation.options.map(opt => `<li>${opt}</li>`).join('')}</ul>` : ''}
+            </div>
+          ` : ''}
+
+          <!-- Language Basics -->
+          ${plan.languageBasics ? `
+            <div class="section-block">
+              <h2>Language Basics</h2>
+              ${plan.languageBasics.officialLanguage ? `<div class="key-value"><strong>Official Language:</strong> ${plan.languageBasics.officialLanguage}</div>` : ''}
+              ${Array.isArray(plan.languageBasics.phrases) ? `<h3>Common Phrases:</h3><ul>${plan.languageBasics.phrases.map(p => `<li>${p}</li>`).join('')}</ul>` : ''}
+              ${plan.languageBasics.communicationTips ? `<p><strong>Tips:</strong> ${plan.languageBasics.communicationTips}</p>` : ''}
+            </div>
+          ` : ''}
+
+           <!-- Weather Info -->
+          ${plan.weatherInfo ? `
+            <div class="section-block">
+                <h2>Weather Info</h2>
+                ${plan.weatherInfo.climate ? `<div class="key-value"><strong>Climate:</strong> ${plan.weatherInfo.climate}</div>` : ''}
+                ${plan.weatherInfo.packingTips ? `<p><strong>Packing Tips:</strong> ${plan.weatherInfo.packingTips}</p>` : ''}
+            </div>
+          ` : ''}
+
         </div>
       </body>
     </html>`;
@@ -145,11 +231,24 @@ export function UserPlanScreen() {
     if (raw && typeof raw === 'string') {
       try {
         ai = JSON.parse(raw);
+        console.log('[UserPlanScreen] Successfully PARSED ai object:', JSON.stringify(ai, null, 2));
+        console.log('[UserPlanScreen] Parsed dailyItinerary:', JSON.stringify(ai.dailyItinerary, null, 2));
+        console.log('[UserPlanScreen] Parsed currencyInfo:', JSON.stringify(ai.currencyInfo ?? ai.currency ?? null, null, 2));
       } catch (err) {
-        console.warn('Failed to parse AI recommendations JSON:', err);
+        console.warn('[UserPlanScreen] FAILED to parse AI recommendations JSON:', err);
+        console.error('[UserPlanScreen] Raw additionalInfo JSON:', raw);
       }
     } else if (tripData.aiRecommendations?.additionalInfo) {
       ai = tripData.aiRecommendations.additionalInfo;
+      console.log('[UserPlanScreen] aiRecommendations.additionalInfo is already an object:', JSON.stringify(ai, null, 2));
+    }
+    if (!ai) {
+      console.error('[UserPlanScreen] FAILED to parse or find AI data.');
+    }
+    if (ai) {
+      console.log('[UserPlanScreen] AI object keys:', Object.keys(ai));
+    } else {
+      console.error('[UserPlanScreen] AI object is null or undefined after parsing.');
     }
 
     // 2) Build base details
@@ -160,10 +259,7 @@ export function UserPlanScreen() {
       },
       {
         name: 'Duration',
-        value:
-          tripData.duration
-            ? `${tripData.duration} days`
-            : 'N/A',
+        value: tripData.duration ? `${tripData.duration} days` : 'N/A',
       },
       {
         name: 'Expenses',
@@ -171,35 +267,87 @@ export function UserPlanScreen() {
       },
     ];
 
-    // 3) Decide which visa/culture to show (prefer separately fetched, else AI)
-    const visaRequirements =
-      tripData.visaRequirements ?? ai?.visaRequirements ?? null;
-    const cultureInsights =
-      tripData.cultureInsights ?? ai?.localCustoms ?? null;
+    // 3) AI-provided Visa and Culture Insights
+    const visaRequirements = ai?.visaRequirements ?? tripData.visaRequirements ?? null;
+    console.log('[UserPlanScreen] Parsed visaRequirements:', JSON.stringify(visaRequirements, null, 2));
+    const cultureInsights = ai?.cultureInsights ?? tripData.cultureInsights ?? null;
+    console.log('[UserPlanScreen] Parsed cultureInsights:', JSON.stringify(cultureInsights, null, 2));
 
-    // 4) Daily itinerary
-    const days = Array.isArray(ai?.dailyItinerary)
-      ? ai.dailyItinerary.map((d, i) => ({
-          day: d.day || i + 1,
-          morning: d.morning || { activities: [] },
-          afternoon: d.afternoon || { activities: [] },
-          evening: d.evening || { activities: [] },
-        }))
-      : [];
+    // 4) Normalize itinerary into days array
+    // Ensure the structure matches what the render logic expects:
+    // [{ day: N, activities: [{ time: T, name: E, plan: [] }] }]
+    const rawItinerary = ai?.dailyItinerary ?? ai?.itinerary ?? [];
+    // Handle multiple itinerary structures: flat list (Structure B) or nested segments per day (Structure A)
+    let days = [];
+    if (Array.isArray(rawItinerary) && rawItinerary.length > 0 && typeof rawItinerary[0]?.activities === 'string') {
+      // Flat activity list (Structure B)
+      const flatActivities = rawItinerary.map((item, idx) => {
+        const { timing, activities, estimatedCosts, estimatedCost, transportationOptions, mealRecommendations, ...otherDetails } = item;
+        return {
+          time: timing || 'N/A',
+          name: activities || 'Unnamed Event',
+          estimatedCosts: estimatedCosts ?? estimatedCost,
+          transportationOptions,
+          mealRecommendations,
+          ...otherDetails,
+          plan: [],
+        };
+      });
+      console.log('[UserPlanScreen] Detected flat dailyItinerary structure. Mapped activities:', JSON.stringify(flatActivities, null, 2));
+      days = [{ day: 1, activities: flatActivities }];
+    } else if (Array.isArray(rawItinerary)) {
+      // Nested by day segments (Structure A)
+      days = rawItinerary.map((dayObj, idx) => {
+        const dayNumber = dayObj.day ?? idx + 1;
+        const dayActivities = [];
+        ['morning', 'afternoon', 'evening'].forEach(period => {
+          const segment = dayObj.activities?.[period];
+          if (segment && typeof segment.activity === 'string' && segment.activity.trim() !== '') {
+            const { timing, activity, ...otherDetails } = segment;
+            dayActivities.push({
+              time: timing || 'N/A',
+              name: activity,
+              ...otherDetails,
+              plan: [],
+            });
+          }
+        });
+        // Fallback to flat plan for this day
+        if (dayActivities.length === 0 && Array.isArray(dayObj.plan)) {
+          dayObj.plan.forEach(item => {
+            dayActivities.push({
+              time: item.time ?? 'N/A',
+              name: item.event ?? 'Unnamed Event',
+              plan: [],
+            });
+          });
+        }
+        console.log(`[UserPlanScreen] Day ${dayNumber} mapped activities:`, JSON.stringify(dayActivities, null, 2));
+        return { day: dayNumber, activities: dayActivities };
+      });
+      console.log('[UserPlanScreen] Mapped nested days structure:', JSON.stringify(days, null, 2));
+    } else {
+      days = [];
+    }
 
-    // 5) Other AI sections
-    const currencyInfo = ai?.currencyInfo ?? null;
+    // 5) Other AI sections simplified (using direct keys from parsed 'ai' object)
+    const currencyInfo = ai?.currencyInfo ?? null; // Prefer primary key
+    console.log('[UserPlanScreen] Parsed currencyInfo:', JSON.stringify(currencyInfo, null, 2));
     const healthAndSafety = ai?.healthAndSafety ?? null;
+    console.log('[UserPlanScreen] Parsed healthAndSafety:', JSON.stringify(healthAndSafety, null, 2));
     const transportation = ai?.transportation ?? null;
+    console.log('[UserPlanScreen] Parsed transportation:', JSON.stringify(transportation, null, 2));
     const languageBasics = ai?.languageBasics ?? null;
+    console.log('[UserPlanScreen] Parsed languageBasics:', JSON.stringify(languageBasics, null, 2));
     const weatherInfo = ai?.weatherInfo ?? null;
+    console.log('[UserPlanScreen] Parsed weatherInfo:', JSON.stringify(weatherInfo, null, 2));
 
-    // 6) Nearby events from tripData
-    const nearbyEvents = Array.isArray(tripData.nearbyEvents)
-      ? tripData.nearbyEvents
-      : [];
+    // 6) Nearby events (from tripData)
+    const nearbyEvents = Array.isArray(tripData.nearbyEvents) ? tripData.nearbyEvents : [];
+    console.log('[UserPlanScreen] Parsed nearbyEvents:', JSON.stringify(nearbyEvents, null, 2));
 
-    return {
+    // Build final plan object
+    const finalPlan = {
       details,
       visaRequirements,
       cultureInsights,
@@ -211,6 +359,8 @@ export function UserPlanScreen() {
       weatherInfo,
       nearbyEvents,
     };
+    console.log('[UserPlanScreen] FINAL plan object being returned:', JSON.stringify(finalPlan, null, 2));
+    return finalPlan;
 
   }, [route.params?.tripData]); // Depend on tripData object
 
@@ -224,7 +374,13 @@ export function UserPlanScreen() {
 
   const handleHome = useCallback(() => navigation.navigate('Home'), [navigation]); // Use actual home route name
   const handleEditPlan = useCallback(() => navigation.navigate('AssistantScreen'), [navigation]); // Ensure route exists
-  const handleNext = useCallback(() => navigation.navigate('InformationScreen'), [navigation]); // Ensure route exists
+  const handleNext = useCallback(() => {
+    const tripData = route.params?.tripData;
+    navigation.navigate('InformationScreen', {
+        nationality: tripData?.nationality, // Pass nationality
+        destination: tripData?.destination || plan?.details?.find(d => d.name === 'Destination')?.value // Pass destination
+    });
+  }, [navigation, route.params?.tripData, plan?.details]); // Add dependencies
 
   const handleShare = useCallback(async () => {
      if (!plan) {
@@ -369,35 +525,8 @@ export function UserPlanScreen() {
         {/* --- Dynamic Sections --- */}
         {/* Only render sections if data exists */}
 
-        {/* Render VisaRequirements if data is available */}
-        {plan.visaRequirements != null && (
-            <VisaRequirements
-              visaData={plan.visaRequirements}
-              isLoading={isLoadingVisa} // Use state if fetched separately
-              error={visaError} // Use state if fetched separately
-            />
-        )}
-
-        {/* Render CultureInsights if data is available */}
-        {plan.cultureInsights != null && (
-            <CultureInsights
-              cultureData={plan.cultureInsights}
-              isLoading={isLoadingCulture} // Use state if fetched separately
-              error={cultureError} // Use state if fetched separately
-            />
-        )}
-
-         {/* Render TravelRecommendations if data is available */}
-         {plan.recommendations && (plan.recommendations.places?.length > 0 || plan.recommendations.tips?.length > 0 || plan.recommendations.culturalNotes?.length > 0 || plan.recommendations.safetyTips?.length > 0) && (
-            <TravelRecommendations
-              recommendations={plan.recommendations}
-              // Assuming recommendations data loading is part of the main plan data now
-              isLoading={false}
-              error={null}
-            />
-        )}
-
         {/* Render NearbyEvents if data is available */}
+        {console.log('[UserPlanScreen] Rendering NearbyEvents with data:', plan.nearbyEvents)}
         {plan.nearbyEvents?.length > 0 && (
             <NearbyEvents
               eventsData={plan.nearbyEvents}
@@ -410,40 +539,61 @@ export function UserPlanScreen() {
 
         {/* Itinerary Days */}
         {/* Map over plan.days (which is guaranteed to be an array by useMemo) */}
-        {plan.days.map((day, index) => (
-          <View key={`day-${index}`} style={styles.dayContainer}>
-            <Text style={styles.dayLabel}>
-              {t('plan.day', 'Day {{number}}', { number: day.day })}
-            </Text>
-            {/* Ensure day.activities is an array before mapping */}
-            {(Array.isArray(day.activities) && day.activities.length > 0) ? (
+        {plan.days.map((day, index) => {
+          console.log('[UserPlanScreen] Rendering Day:', JSON.stringify(day, null, 2));
+          return (
+            <View key={`day-${index}`} style={styles.dayContainer}>
+              <Text style={styles.dayLabel}>
+                {t('plan.day', 'Day {{number}}', { number: day.day })}
+              </Text>
+              {(Array.isArray(day.activities) && day.activities.length > 0) ? (
                 <View style={styles.activitiesContainer}>
-                {day.activities.map((activity, idx) => (
+                  {day.activities.map((activity, idx) => (
                     <Accordion
                       key={`activity-${idx}`}
                       title={<ActivityItem time={activity.time} name={activity.name} />}
                     >
-                      {/* Accordion Content: Map over day.plan */}
-                      {(Array.isArray(day.plan) && day.plan.length > 0) ? (
-                         day.plan.map((item, i) => (
-                            <View key={`plan-${i}`} style={styles.planItem}>
-                              <Text style={styles.planTime}>{item.time}</Text>
-                              <Text style={styles.planEvent}>{item.event}</Text>
-                            </View>
-                          ))
-                        ) : (
-                           <Text style={styles.noPlanText}>No detailed plan for this activity.</Text>
-                        )
-                      }
+                      {/* Render activity details directly from the activity object */}
+                      <View style={styles.accordionContent}> {/* Add a container with padding */}
+                        {
+                          (activity.estimatedCosts || activity.transportationOptions || activity.mealRecommendations || activity.accommodationSuggestions) ? (
+                            <>
+                              {activity.estimatedCosts && (
+                                <Text style={styles.detailText}>
+                                  <Text style={styles.detailLabel}>Costs: </Text>{activity.estimatedCosts}
+                                </Text>
+                              )}
+                              {activity.transportationOptions && (
+                                <Text style={styles.detailText}>
+                                  <Text style={styles.detailLabel}>Transport: </Text>{activity.transportationOptions}
+                                </Text>
+                              )}
+                              {activity.mealRecommendations && (
+                                <Text style={styles.detailText}>
+                                  <Text style={styles.detailLabel}>Meals: </Text>{activity.mealRecommendations}
+                                </Text>
+                              )}
+                              {activity.accommodationSuggestions && (
+                                <Text style={styles.detailText}>
+                                  <Text style={styles.detailLabel}>Accommodation: </Text>{activity.accommodationSuggestions}
+                                </Text>
+                              )}
+                              {/* Optionally render other ...otherDetails fields here */}
+                            </>
+                          ) : (
+                            <Text style={styles.noPlanText}>No specific details available.</Text>
+                          )
+                        }
+                      </View>
                     </Accordion>
-                ))}
+                  ))}
                 </View>
               ) : (
-                 <Text style={styles.noActivityText}>No activities scheduled for this day.</Text>
-              )
-            }
-          </View>
-        ))}
+                <Text style={styles.noActivityText}>No activities scheduled for this day.</Text>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
 
       {/* Next Button */}
@@ -493,6 +643,10 @@ const styles = StyleSheet.create({
     noPlanText: { padding: 12, color: '#71717A', fontStyle: 'italic' },
     noActivityText: { padding: 12, color: '#71717A', fontStyle: 'italic', textAlign: 'center' },
     nextButtonContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, paddingBottom: 32, backgroundColor: 'transparent', pointerEvents: 'box-none' }, // absolute bottom-0 left-0 right-0 p-5 pb-8 bg-transparent pointer-events-box
+    // Styles for Accordion Content
+    accordionContent: { padding: 12, backgroundColor: '#FFFFFF' }, // bg-white for contrast inside accordion
+    detailText: { color: '#3F3F46', marginBottom: 4 }, // text-neutral-700
+    detailLabel: { fontWeight: '600' }, // font-semibold
     nextButton: { backgroundColor: '#0EA5E9', paddingVertical: 16, paddingHorizontal: 20, borderRadius: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 1, }, shadowOpacity: 0.2, shadowRadius: 1.41, elevation: 2 }, // bg-sky-500 py-4 px-5 rounded-lg shadow
     nextButtonText: { color: '#FFFFFF', textAlign: 'center', fontSize: 16, fontWeight: '600' }, // text-white text-center text-base font-semibold
 });
