@@ -22,7 +22,8 @@ import InformationScreen from "./src/screens/home/InformationScreen";
 import InfoBaseScreen from "./src/screens/home/InfoBaseScreen";
 import ProfileSetting from "./src/screens/home/ProfileSetting"; // Kept from upstream
 import AssistantScreen from "./src/screens/assistant/AssistantScreen"; // Kept from stash
-
+import ProfileInfoScreen from "./src/screens/profile/ProfileInfoScreen";
+import EditProfileScreen from "./src/screens/profile/EditProfileScreen";
 // Import screens - Trip related
 import UserPlanScreen from "./src/screens/trips/UserPlanScreen"; // Kept from stash
 import CreateTripScreen from "./src/screens/trips/CreateTripScreen"; // Kept from stash
@@ -58,6 +59,8 @@ function AppStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="ProfileSetting" component={ProfileSetting} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="ProfileInfo" component={ProfileInfoScreen} />
       <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
       <Stack.Screen name="InformationScreen" component={InformationScreen} />
