@@ -13,7 +13,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadToken = async () => {
       try {
-        const token = await AsyncStorage.getItem("userToken");
+        let token = await AsyncStorage.getItem("userToken");
+        // Check if token is a guest token
+        if (token === "guest-token") {
+          token = null;
+          await AsyncStorage.removeItem("userToken");
+        }
         if (token) {
           setUserTokenState(token);
           console.log("Loaded token:", token);
