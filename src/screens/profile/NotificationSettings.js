@@ -28,6 +28,11 @@ export default function NotificationSettings() {
         promotions: false,  
     });  
 
+    // Function to navigate back to ProfileSetting  
+    const navigateToProfileSetting = () => {  
+        navigation.navigate('ProfileSetting');  
+    };  
+
     // Toggle handler for switches  
     const toggleSwitch = (key) => {  
         setNotificationSettings(prevState => ({  
@@ -43,7 +48,7 @@ export default function NotificationSettings() {
             {/* Header with back button */}  
             <View className="flex-row items-center px-4 py-3 border-b border-gray-200">  
                 <TouchableOpacity   
-                    onPress={() => navigation.goBack()}  
+                    onPress={navigateToProfileSetting}  
                     className="p-2"  
                 >  
                     <ChevronLeft size={24} color="#4b5563" />  
@@ -136,8 +141,10 @@ export default function NotificationSettings() {
                         className="bg-blue-500 py-4 rounded-xl items-center"  
                         onPress={() => {  
                             // Here you would implement saving the settings to a backend or local storage  
-                            // For now, just navigate back  
-                            navigation.goBack();  
+                            // Save logic here...  
+                            
+                            // Then navigate to ProfileSetting  
+                            navigateToProfileSetting();  
                         }}  
                     >  
                         <Text className="text-white font-semibold text-base">Save Preferences</Text>  
