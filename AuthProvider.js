@@ -1,4 +1,3 @@
-// handling token
 import React, { createContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -13,20 +12,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadToken = async () => {
       try {
-        let token = await AsyncStorage.getItem("userToken");
-        // Check if token is a guest token
-        if (token === "guest-token") {
-          token = null;
-          await AsyncStorage.removeItem("userToken");
-        }
+        const token = await AsyncStorage.getItem("userToken");
         if (token) {
           setUserTokenState(token);
-          console.log("Loaded token:", token);
+          console.log("Loaded token from AsyncStorage:", token);
         } else {
-          console.log("No token found in AsyncStorage.");
+          console.log("No token found.");
         }
       } catch (e) {
-        console.error("Error loading token", e);
+        console.error("Error loading token:", e);
       } finally {
         setIsLoading(false);
       }
@@ -35,31 +29,29 @@ export const AuthProvider = ({ children }) => {
     loadToken();
   }, []);
 
-  // Save token to state & AsyncStorage
+  // Save or remove token
   const setUserToken = async (token) => {
     try {
       if (token) {
         await AsyncStorage.setItem("userToken", token);
-        console.log("Token saved:", token);
+        console.log("Token saved to AsyncStorage:", token);
       } else {
         await AsyncStorage.removeItem("userToken");
         console.log("Token removed from AsyncStorage.");
       }
       setUserTokenState(token);
     } catch (e) {
-      console.error("Error saving token:", e);
+      console.error("Error saving/removing token:", e);
     }
   };
 
-  // Logout function
+  // Logout
   const logout = async () => {
     await setUserToken(null);
   };
 
   return (
-    <AuthContext.Provider
-      value={{ userToken, setUserToken, logout, isLoading }}
-    >
+    <AuthContext.Provider value={{ userToken, setUserToken, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
