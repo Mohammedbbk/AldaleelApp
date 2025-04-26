@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/screens/profile/EditProfileScreen.js
+import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
   View,
@@ -9,216 +10,230 @@ import {
   ScrollView,
   StatusBar,
   Alert,
-  Platform,
   ActivityIndicator,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import {
-  ArrowLeft,
-  User,
-  Mail,
-  MapPin,
-  Check,
-  Camera,
-} from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { ArrowLeft, User, Check, Camera } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
 
 export default function EditProfileScreen() {
   const navigation = useNavigation();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    avatarUrl: '',
-  });
+  const [form, setForm] = useState({ name: "", avatarUrl: "" });
+  const [initial, setInitial] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState('');
-  const [isValidEmail, setIsValidEmail] = useState(true);
-  const [emailError, setEmailError] = useState('');
+  const [token, setToken] = useState(null);
 
-  const BASE_URL = 'http://localhost:5000'; // Backend port
+  const BASE = "http://10.0.2.2:5000/api/users";
 
+  // fetch profile on mount
   useEffect(() => {
-    const fetchProfile = async () => {
+    (async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('token');
-        if (!storedToken) return Alert.alert('Error', 'No token found');
+        const t = await AsyncStorage.getItem("userToken");
+        if (!t) throw new Error("No token found");
+        setToken(t);
 
-        setToken(storedToken);
-
-        const res = await fetch(`${BASE_URL}/profile`, {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
+        const res = await fetch(`${BASE}/profile`, {
+          headers: { Authorization: `Bearer ${t}` },
         });
-
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to fetch profile');
+        if (!res.ok) throw new Error(data.error || "Fetch failed");
 
-        setFormData({
-          name: data.name || '',
-          email: data.email || '',
-          avatarUrl: data.avatarUrl || '',
-        });
+        const payload = {
+          name: data.name,
+          avatarUrl: data.avatarUrl || "",
+        };
+        setForm(payload);
+        setInitial(payload);
       } catch (err) {
-        Alert.alert('Error', err.message);
+        Alert.alert("Error", err.message);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchProfile();
+    })();
   }, []);
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isValid = emailRegex.test(email);
-    setIsValidEmail(isValid);
-    setEmailError(isValid ? '' : 'Please enter a valid email address');
-    return isValid;
-  };
-
+  // photo pickers
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      return Alert.alert('Permission required', 'Allow photo library access');
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
+    let { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!granted) return Alert.alert("Permission required");
+    let { assets, canceled } = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
-
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setFormData({ ...formData, avatarUrl: uri });
-    }
+    if (!canceled) setForm({ ...form, avatarUrl: assets[0].uri });
   };
-
   const takePhoto = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permissionResult.granted) {
-      return Alert.alert('Permission required', 'Allow camera access');
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
+    let { granted } = await ImagePicker.requestCameraPermissionsAsync();
+    if (!granted) return Alert.alert("Permission required");
+    let { assets, canceled } = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
-
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setFormData({ ...formData, avatarUrl: uri });
-    }
+    if (!canceled) setForm({ ...form, avatarUrl: assets[0].uri });
   };
+
+  // detect if anything changed
+  const changed =
+    initial &&
+    (form.name !== initial.name || form.avatarUrl !== initial.avatarUrl);
 
   const saveChanges = async () => {
-    if (!validateEmail(formData.email)) return;
-
+    if (!form.name.trim()) return Alert.alert("Name cannot be empty");
     try {
-      const res = await fetch(`${BASE_URL}/profile`, {
-        method: 'PUT',
+      const res = await fetch(`${BASE}/profile`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(form),
       });
-
-      const result = await res.json();
-
-      if (!res.ok) throw new Error(result.error || 'Failed to update profile');
-
-      Alert.alert('Success', 'Profile updated');
-      navigation.navigate('Profile');
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Update failed");
+      Alert.alert("Saved!", "Your profile has been updated.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
     } catch (err) {
-      Alert.alert('Error', err.message);
+      Alert.alert("Error", err.message);
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
-  }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="dark-content" backgroundColor="rgb(249 250 251)" />
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f9fafb" }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-200">
-        <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: 12,
+          backgroundColor: "#fff",
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color="#374151" />
         </TouchableOpacity>
-        <Text className="text-lg font-bold text-gray-800">Edit Profile</Text>
-        <TouchableOpacity onPress={saveChanges} className="p-2 bg-blue-500 rounded-full">
-          <Check size={20} color="#FFFFFF" />
+        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#374151" }}>
+          Edit Profile
+        </Text>
+        <TouchableOpacity
+          onPress={saveChanges}
+          disabled={!changed}
+          style={{
+            padding: 8,
+            borderRadius: 20,
+            backgroundColor: changed ? "#3B82F6" : "#d1d5db",
+          }}
+        >
+          <Check size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="p-6 pb-8">
-          {/* Profile Image */}
-          <View className="items-center mb-8">
-            <View className="relative">
-              <Image
-                source={formData.avatarUrl ? { uri: formData.avatarUrl } : require('../../../assets/onboard/beachAdventure.png')}
-                className="w-28 h-28 rounded-full border-4 border-blue-100"
-              />
-              <View className="absolute bottom-0 right-0 flex-row">
-                <TouchableOpacity onPress={pickImage} className="bg-blue-500 p-2 rounded-full mr-2">
-                  <Camera size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={takePhoto} className="bg-green-500 p-2 rounded-full">
-                  <Camera size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <Text className="text-gray-500 mt-2 text-sm">Tap camera icon to change photo</Text>
-          </View>
-
-          {/* Info Form */}
-          <View className="bg-white rounded-2xl shadow-sm overflow-hidden mb-8">
-            {/* Name */}
-            <View className="p-4 border-b border-gray-100">
-              <Text className="text-sm text-gray-500 mb-1">Name</Text>
-              <View className="flex-row items-center">
-                <User size={18} color="#6b7280" className="mr-2" />
-                <TextInput
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  className="flex-1 text-gray-800 text-base py-1"
-                  placeholder="Enter your full name"
-                />
-              </View>
-            </View>
-
-            {/* Email */}
-            <View className="p-4">
-              <Text className="text-sm text-gray-500 mb-1">Email</Text>
-              <View className="flex-row items-center">
-                <Mail size={18} color="#6b7280" className="mr-2" />
-                <TextInput
-                  value={formData.email}
-                  onChangeText={(text) => {
-                    setFormData({ ...formData, email: text });
-                    validateEmail(text);
-                  }}
-                  keyboardType="email-address"
-                  className={`flex-1 text-gray-800 text-base py-1 ${!isValidEmail ? 'text-red-500' : ''}`}
-                  placeholder="Enter your email address"
-                />
-              </View>
-              {!isValidEmail && <Text className="text-red-500 text-xs mt-1">{emailError}</Text>}
-            </View>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        {/* Avatar */}
+        <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <Image
+            source={
+              form.avatarUrl
+                ? { uri: form.avatarUrl }
+                : require("../../../assets/onboard/beachAdventure.png")
+            }
+            style={{
+              width: 112,
+              height: 112,
+              borderRadius: 56,
+              borderWidth: 2,
+              borderColor: "#bfdbfe",
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              flexDirection: "row",
+            }}
+          >
+            <TouchableOpacity
+              onPress={pickImage}
+              style={{
+                backgroundColor: "#3B82F6",
+                padding: 8,
+                borderRadius: 20,
+                marginRight: 8,
+              }}
+            >
+              <Camera size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={takePhoto}
+              style={{
+                backgroundColor: "#10b981",
+                padding: 8,
+                borderRadius: 20,
+              }}
+            >
+              <Camera size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
+
+        {/* Name input */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 6 }}>
+            Name
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <User size={20} color="#6b7280" style={{ marginRight: 8 }} />
+            <TextInput
+              style={{
+                flex: 1,
+                fontSize: 16,
+                color: "#111",
+                paddingVertical: 4,
+              }}
+              value={form.name}
+              onChangeText={(name) => setForm({ ...form, name })}
+              placeholder="Your Name"
+            />
+          </View>
+        </View>
+
+        {/* Save button */}
+        <TouchableOpacity
+          onPress={saveChanges}
+          disabled={!changed}
+          style={{
+            backgroundColor: changed ? "#3B82F6" : "#d1d5db",
+            padding: 16,
+            borderRadius: 12,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            Save Changes
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
