@@ -26,6 +26,7 @@ import ProfileInfoScreen from "./src/screens/profile/ProfileInfoScreen";
 import EditProfileScreen from "./src/screens/profile/EditProfileScreen";
 import NotificationSettings from "./src/screens/profile/NotificationSettings";
 import TravelPreferences from "./src/screens/profile/TravelPreferences";
+import ThemeSettings from "./src/screens/profile/ThemeSettings";
 // Import screens - Trip related
 import UserPlanScreen from "./src/screens/trips/UserPlanScreen"; // Kept from stash
 import CreateTripScreen from "./src/screens/trips/CreateTripScreen"; // Kept from stash
@@ -65,6 +66,7 @@ function AppStack() {
       <Stack.Screen name="ProfileInfo" component={ProfileInfoScreen} />
       <Stack.Screen name="NotificationSettings" component={NotificationSettings}/>
       <Stack.Screen name="TravelPreferences" component={TravelPreferences}/>
+            <Stack.Screen name="ThemeSettings" component={ThemeSettings}/>
       <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
       <Stack.Screen name="InformationScreen" component={InformationScreen} />
