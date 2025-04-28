@@ -170,10 +170,13 @@ function TripListScreen({ navigation }) {
   // Use `WorkspaceTripsData` in the retry button
   return (
     <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+      {/* StatusBar */}
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
       />
+
       <View className="flex-1 px-4 mt-4">
+        {/* Search Bar - Positioned above the list */}
         <SearchBar
           value={searchText}
           onChangeText={setSearchText}
@@ -182,6 +185,7 @@ function TripListScreen({ navigation }) {
           containerClassName="mt-4 mb-2"
         />
 
+        {/* Filter and Sort Options - Positioned above the list */}
         <View>
           {/* Title and Sort Button */}
           <View className="flex-row justify-between items-center mb-2">
@@ -243,6 +247,7 @@ function TripListScreen({ navigation }) {
         </View>
 
         {/* List Area */}
+
         {isLoading && trips.length === 0 ? ( // Show loader only on initial load
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#3B82F6" />
@@ -292,7 +297,8 @@ function TripListScreen({ navigation }) {
           />
         )}
       </View>
-      {/* Create Button - Outside FlatList */}
+
+      {/* Create Button - Outside FlatList, Positioned relative to SafeAreaView */}
       <TouchableOpacity
         className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow-lg mx-4" // Adjust margins
         onPress={() => navigation.navigate("CreateTrip")}
