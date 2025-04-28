@@ -175,20 +175,21 @@ function TripListScreen({ navigation }) {
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
       />
 
-      <View className="flex-1 px-4 mt-4">
+      {/* Header - Containts search bar and filters */}
+      <View className="px-4 mt-4 mb-2">
         {/* Search Bar - Positioned above the list */}
         <SearchBar
           value={searchText}
           onChangeText={setSearchText}
           placeholder={i18n.t("trips.list.searchPlaceholder")}
           // onSearchPress removed as search triggers via useEffect
-          containerClassName="mt-4 mb-2"
+          containerClassName="mt-4 mb-2 h-16"
         />
 
         {/* Filter and Sort Options - Positioned above the list */}
-        <View>
+        <View className="bg-white dark:bg-gray-800 rounded-3xl shadow py-2 px-4">
           {/* Title and Sort Button */}
-          <View className="flex-row justify-between items-center mb-2">
+          <View className="flex-row justify-between items-center">
             <Text
               className={`text-xl font-bold ${
                 colorScheme === "dark" ? "text-white" : "text-black"
@@ -245,9 +246,11 @@ function TripListScreen({ navigation }) {
             ))}
           </ScrollView>
         </View>
+      </View>
 
+      {/* Body - Contains List aria */}
+      <View className="flex-1 px-4">
         {/* List Area */}
-
         {isLoading && trips.length === 0 ? ( // Show loader only on initial load
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#3B82F6" />
@@ -282,7 +285,7 @@ function TripListScreen({ navigation }) {
             data={trips}
             renderItem={renderTripItem}
             keyExtractor={(item) => item.id?.toString()} // Ensure key is string
-            contentContainerStyle={{ paddingBottom: 80 }}
+            contentContainerStyle={{ paddingBottom: 180 }}
             showsVerticalScrollIndicator={false}
             // Add onRefresh and onEndReached for pull-to-refresh/load-more
             // onRefresh={() => fetchTripsData({ page: 1 })}
@@ -300,7 +303,7 @@ function TripListScreen({ navigation }) {
 
       {/* Create Button - Outside FlatList, Positioned relative to SafeAreaView */}
       <TouchableOpacity
-        className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow-lg mx-4" // Adjust margins
+        className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow mx-4" // Adjust margins
         onPress={() => navigation.navigate("CreateTrip")}
       >
         <Text className="text-white text-lg font-bold">
