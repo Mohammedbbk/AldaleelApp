@@ -173,18 +173,18 @@ function TripListScreen({ navigation }) {
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
       />
-      <View className="flex-1 px-4 pb-20 mt-4">
+      <View className="flex-1 px-4 mt-4">
         <SearchBar
           value={searchText}
           onChangeText={setSearchText}
           placeholder={i18n.t("trips.list.searchPlaceholder")}
           // onSearchPress removed as search triggers via useEffect
-          containerClassName="my-2"
+          containerClassName="mt-4 mb-2"
         />
 
-        <View className="mb-4">
+        <View>
           {/* Title and Sort Button */}
-          <View className="flex-row justify-between items-center mb-4">
+          <View className="flex-row justify-between items-center mb-2">
             <Text
               className={`text-xl font-bold ${
                 colorScheme === "dark" ? "text-white" : "text-black"
@@ -213,7 +213,7 @@ function TripListScreen({ navigation }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            className="-mx-1 mb-4" // Add negative margin to align edges visually
+            className="-mx-1 mb-2" // Add negative margin to align edges visually
             contentContainerStyle={{ paddingHorizontal: 4 }} // Add padding inside scroll
           >
             {filterOptions.map((option) => (
@@ -291,17 +291,17 @@ function TripListScreen({ navigation }) {
             // ListFooterComponent={isLoading && trips.length > 0 ? <ActivityIndicator /> : null}
           />
         )}
-
-        {/* Create Button - Outside FlatList */}
-        <TouchableOpacity
-          className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow-lg mx-4" // Adjust margins
-          onPress={() => navigation.navigate("CreateTrip")}
-        >
-          <Text className="text-white text-lg font-bold">
-            {i18n.t("trips.list.createNew")}
-          </Text>
-        </TouchableOpacity>
       </View>
+      {/* Create Button - Outside FlatList */}
+      <TouchableOpacity
+        className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow-lg mx-4" // Adjust margins
+        onPress={() => navigation.navigate("CreateTrip")}
+      >
+        <Text className="text-white text-lg font-bold">
+          {i18n.t("trips.list.createNew")}
+        </Text>
+      </TouchableOpacity>
+
       {/* Floating Nav - Positioned relative to SafeAreaView */}
       <FloatingBottomNav activeRouteName="Trips" />
     </SafeAreaView>
