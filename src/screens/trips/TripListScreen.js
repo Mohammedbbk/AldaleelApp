@@ -179,7 +179,7 @@ function TripListScreen({ navigation }) {
           onChangeText={setSearchText}
           placeholder={i18n.t("trips.list.searchPlaceholder")}
           // onSearchPress removed as search triggers via useEffect
-          containerClassName="my-4"
+          containerClassName="my-2"
         />
 
         <View className="mb-4">
