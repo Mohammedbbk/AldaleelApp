@@ -294,7 +294,7 @@ function TripListScreen({ navigation }) {
 
         {/* Create Button - Outside FlatList */}
         <TouchableOpacity
-          className="bg-blue-500 py-3.5 rounded-full items-center my-4 shadow-lg mx-4" // Adjust margins
+          className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow-lg mx-4" // Adjust margins
           onPress={() => navigation.navigate("CreateTrip")}
         >
           <Text className="text-white text-lg font-bold">
