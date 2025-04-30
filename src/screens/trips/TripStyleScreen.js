@@ -47,7 +47,7 @@ export function TripStyleScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 pt-5">
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}

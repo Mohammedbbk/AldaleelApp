@@ -12,7 +12,10 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 // Assuming these helpers are correctly defined in tripService.js
-import { WorkspaceVisaInfo, WorkspaceCultureInsights } from '../../services/tripService';
+import {
+  WorkspaceVisaInfo,
+  WorkspaceCultureInsights,
+} from "../../services/tripService";
 
 const InfoBaseScreen = () => {
   const navigation = useNavigation();
@@ -32,7 +35,9 @@ const InfoBaseScreen = () => {
   const staticInfo = (() => {
     try {
       // Make sure the path to AiResponse is correct relative to this file
-      return require('../../config/AiResponse').AI_RESPONSE.Information[contentKey];
+      return require("../../config/AiResponse").AI_RESPONSE.Information[
+        contentKey
+      ];
     } catch {
       // Return null or a default object if AiResponse or the key doesn't exist
       return null;
@@ -66,14 +71,16 @@ const InfoBaseScreen = () => {
         try {
           let content;
           // Call the appropriate service function
-          if (contentKey === 'visa') {
+          if (contentKey === "visa") {
             content = await WorkspaceVisaInfo(nationality, destination);
-          } else { // contentKey === 'local'
+          } else {
+            // contentKey === 'local'
             content = await WorkspaceCultureInsights(nationality, destination);
           }
           if (!cancelled) setDynamicContent(content); // Update state with fetched content
         } catch (e) {
-          if (!cancelled) setError(e.message || `Failed to fetch ${contentKey} information.`);
+          if (!cancelled)
+            setError(e.message || `Failed to fetch ${contentKey} information.`);
         } finally {
           if (!cancelled) setIsLoading(false); // Stop loading regardless of outcome
         }
@@ -97,28 +104,36 @@ const InfoBaseScreen = () => {
   const handleClose = () => {
     // Consider navigation.goBack() if it's always modal-like,
     // or navigate specifically if needed.
-    navigation.navigate("InformationScreen");
+    navigation.goBack();
   };
 
   // --- RENDER LOGIC ---
 
   // Determine Title: Use static title if available, otherwise generate default
-  const screenTitle = staticInfo?.title || (contentKey === 'visa' ? 'Visa Requirements' : contentKey === 'local' ? 'Local Customs' : 'Information');
+  const screenTitle =
+    staticInfo?.title ||
+    (contentKey === "visa"
+      ? "Visa Requirements"
+      : contentKey === "local"
+      ? "Local Customs"
+      : "Information");
 
   // Determine Image: Use static image if available
   const screenImage = staticInfo?.image;
 
   return (
     // Use SafeAreaView for notches/status bars
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white pt-10">
       {/* // Use device status bar setting
       <StatusBar barStyle="dark-content" /> */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}> {/* Add padding for Close button */}
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        {/* Add padding for Close button */}
         {/* Title */}
-        <Text className="text-xl font-bold text-center mt-5 mb-5 px-4">
-          {screenTitle}
-        </Text>
-
+        <View className="flex-1 items-center">
+          <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+            {screenTitle}
+          </Text>
+        </View>
         {/* Image (Optional) */}
         {screenImage && (
           <Image
@@ -127,7 +142,6 @@ const InfoBaseScreen = () => {
             resizeMode="contain"
           />
         )}
-
         {/* Content Area */}
         <View className="p-5">
           {/* Logic for Visa/Local (Dynamic) */}
@@ -144,8 +158,10 @@ const InfoBaseScreen = () => {
                   {dynamicContent}
                 </Text>
               ) : (
-                 // Should ideally not be reached if loading/error/content covers all cases
-                <Text className="text-base text-gray-500">No information available.</Text>
+                // Should ideally not be reached if loading/error/content covers all cases
+                <Text className="text-base text-gray-500">
+                  No information available.
+                </Text>
               )}
             </>
           )}

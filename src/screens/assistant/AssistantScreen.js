@@ -24,7 +24,6 @@ const initialMessages = [
     isUser: false,
   },
 ];
-
 class ChatScreen extends React.Component {
   // Initialize with mock data
   state = {
@@ -34,7 +33,7 @@ class ChatScreen extends React.Component {
   };
   //handelers
   handleBack = () => {
-    this.props.navigation.replace("UserPlanScreen");
+    this.props.navigation.goBack();
   };
   handleHome = () => {
     this.props.navigation.navigate("MainScreen");
@@ -160,36 +159,31 @@ class ChatScreen extends React.Component {
     const { messages } = this.state; // Access messages from state
 
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 pt-5">
         {/* Header */}
-        <View style={styles.headerContainer}>
-          <Text style={styles.titleText}>Al-Daleel AI</Text>
+        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
           <View style={styles.headerButton}>
-            <TouchableOpacity>
-              <Ionicons
-                name="chevron-back"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleBack}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Ionicons
-                name="home-outline"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleHome}
-              />
+            <TouchableOpacity
+              className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+              onPress={this.handleBack}
+            >
+              <Ionicons name="chevron-back" size={26} />
             </TouchableOpacity>
           </View>
+
+          {/* Header Title (Centered) */}
+          <View className="flex-1 items-center">
+            <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+              Al-Daleel AI
+            </Text>
+          </View>
+
           <View style={styles.headerButton}>
-            <TouchableOpacity>
-              <Ionicons
-                name="checkmark"
-                size={24}
-                color="#007AFF"
-                onPress={this.handleShare}
-              />
+            <TouchableOpacity
+              className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+              onPress={this.handleShare}
+            >
+              <Ionicons name="checkmark" size={26} color="#007AFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -300,13 +294,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  headerButton: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    flexShrink: 1,
-    padding: 8,
-    gap: 20,
-  },
+  headerButton: { flexDirection: "row", alignItems: "center", gap: 16 },
   chatContainer: {
     flex: 1,
     padding: 16,

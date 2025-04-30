@@ -161,7 +161,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white pt-5">
       <StatusBar
         translucent
         backgroundColor="transparent"
@@ -169,7 +169,7 @@ export default function HomeScreen() {
       />
 
       {/* Header Section */}
-      <View className="px-6 pt-4 pb-2 mt-4">
+      <View className="px-6 pt-4 pb-2">
         <View className="flex-row justify-between items-center">
           <TouchableOpacity
             className="flex-row items-center"

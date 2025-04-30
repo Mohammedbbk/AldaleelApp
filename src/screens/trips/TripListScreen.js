@@ -169,14 +169,14 @@ function TripListScreen({ navigation }) {
   // --- Render logic remains largely the same ---
   // Use `WorkspaceTripsData` in the retry button
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900 pt-5">
       {/* StatusBar */}
       <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
       />
 
       {/* Header - Containts search bar and filters */}
-      <View className="px-4 mt-4 mb-2">
+      <View className="px-4 mb-2">
         {/* Search Bar - Positioned above the list */}
         <SearchBar
           value={searchText}
