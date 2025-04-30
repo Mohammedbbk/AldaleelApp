@@ -383,22 +383,22 @@ export function TripDetailsScreen({ route, navigation }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // Adjust offset as needed
       >
         {/* Header */}
-        <View style={styles.headerContainer}>
+        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900 mt-5">
           <TouchableOpacity
-            style={styles.backButton}
+            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
             onPress={() => navigation.goBack()}
             accessibilityLabel="Go back"
             accessibilityRole="button"
           >
             <Ionicons name="chevron-back" size={28} color="#000" />
           </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>
+          <View className="flex-1 items-center">
+            <Text className="text-2xl font-bold text-gray-900 dark:text-white">
               {i18n.t("tripDetails.title")}
             </Text>
           </View>
           {/* Adjusted to not rely on absolute positioning if header structure changes */}
-          <Text style={styles.stepIndicator}>
+          <Text className="text-base text-orange-500 font-semibold">
             {i18n.t("tripDetails.stepIndicator")}
           </Text>
         </View>
