@@ -98,7 +98,7 @@ export default function FloatingBottomNav({ activeRouteName }) {
           {/* AI Chat Tab */}
           <TouchableOpacity
             className="items-center flex-1"
-            onPress={() => navigation.navigate("AIChat")}
+            onPress={() => navigation.navigate("AssistantScreen")}
           >
             <View
               className={`p-2 rounded-full ${
