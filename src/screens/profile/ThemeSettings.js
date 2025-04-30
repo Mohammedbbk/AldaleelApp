@@ -1,5 +1,5 @@
 // screens/ThemeSettingsScreen.js  
-import React, { useState } from 'react';  
+import React from 'react';  
 import {  
   SafeAreaView,  
   View,  
@@ -17,15 +17,19 @@ import {
   Smartphone,  
   Check,  
   Palette,  
-} from 'lucide-react-native';  
+} from 'lucide-react-native';
+import { useTheme } from '../../../ThemeProvider';
 
 export default function ThemeSettingsScreen() {  
-  const navigation = useNavigation();  
-  
-  // Theme States - would connect to a theme context in a real app  
-  const [darkMode, setDarkMode] = useState(false);  
-  const [useSystemTheme, setUseSystemTheme] = useState(true);  
-  const [selectedColor, setSelectedColor] = useState('blue');  
+  const navigation = useNavigation();
+  const { 
+    themeMode, 
+    setThemeMode, 
+    themeColor, 
+    setThemeColor, 
+    isDarkMode,
+    colors 
+  } = useTheme();
 
   // Theme color options  
   const themeColors = [  
@@ -39,116 +43,121 @@ export default function ThemeSettingsScreen() {
 
   // Toggle dark mode  
   const handleDarkModeToggle = () => {  
-    if (useSystemTheme) {  
+    if (themeMode === 'system') {  
       // If system theme is enabled, disable it first  
-      setUseSystemTheme(false);  
-    }  
-    setDarkMode(!darkMode);  
+      setThemeMode('dark');
+    } else if (themeMode === 'dark') {
+      setThemeMode('light');
+    } else {
+      setThemeMode('dark');
+    }
   };  
 
   // Toggle system theme  
-  const handleSystemThemeToggle = () => {  
-    setUseSystemTheme(!useSystemTheme);  
-    if (!useSystemTheme) {  
-      // When enabling system theme, reset manual dark mode selection  
-      setDarkMode(false);  
-    }  
+  const handleSystemThemeToggle = (value) => {  
+    setThemeMode(value ? 'system' : isDarkMode ? 'dark' : 'light');
   };  
 
   // Select theme color  
   const handleColorSelect = (colorId) => {  
-    setSelectedColor(colorId);  
+    setThemeColor(colorId);  
   };  
 
   // Save theme settings and go back  
   const saveThemeSettings = () => {  
-    // In a real app, this would save to context/storage  
-    // For now, just navigate back  
     navigation.goBack();  
   };  
 
   return (  
-    <SafeAreaView className="flex-1 bg-gray-50">  
-      <StatusBar barStyle="dark-content" backgroundColor="rgb(249 250 251)" />  
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>  
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? "#1f2937" : "rgb(249 250 251)"} />  
 
       {/* Top navigation bar */}  
-      <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-200">  
+      <View className={`flex-row items-center px-4 py-3 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b`}>  
         <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">  
-          <ArrowLeft size={24} color="#374151" />  
+          <ArrowLeft size={24} color={isDarkMode ? "#e5e7eb" : "#374151"} />  
         </TouchableOpacity>  
-        <Text className="text-lg font-bold text-gray-800 ml-2">Theme Settings</Text>  
+        <Text className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} ml-2`}>Theme Settings</Text>  
       </View>  
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>  
-        <View className="p-6 pb-8">  
+        <View className="p-6 pb-8">
           
           {/* Theme Mode Section */}  
-          <View className="bg-white rounded-2xl shadow-sm overflow-hidden mb-6">  
-            <View className="p-4 border-b border-gray-100 flex-row items-center justify-between">  
+          <View className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm overflow-hidden mb-6`}>  
+            <View className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex-row items-center justify-between`}>  
               <View className="flex-row items-center">  
-                <Smartphone size={20} color="#6b7280" />  
-                <Text className="text-base font-medium text-gray-800 ml-3">Use System Theme</Text>  
+                <Smartphone size={20} color={isDarkMode ? "#d1d5db" : "#6b7280"} />  
+                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} ml-3`}>Use System Theme</Text>  
               </View>  
               <Switch  
-                value={useSystemTheme}  
+                value={themeMode === 'system'}  
                 onValueChange={handleSystemThemeToggle}  
-                trackColor={{ false: '#d1d5db', true: '#93c5fd' }}  
-                thumbColor={useSystemTheme ? '#3b82f6' : '#f4f4f5'}  
-                ios_backgroundColor="#d1d5db"  
+                trackColor={{ false: isDarkMode ? '#4b5563' : '#d1d5db', true: colors.secondary }}  
+                thumbColor={themeMode === 'system' ? colors.primary : isDarkMode ? '#d1d5db' : '#f4f4f5'}  
+                ios_backgroundColor={isDarkMode ? '#4b5563' : '#d1d5db'}  
               />  
             </View>  
             
-            <View className="p-4 border-b border-gray-100 flex-row items-center justify-between">  
+            <View className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex-row items-center justify-between`}>  
               <View className="flex-row items-center">  
-                <Sun size={20} color="#6b7280" />  
-                <Text className="text-base font-medium text-gray-800 ml-3">Light Mode</Text>  
+                <Sun size={20} color={isDarkMode ? "#d1d5db" : "#6b7280"} />  
+                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} ml-3`}>Light Mode</Text>  
               </View>  
               <View>  
-                {!darkMode && !useSystemTheme && (  
+                {themeMode === 'light' && (  
                   <View className="p-1 bg-blue-500 rounded-full">  
                     <Check size={16} color="#FFFFFF" />  
                   </View>  
                 )}  
-                {useSystemTheme && (  
-                  <Text className="text-xs text-gray-400">System Controlled</Text>  
+                {themeMode === 'system' && (  
+                  <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>System Controlled</Text>  
                 )}  
+                {themeMode === 'dark' && (
+                  <TouchableOpacity   
+                    onPress={handleDarkModeToggle}  
+                    className={`px-3 py-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-full`}  
+                  >  
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Enable</Text>  
+                  </TouchableOpacity>  
+                )}
               </View>  
             </View>  
             
-            <View className="p-4 flex-row items-center justify-between">  
+            <View className={`p-4 flex-row items-center justify-between`}>  
               <View className="flex-row items-center">  
-                <Moon size={20} color="#6b7280" />  
-                <Text className="text-base font-medium text-gray-800 ml-3">Dark Mode</Text>  
+                <Moon size={20} color={isDarkMode ? "#d1d5db" : "#6b7280"} />  
+                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} ml-3`}>Dark Mode</Text>  
               </View>  
               <View>  
-                {darkMode && !useSystemTheme && (  
+                {themeMode === 'dark' && (  
                   <View className="p-1 bg-blue-500 rounded-full">  
                     <Check size={16} color="#FFFFFF" />  
                   </View>  
                 )}  
-                {!darkMode && !useSystemTheme && (  
+                {themeMode === 'system' && (  
+                  <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>System Controlled</Text>  
+                )}  
+                {themeMode === 'light' && (
                   <TouchableOpacity   
                     onPress={handleDarkModeToggle}  
-                    className="px-3 py-1 bg-gray-100 rounded-full"  
+                    className={`px-3 py-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-full`}  
                   >  
-                    <Text className="text-xs text-gray-500">Enable</Text>  
+                    <Text className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Enable</Text>  
                   </TouchableOpacity>  
-                )}  
-                {useSystemTheme && (  
-                  <Text className="text-xs text-gray-400">System Controlled</Text>  
-                )}  
+                )}
               </View>  
             </View>  
           </View>  
           
           {/* Theme Color Section */}  
-          <View className="bg-white rounded-2xl shadow-sm overflow-hidden">  
-            <View className="p-4 border-b border-gray-100">  
+          <View className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-sm overflow-hidden`}>  
+            <View className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>  
               <View className="flex-row items-center">  
-                <Palette size={20} color="#6b7280" />  
-                <Text className="text-base font-medium text-gray-800 ml-3">App Color Theme</Text>  
+                <Palette size={20} color={isDarkMode ? "#d1d5db" : "#6b7280"} />  
+                <Text className={`text-base font-medium ${isDarkMode ? 'text-white' : 'text-gray-800'} ml-3`}>App Color Theme</Text>  
               </View>  
-              <Text className="text-xs text-gray-500 mt-1 ml-8">  
+              <Text className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1 ml-8`}>  
                 Select a primary color for the app interface  
               </Text>  
             </View>  
@@ -167,13 +176,13 @@ export default function ThemeSettingsScreen() {
                         className="w-16 h-16 rounded-full mb-2"  
                         style={{ backgroundColor: color.primary }}  
                       />  
-                      {selectedColor === color.id && (  
-                        <View className="absolute bottom-2 right-0 bg-white p-1 rounded-full border-2" style={{ borderColor: color.primary }}>  
+                      {themeColor === color.id && (  
+                        <View className={`absolute bottom-2 right-0 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-1 rounded-full border-2`} style={{ borderColor: color.primary }}>  
                           <Check size={16} color={color.primary} />  
                         </View>  
                       )}  
                     </View>  
-                    <Text className="text-sm text-gray-700">{color.name}</Text>  
+                    <Text className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{color.name}</Text>  
                   </TouchableOpacity>  
                 ))}  
               </View>  
@@ -183,7 +192,8 @@ export default function ThemeSettingsScreen() {
           {/* Save button */}  
           <TouchableOpacity  
             onPress={saveThemeSettings}  
-            className="mt-6 p-4 bg-blue-500 rounded-xl"  
+            className="mt-6 p-4 rounded-xl"
+            style={{ backgroundColor: colors.primary }}
           >  
             <Text className="text-white font-semibold text-base text-center">  
               Save Theme Settings  

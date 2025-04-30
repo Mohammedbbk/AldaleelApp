@@ -7,13 +7,12 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  Share, // Import Share API
   StyleSheet, // Import StyleSheet
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useTheme } from '../../../ThemeProvider'; // Import ThemeProvider
 
 // Pictures - Make sure these paths are correct
 import visa from "../../../assets/Information_pictures/Visa.png";
@@ -22,6 +21,9 @@ import language from "../../../assets/Information_pictures/Language.png";
 import local from "../../../assets/Information_pictures/Local.png";
 import transportation from "../../../assets/Information_pictures/Transportation.png";
 import currency from "../../../assets/Information_pictures/Currency.png";
+
+// Fallback image for loading errors
+import placeholderImage from "../../../assets/Information_pictures/Language.png";
 
 const titles = [
   {
@@ -69,34 +71,32 @@ const titles = [
 ];
 
 const InformationScreen = () => {
-  const { t } = useTranslation(); // Hook called at top level - OK
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
+  const { isDarkMode } = useTheme();
   
   // Get nationality and destination from route params
   const { nationality, destination } = route.params || {};
-  
-  // Debug logging
-  console.log("InformationScreen received params:", { nationality, destination });
 
   const handleBack = () => {
     navigation.navigate("UserPlanScreen");
   };
 
   const handleHome = () => {
-    //TBD
+    navigation.navigate("Home");
   };
-  const handleBackToTrips = () => {
-    // Navigate to the main Home screen
-    navigation.navigate("Trips");
+
+  const handleShare = () => {
+    Alert.alert(
+      "Share Feature",
+      "Sharing functionality will be available in the next update.",
+      [{ text: "OK", onPress: () => console.log("Share alert closed") }]
+    );
   };
 
   const handleEditPlan = () => {
     navigation.navigate("AssistantScreen");
-  };
-
-  const handleShare = () => {
-    // Implementation pending
   };
 
   const handleSubScreens = (item) => {
@@ -107,59 +107,91 @@ const InformationScreen = () => {
       
       Alert.alert(
         "Missing Information", 
-        `Please provide your ${missingParams.join(" and ")} to view this information.`
+        `Please provide your ${missingParams.join(" and ")} to view this information.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Go to Trip Creation", 
+            onPress: () => navigation.navigate("CreateTrip") 
+          }
+        ]
       );
       return;
     }
     
     // Navigate to the appropriate screen with all necessary parameters
-    navigation.navigate(item.screen, {
-      contentKey: item.contentKey,
-      nationality,
-      destination
-    });
+    try {
+      navigation.navigate(item.screen, {
+        contentKey: item.contentKey,
+        nationality,
+        destination
+      });
+    } catch (error) {
+      console.error("Navigation error:", error);
+      Alert.alert(
+        "Navigation Error",
+        "An error occurred while navigating to the information screen. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f5f5f5]">
+    <SafeAreaView className={`flex-1 ${isDarkMode ? 'bg-gray-900' : 'bg-[#f5f5f5]'}`}>
       {/* Header Section */}
-      <View className="flex-row items-center justify-between py-2.5 bg-white border-b border-[#E5E5EA]">
-        <Text className="text-[17px] font-semibold text-black text-center absolute left-0 right-0">
+      <View className={`flex-row items-center justify-between py-2.5 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-[#E5E5EA]'} border-b`}>
+        <Text className={`text-[17px] font-semibold ${isDarkMode ? 'text-white' : 'text-black'} text-center absolute left-0 right-0`}>
           Information Hub
         </Text>
         <View className="flex-row justify-end p-2.5 px-[15px] gap-5">
-          <TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to trip"
+            className="p-1.5" // Increased touch target
+          >
             <Ionicons
               name="chevron-back"
               size={24}
-              color="#007AFF"
-              onPress={handleBack}
+              color={isDarkMode ? "#4B97EE" : "#007AFF"}
             />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleHome}
+            accessibilityRole="button"
+            accessibilityLabel="Go to home screen"
+            className="p-1.5" // Increased touch target
+          >
             <Ionicons
               name="home-outline"
               size={24}
-              color="#007AFF"
-              onPress={handleHome}
+              color={isDarkMode ? "#4B97EE" : "#007AFF"}
             />
           </TouchableOpacity>
         </View>
         <View className="flex-row justify-end p-2.5 px-[15px] gap-5">
-          <TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleShare}
+            accessibilityRole="button"
+            accessibilityLabel="Share information"
+            className="p-1.5" // Increased touch target
+          >
             <Ionicons
               name="share-outline"
               size={24}
-              color="#007AFF"
-              onPress={handleShare}
+              color={isDarkMode ? "#4B97EE" : "#007AFF"}
             />
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handleEditPlan}
+            accessibilityRole="button"
+            accessibilityLabel="Edit plan"
+            className="p-1.5" // Increased touch target
+          >
             <Ionicons
               name="pencil-outline"
               size={24}
-              color="#007AFF"
-              onPress={handleEditPlan}
+              color={isDarkMode ? "#4B97EE" : "#007AFF"}
             />
           </TouchableOpacity>
         </View>
@@ -167,61 +199,48 @@ const InformationScreen = () => {
 
       {/* Body */}
       <ScrollView
-        className="pb-[200px] px-2.5"
+        className="pb-[100px] px-2.5" // Reduced padding
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-col items-stretch pt-5 gap-5">
           {titles.map((item) => (
             <TouchableOpacity
               key={item.number}
-              className="flex-row justify-between items-center p-[5px] bg-white rounded-[20px] overflow-hidden shadow-md"
+              className={`flex-row justify-between items-center p-[5px] ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-[20px] overflow-hidden shadow-md`}
               activeOpacity={0.9}
               onPress={() => handleSubScreens(item)}
+              accessibilityRole="button"
+              accessibilityLabel={`View ${item.title}`}
             >
               <Image
                 className="rounded-[20px] bg-[#555] h-[130px] w-[100px]"
                 source={item.image}
+                defaultSource={placeholderImage}
+                onError={(e) => console.warn(`Image load error for ${item.title}:`, e.nativeEvent.error)}
+                resizeMode="cover"
               />
-              <Text className="text-[18px] font-normal text-center text-black flex-1 p-2.5">
+              <Text className={`text-[18px] font-normal text-center ${isDarkMode ? 'text-white' : 'text-black'} flex-1 p-2.5`}>
                 {item.title}
               </Text>
-              <Ionicons name="chevron-forward" size={24} color={"#007AFF"} />
+              <Ionicons 
+                name="chevron-forward" 
+                size={24} 
+                color={isDarkMode ? "#4B97EE" : "#007AFF"} 
+              />
             </TouchableOpacity>
           ))}
         </View>
-        {titles.map((item) => (
-          <TouchableOpacity
-            key={item.number}
-            style={styles.itemContainer}
-            activeOpacity={0.8} // Slightly less opacity change
-            onPress={() => handleSubScreens(item)}
-          >
-            <Image
-              style={styles.itemImage}
-              source={item.image} // Assumes images are loaded correctly via require
-              resizeMode="cover" // Cover might look better than default stretch
-            />
-            {/* // Added a View for better text centering if needed */}
-            <View style={styles.itemTextContainer}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color={"#007AFF"}
-              style={styles.itemChevron}
-            />
-          </TouchableOpacity>
-        ))}
       </ScrollView>
       
-      {/* Next Button */}
+      {/* Back to Trip Button - Using handleBack to consolidate navigation logic */}
       <TouchableOpacity
-        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0"
-        onPress={() => navigation.navigate("InformationScreen")}
+        className={`${isDarkMode ? 'bg-blue-600' : 'bg-[#24BAEC]'} mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0`}
+        onPress={handleBack}
+        accessibilityRole="button"
+        accessibilityLabel="Back to trip"
       >
         <Text className="text-white text-center text-base font-semibold">
-          Next
+          Back to Trip
         </Text>
       </TouchableOpacity>
     </SafeAreaView>

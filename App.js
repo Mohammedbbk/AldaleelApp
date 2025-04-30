@@ -35,8 +35,9 @@ import NotificationSettings from "./src/screens/profile/NotificationSettings";
 import TravelPreferences from "./src/screens/profile/TravelPreferences";
 import ThemeSettings from "./src/screens/profile/ThemeSettings";
 
-// Import the AuthProvider
+// Import the providers
 import { AuthProvider, AuthContext } from "./AuthProvider";
+import { ThemeProvider } from "./ThemeProvider";
 
 const Stack = createStackNavigator();
 
@@ -166,11 +167,13 @@ class App extends React.Component {
   render() {
     return (
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NavigationErrorBoundary>
-            <RootNavigator />
-          </NavigationErrorBoundary>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <NavigationErrorBoundary>
+              <RootNavigator />
+            </NavigationErrorBoundary>
+          </AuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     );
   }

@@ -64,7 +64,6 @@ export default function FloatingBottomNav({ activeRouteName }) {
           </View>  
 
 
-          {/* AI Chat Tab - تم تغيير الاسم من AIChat إلى AssistantScreen */}  
           <TouchableOpacity  
             className="items-center flex-1"  
             onPress={() => navigation.navigate('AssistantScreen')}  

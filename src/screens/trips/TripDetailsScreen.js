@@ -232,35 +232,73 @@ export function TripDetailsScreen({ route, navigation }) {
     try {
       // Note: The original code structure suggests createTrip might not return the final data directly,
       // relying on the onSuccess callback instead. Adjust if createTrip actually returns data.
-      await createTrip(tripData, {
+      const tripResult = await createTrip(tripData, {
         onLoadingChange: setLoading,
         onLoadingMessageChange: setLoadingMessage,
         onError: (err) => {
-          // Use onError callback for service-level errors
-          console.error("Error reported by createTrip service:", err);
-          setError(err?.message || i18n.t("tripDetails.alerts.error.message"));
-          setLoading(false); // Ensure loading is stopped on error
+          // Check if this might be a partial success case
+          if (err.includes("AI generation") || err.includes("recommendation")) {
+            // This is likely a case where the trip was created but AI recommendations failed
+            console.log("AI generation error but trip may have been created. Checking...");
+            // We'll handle this in the try/catch, not here
+          } else {
+            // Use onError callback for service-level errors
+            console.error("Error reported by createTrip service:", err);
+            setError(err?.message || i18n.t("tripDetails.alerts.error.message"));
+            setLoading(false); // Ensure loading is stopped on error
+          }
         },
         onSuccess: (data) => {
           console.log("Trip created successfully:", data);
           setLoading(false); // Ensure loading is stopped on success
-          Alert.alert(
-            i18n.t("tripDetails.alerts.success.title"),
-            i18n.t("tripDetails.alerts.success.message"),
-            [
-              {
-                text: i18n.t("tripDetails.alerts.success.ok"),
-                onPress: () =>
-                  navigation.navigate("UserPlanScreen", { tripData: data }),
-              },
-            ]
-          );
+
+          // Check if AI generation failed but trip was created
+          if (data && data.aiGenerationFailed) {
+            // Show a warning that the trip was created but without AI recommendations
+            Alert.alert(
+              "Trip Created with Limited Features",
+              "Your trip was created successfully, but we couldn't generate AI recommendations. You can still view and edit your trip details.",
+              [
+                {
+                  text: "View Trip",
+                  onPress: () => navigation.navigate("UserPlanScreen", { tripData: data }),
+                },
+              ]
+            );
+          } else {
+            // Normal success flow
+            Alert.alert(
+              i18n.t("tripDetails.alerts.success.title"),
+              i18n.t("tripDetails.alerts.success.message"),
+              [
+                {
+                  text: i18n.t("tripDetails.alerts.success.ok"),
+                  onPress: () => navigation.navigate("UserPlanScreen", { tripData: data }),
+                },
+              ]
+            );
+          }
         },
       });
 
-      // If createTrip *does* return the data, handle it here.
-      // const finalTripData = await createTrip(...);
-      // If it uses callbacks only (as implied), this line might not be needed.
+      // Handle case where tripResult is returned directly
+      if (tripResult) {
+        console.log("Trip creation completed with direct return:", tripResult);
+        
+        // Check if this is a partial success (trip created but AI generation failed)
+        if (tripResult.aiGenerationFailed) {
+          Alert.alert(
+            "Trip Created with Limited Features",
+            "Your trip was created successfully, but we couldn't generate AI recommendations. You can still view and edit your trip details.",
+            [
+              {
+                text: "View Trip",
+                onPress: () => navigation.navigate("UserPlanScreen", { tripData: tripResult }),
+              },
+            ]
+          );
+        }
+      }
     } catch (err) {
       // This catch block handles errors thrown *synchronously* by createTrip
       // or errors during the setup before the async operation within createTrip starts.
@@ -271,6 +309,34 @@ export function TripDetailsScreen({ route, navigation }) {
         err
       );
       setLoading(false); // Ensure loading is stopped
+
+      // Check if the error might indicate a partial success
+      if (err.message && (
+          err.message.includes("AI generation") || 
+          err.message.includes("recommendation") ||
+          err.message.includes("itinerary")
+      )) {
+        // This is likely a case where the trip was created but AI recommendations failed
+        Alert.alert(
+          "Trip May Have Been Created",
+          "We encountered an issue with AI recommendations, but your trip may have been created. Would you like to check your trips or try again?",
+          [
+            {
+              text: "View My Trips",
+              onPress: () => navigation.navigate("TripListScreen"),
+            },
+            {
+              text: "Try Again",
+              onPress: handleCreateAdventure,
+            },
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+          ]
+        );
+        return;
+      }
 
       // Retry logic for specific network-related errors
       if (
@@ -516,8 +582,6 @@ export function TripDetailsScreen({ route, navigation }) {
             {/* <TouchableOpacity
                             style={styles.homeButton} // Consider revising positioning
                             onPress={() => navigation.navigate('Home')} // Ensure 'Home' is the correct route name
-                            accessibilityRole="button"
-                            accessibilityLabel="Go to home page"
                          >
                             <FontAwesome name="home" size={24} color="#333" />
                         </TouchableOpacity> */}

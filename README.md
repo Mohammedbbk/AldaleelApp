@@ -89,3 +89,62 @@ AldaleelApp/
 ├── App.js             # Application entry point
 └── tailwind.config.js # TailwindCSS configuration
 ```
+
+## Dark Mode Support
+
+We've implemented dark mode support in the app using the following changes:
+
+1. **ThemeProvider**:
+   - Created a new `ThemeProvider.js` in the root directory that manages theme state (light/dark/system) and theme colors
+   - Uses AsyncStorage to persist user preferences
+   - Provides a custom hook `useTheme()` to easily access theme settings throughout the app
+
+2. **ThemeAwareComponent**:
+   - Added a reusable component in `src/components/ThemeAwareComponent.js` 
+   - Provides consistent styling, colors, and component wrappers for easy theme integration
+   - Includes helper hooks like `useThemeAwareStyles()` to simplify accessing theme colors and styles
+
+3. **ThemeSettings Screen**:
+   - Updated to connect with the ThemeProvider context
+   - Added proper dark mode styling to all UI elements
+   - Made the theme switching functional
+
+4. **App.js**:
+   - Added ThemeProvider to the provider stack
+
+5. **HomeScreen**:
+   - Updated to support dark mode styling
+   - Used ThemeProvider to conditionally render styles based on the current theme
+
+### To-Do for Complete Dark Mode Support:
+
+For all other screens that haven't been updated yet, apply the following pattern:
+
+1. Import the ThemeProvider hooks:
+   ```javascript 
+   import { useTheme } from '../../../ThemeProvider';
+   // Optional if needed:
+   import { useThemeAwareStyles } from '../../components/ThemeAwareComponent';
+   ```
+
+2. Use the hook in your component:
+   ```javascript
+   const { isDarkMode, colors } = useTheme();
+   ```
+
+3. Update component styles to support dark mode:
+   - Use conditional tailwind classes: `className={`${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}`
+   - Use conditional StatusBar: `barStyle={isDarkMode ? "light-content" : "dark-content"}`
+   - Apply theme colors: `color={colors.primary}`
+
+4. For components that need consistent styling, use the ThemeAwareComponent helpers:
+   ```javascript
+   const { styles, colors: themeColors } = useThemeAwareStyles();
+   ```
+
+### Testing Dark Mode
+
+1. Go to the Theme Settings screen
+2. Try each theme option (System, Light, Dark)
+3. Verify all screens properly respond to theme changes
+4. Check accessibility features still work with dark mode

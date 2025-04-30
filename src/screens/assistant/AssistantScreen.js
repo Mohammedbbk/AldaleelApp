@@ -8,363 +8,398 @@ import {
   TextInput,
   StatusBar,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../../../ThemeProvider';
+import { apiClient, getErrorMessage, getRecoverySteps } from '../../services/apiClient';
 
-//mock data
+// Constants
+const STORAGE_KEY = '@aldaleel_chat_history';
+const DEBOUNCE_DELAY = 1000;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
+
+// Initial system message
 const initialMessages = [
   {
     id: 1,
-    text: "Welcome! Ready to adjust your travel plan? Let me know how I can help!",
-    time: new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    isUser: false,
+    role: 'system',
+    content: "Welcome! Ready to adjust your travel plan? Let me know how I can help!",
+    timestamp: new Date().toISOString(),
+    metadata: {
+      type: 'welcome'
+    }
   },
 ];
+
+/**
+ * @typedef {Object} ChatScreenState
+ * @property {Array<Object>} messages - Array of chat messages
+ * @property {string} userInput - Current user input
+ * @property {boolean} isLoading - Loading state
+ * @property {Object|null} conversation - Current conversation
+ * @property {string|null} error - Error message
+ * @property {number} retryCount - Number of retry attempts
+ * @property {Array<string>} offlineMessages - Messages to process when back online
+ */
+
 class ChatScreen extends React.Component {
-  // Initialize with mock data
-  state = {
-    messages: initialMessages,
-    userInput: "",
-    isLoading: false,
+  /** @type {React.RefObject<ScrollView>} */
+  scrollViewRef = React.createRef();
+  /** @type {NodeJS.Timeout|null} */
+  debounceTimeout = null;
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      messages: initialMessages,
+      userInput: "",
+      isLoading: false,
+      conversation: null,
+      error: null,
+      retryCount: 0,
+      offlineMessages: [],
+    };
+  }
+
+  componentDidMount() {
+    this.loadChatHistory();
+  }
+
+  componentWillUnmount() {
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
+    }
+  }
+
+  // Load chat history from storage
+  loadChatHistory = async () => {
+    try {
+      const history = await AsyncStorage.getItem(STORAGE_KEY);
+      if (history) {
+        const { messages, conversation } = JSON.parse(history);
+        this.setState({ 
+          messages: messages || initialMessages,
+          conversation: conversation || null
+        });
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    }
   };
-  //handelers
+
+  // Save chat history to storage
+  saveChatHistory = async () => {
+    try {
+      const { messages, conversation } = this.state;
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({
+        messages,
+        conversation
+      }));
+    } catch (error) {
+      console.error('Error saving chat history:', error);
+    }
+  };
+
+  // Navigation handlers
   handleBack = () => {
     this.props.navigation.goBack();
   };
+
   handleHome = () => {
     this.props.navigation.navigate("MainScreen");
   };
-  handleProceed = () => {
-    //TBD
-  };
-  // Create a ref for the ScrollView
-  scrollViewRef = React.createRef();
 
-  // Function to scroll to the bottom
+  // Scroll to bottom of chat
   scrollToBottom = () => {
     if (this.scrollViewRef.current) {
       this.scrollViewRef.current.scrollToEnd({ animated: true });
     }
   };
 
+  /**
+   * @param {string} text - The new input text
+   */
   handleInputChange = (text) => {
     this.setState({ userInput: text });
   };
 
-  //Ai response handle
-  getAIResponse = async (userMessage) => {
+  /**
+   * @param {string} message - The message to send
+   * @param {string} context - The conversation context
+   * @returns {Promise<Object>} The response from the API
+   */
+  sendMessage = async (message, context) => {
     try {
-      // Use 10.0.2.2 to access host machine from Android emulator
-      // For iOS simulator, use localhost
-      const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-      
-      const response = await fetch(`${baseUrl}/api/trips/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          context: "travel_planning",
-          // Include any trip data from previous screens if available
-          tripData: this.props.route.params?.tripData || null
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("AI response error:", errorData);
-        throw new Error(errorData.message || "Failed to get AI response");
-      }
-
-      const data = await response.json();
-      return data.response || "I'm sorry, I couldn't process your request at this time.";
+      const response = await apiClient.sendChatMessage(message, context);
+      return response;
     } catch (error) {
-      console.error("Error getting AI response:", error);
-      throw new Error("Failed to get AI response: " + error.message);
+      console.error('Error sending message:', error);
+      throw error;
     }
   };
 
-  //User input handle
-  handleSend = async () => {
-    const { userInput, messages } = this.state;
-    if (!userInput.trim()) return;
+  // Handle sending messages with debouncing
+  handleSend = () => {
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
+    }
 
-    // Add user message
-    const newUserMessage = {
-      id: messages.length + 1,
-      text: userInput,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isUser: true,
-    };
+    this.debounceTimeout = setTimeout(async () => {
+      const { userInput, messages, offlineMessages, conversation } = this.state;
+      if (!userInput.trim()) return;
 
-    this.setState(
-      {
-        messages: [...messages, newUserMessage],
+      // Create user message
+      const userMessage = {
+        id: messages.length + 1,
+        role: 'user',
+        content: userInput,
+        timestamp: new Date().toISOString(),
+      };
+
+      this.setState({
+        messages: [...messages, userMessage],
         userInput: "",
         isLoading: true,
-      },
-      () => {
-        // Scroll to bottom after state update
-        this.scrollToBottom();
+        error: null
+      }, this.scrollToBottom);
+
+      try {
+        // Get AI response using our API client
+        const response = await this.sendMessage(userInput, conversation?.context || 'general');
+        
+        this.setState(prevState => ({
+          messages: [...prevState.messages, {
+            id: prevState.messages.length + 2,
+            ...response.data.message
+          }],
+          conversation: response.data.conversation,
+          isLoading: false,
+          retryCount: 0
+        }), () => {
+          this.scrollToBottom();
+          this.saveChatHistory();
+        });
+
+        // Process any offline messages
+        if (offlineMessages.length > 0) {
+          this.processOfflineMessages();
+        }
+      } catch (error) {
+        // Handle error and show recovery UI
+        const errorMessage = {
+          id: messages.length + 2,
+          role: 'system',
+          content: getErrorMessage(error),
+          timestamp: new Date().toISOString(),
+          metadata: {
+            type: 'error',
+            error: error.message
+          }
+        };
+
+        // Store message for offline processing if needed
+        if (!navigator.onLine) {
+          this.setState(prevState => ({
+            offlineMessages: [...prevState.offlineMessages, userInput]
+          }));
+        }
+
+        this.setState({
+          messages: [...messages, errorMessage],
+          isLoading: false,
+          error: error.message,
+          retryCount: this.state.retryCount + 1
+        }, () => {
+          this.scrollToBottom();
+          this.saveChatHistory();
+        });
+
+        // Show error alert with recovery options
+        Alert.alert(
+          'Error',
+          getErrorMessage(error),
+          [
+            {
+              text: 'Try Again',
+              onPress: () => this.retryLastMessage()
+            },
+            {
+              text: 'OK',
+              style: 'cancel'
+            }
+          ]
+        );
       }
-    );
+    }, DEBOUNCE_DELAY);
+  };
 
-    // Attempt to get AI response
-    try {
-      const aiResponse = await this.getAIResponse(userInput);
-
-      const newAIMessage = {
-        id: messages.length + 2,
-        text: aiResponse,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isUser: false,
-      };
-
-      this.setState((prevState) => ({
-        messages: [...prevState.messages, newAIMessage],
-        isLoading: false,
-      }));
-    } catch (error) {
-      // Add error message to chat
-      const errorMessage = {
-        id: messages.length + 2,
-        text: "I apologize, but I'm having trouble responding right now. Please try again in a moment.",
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isUser: false,
-        isError: true,
-      };
-
-      this.setState((prevState) => ({
-        messages: [...prevState.messages, errorMessage],
-        isLoading: false,
-      }));
+  // Retry last failed message
+  retryLastMessage = () => {
+    const { messages } = this.state;
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    if (lastUserMessage) {
+      this.setState({
+        userInput: lastUserMessage.content
+      }, this.handleSend);
     }
+  };
+
+  // Process offline messages when back online
+  processOfflineMessages = async () => {
+    const { offlineMessages } = this.state;
+    for (const message of offlineMessages) {
+      try {
+        const response = await this.sendMessage(message);
+        this.setState(prevState => ({
+          messages: [...prevState.messages, {
+            id: prevState.messages.length + 1,
+            ...response.data.message
+          }]
+        }));
+      } catch (error) {
+        console.error('Error processing offline message:', error);
+      }
+    }
+    this.setState({ offlineMessages: [] });
   };
 
   render() {
-    const { messages } = this.state; // Access messages from state
+    const { messages, isLoading, error } = this.state;
+    const { colors } = this.props.theme;
 
     return (
       <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 pt-5">
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
-          <View style={styles.headerButton}>
-            <TouchableOpacity
-              className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
-              onPress={this.handleBack}
-            >
-              <Ionicons name="chevron-back" size={26} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+            onPress={this.handleBack}
+          >
+            <Ionicons name="chevron-back" size={26} color={colors.text} />
+          </TouchableOpacity>
 
-          {/* Header Title (Centered) */}
           <View className="flex-1 items-center">
             <Text className="text-2xl font-bold text-gray-900 dark:text-white">
               Al-Daleel AI
             </Text>
           </View>
 
-          <View style={styles.headerButton}>
-            <TouchableOpacity
-              className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
-              onPress={this.handleShare}
-            >
-              <Ionicons name="checkmark" size={26} color="#007AFF" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+            onPress={this.handleHome}
+          >
+            <Ionicons name="home" size={26} color={colors.text} />
+          </TouchableOpacity>
         </View>
 
         {/* Chat Messages */}
         <ScrollView
-          ref={this.scrollViewRef} // Attach the ref
-          style={styles.chatContainer}
-          contentContainerStyle={{ paddingBottom: 20 }} // Add padding to avoid overlap with input
-          onContentSizeChange={() => this.scrollToBottom()} // Scroll to bottom when content size changes
+          ref={this.scrollViewRef}
+          className="flex-1 px-4"
+          contentContainerStyle={{ paddingBottom: 20 }}
+          onContentSizeChange={this.scrollToBottom}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.dateLabel}>Today</Text>
-
           {messages.map((message) => (
             <View
               key={message.id}
-              style={[
-                styles.messageContainer,
-                message.isUser ? styles.userMessage : styles.assistantMessage,
-              ]}
+              className={`mb-4 max-w-[80%] ${
+                message.role === 'user' ? 'self-end ml-auto' : 'self-start'
+              }`}
             >
-              <Text
-                style={[
-                  styles.messageText,
-                  message.isUser
-                    ? styles.userMessageText
-                    : styles.assistantMessageText,
-                ]}
+              <View
+                className={`rounded-2xl p-3 ${
+                  message.role === 'user'
+                    ? 'bg-blue-500'
+                    : message.metadata?.type === 'error'
+                    ? 'bg-red-100 dark:bg-red-900'
+                    : 'bg-gray-100 dark:bg-gray-800'
+                }`}
               >
-                {message.text}
-              </Text>
+                <Text
+                  className={`text-base ${
+                    message.role === 'user'
+                      ? 'text-white'
+                      : message.metadata?.type === 'error'
+                      ? 'text-red-800 dark:text-red-200'
+                      : 'text-gray-800 dark:text-gray-200'
+                  }`}
+                >
+                  {message.content}
+                </Text>
+              </View>
               <Text
-                style={[
-                  message.isUser
-                    ? styles.userMessageTimeText
-                    : styles.assistantMessageTimeText,
-                ]}
+                className="text-xs text-gray-500 dark:text-gray-400 mt-1"
               >
-                {message.time}
+                {new Date(message.timestamp).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
               </Text>
             </View>
           ))}
+
+          {isLoading && (
+            <View className="self-start mb-4">
+              <View className="bg-gray-100 dark:bg-gray-800 rounded-2xl p-3">
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Input Area */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Type your message"
-            placeholderTextColor="#8E8E93"
-            value={this.state.userInput}
-            onChangeText={this.handleInputChange}
-            onSubmitEditing={this.handleSend}
-          />
-          <TouchableOpacity
-            onPress={this.handleSend}
-            disabled={this.state.isLoading}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="send"
-              size={24}
-              color={this.state.userInput.trim() ? "white" : "#B0B0B0"}
-              style={[
-                styles.sendButton,
-                {
-                  backgroundColor: this.state.userInput.trim()
-                    ? "#007AFF"
-                    : "#E5E5EA",
-                },
-              ]}
+        <View className="px-4 pb-4 pt-2 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+          <View className="flex-row items-center">
+            <TextInput
+              className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-2 mr-2 text-gray-900 dark:text-white"
+              placeholder="Type your message"
+              placeholderTextColor={colors.placeholder}
+              value={this.state.userInput}
+              onChangeText={this.handleInputChange}
+              onSubmitEditing={this.handleSend}
+              editable={!isLoading}
             />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={this.handleSend}
+              disabled={isLoading || !this.state.userInput.trim()}
+              className={`p-2 rounded-full ${
+                isLoading || !this.state.userInput.trim()
+                  ? 'opacity-50'
+                  : 'opacity-100'
+              }`}
+            >
+              <Ionicons
+                name="send"
+                size={24}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          </View>
+          
+          {error && (
+            <TouchableOpacity
+              onPress={this.retryLastMessage}
+              className="mt-2 self-center"
+            >
+              <Text className="text-blue-500 dark:text-blue-400">
+                Tap to retry
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     );
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    marginTop: StatusBar.currentHeight,
-  },
-  headerContainer: {
-    backgroundColor: "white",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
-  },
-  titleContainer: {
-    position: "absolute",
-    right: "0",
-    left: "0",
-  },
-  titleText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#000000",
-    textAlign: "center",
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
-  headerButton: { flexDirection: "row", alignItems: "center", gap: 16 },
-  chatContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  dateLabel: {
-    textAlign: "center",
-    color: "#8E8E93",
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  messageContainer: {
-    maxWidth: "75%",
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 20,
-  },
-  userMessage: {
-    alignSelf: "flex-end",
-    backgroundColor: "#007AFF",
-  },
-  assistantMessage: {
-    alignSelf: "flex-start",
-    backgroundColor: "#E5E5EA",
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  userMessageText: {
-    color: "#FFFFFF",
-  },
-  assistantMessageText: {
-    color: "#000000",
-  },
-  assistantMessageTimeText: {
-    fontSize: 12,
-    color: "#8E8E93",
-    marginTop: 4,
-    alignSelf: "flex-end",
-  },
-  userMessageTimeText: {
-    fontSize: 12,
-    color: "#FFFFFF",
-    marginTop: 4,
-    alignSelf: "flex-end",
-  },
-  inputContainer: {
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "white",
-  },
-  input: {
-    height: 50,
-    paddingHorizontal: 10,
-    backgroundColor: "#F2F2F7",
-    borderRadius: 15,
-    fontSize: 16,
-    flex: 1,
-    flexWrap: 1,
-    flexGrow: 1,
-  },
-  sendButton: {
-    backgroundColor: "#007AFF",
-    borderRadius: 100,
-    padding: 13,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
-
-export default ChatScreen;
+// Wrap component with theme
+export default function ThemedChatScreen(props) {
+  const theme = useTheme();
+  return <ChatScreen {...props} theme={theme} />;
+}

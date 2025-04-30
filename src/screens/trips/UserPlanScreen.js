@@ -425,87 +425,37 @@ export function UserPlanScreen() {
     );
 
     // 4) Normalize itinerary into days array
-    // Ensure the structure matches what the render logic expects:
-    // [{ day: N, activities: [{ time: T, name: E, plan: [] }] }]
-    const rawItinerary = ai?.dailyItinerary ?? ai?.itinerary ?? [];
-    // Handle multiple itinerary structures: flat list (Structure B) or nested segments per day (Structure A)
+    const rawItinerary = ai?.dailyItinerary ?? [];
+    console.log("[UserPlanScreen] Processing rawItinerary:", JSON.stringify(rawItinerary, null, 2));
+    
     let days = [];
-    if (
-      Array.isArray(rawItinerary) &&
-      rawItinerary.length > 0 &&
-      typeof rawItinerary[0]?.activities === "string"
-    ) {
-      // Flat activity list (Structure B)
-      const flatActivities = rawItinerary.map((item, idx) => {
-        const {
-          timing,
-          activities,
-          estimatedCosts,
-          estimatedCost,
-          transportationOptions,
-          mealRecommendations,
-          ...otherDetails
-        } = item;
-        return {
-          time: timing || "N/A",
-          name: activities || "Unnamed Event",
-          estimatedCosts: estimatedCosts ?? estimatedCost,
-          transportationOptions,
-          mealRecommendations,
-          ...otherDetails,
-          plan: [],
-        };
-      });
-      console.log(
-        "[UserPlanScreen] Detected flat dailyItinerary structure. Mapped activities:",
-        JSON.stringify(flatActivities, null, 2)
-      );
-      days = [{ day: 1, activities: flatActivities }];
-    } else if (Array.isArray(rawItinerary)) {
-      // Nested segments per day (Structure A)
+    if (Array.isArray(rawItinerary) && rawItinerary.length > 0) {
       days = rawItinerary.map((dayObj, idx) => {
-        const dayNumber = dayObj.day ?? idx + 1;
         const dayActivities = [];
-        ["morning", "afternoon", "evening"].forEach((period) => {
-          const segment = dayObj.activities?.[period];
-          if (
-            segment &&
-            typeof segment.activity === "string" &&
-            segment.activity.trim() !== ""
-          ) {
-            const { timing, activity, ...otherDetails } = segment;
+        
+        // Process morning, afternoon, evening segments
+        ['morning', 'afternoon', 'evening'].forEach(period => {
+          const segment = dayObj[period];
+          if (segment) {
             dayActivities.push({
-              time: timing || "N/A",
-              name: activity,
-              ...otherDetails,
-              plan: [],
+              time: segment.timing || 'N/A',
+              name: segment.activities || 'No activity specified',
+              estimatedCosts: segment.estimatedCosts,
+              transportationOptions: segment.transportationOptions,
+              mealRecommendations: segment.mealRecommendations,
+              accommodationSuggestions: segment.accommodationSuggestions
             });
           }
         });
 
-        // Fallback: if no segments added and a flat plan array exists
-        if (dayActivities.length === 0 && Array.isArray(dayObj.plan)) {
-          dayObj.plan.forEach((item) => {
-            dayActivities.push({
-              time: item.time ?? "N/A",
-              name: item.event ?? "Unnamed Event",
-              plan: [],
-            });
-          });
-        }
-        console.log(
-          `[UserPlanScreen] Day ${dayNumber} mapped activities:`,
-          JSON.stringify(dayActivities, null, 2)
-        );
-        return { day: dayNumber, activities: dayActivities };
+        return {
+          day: dayObj.day || idx + 1,
+          activities: dayActivities
+        };
       });
-      console.log(
-        "[UserPlanScreen] Mapped nested days structure:",
-        JSON.stringify(days, null, 2)
-      );
-    } else {
-      days = [];
     }
+
+    console.log("[UserPlanScreen] Transformed days:", JSON.stringify(days, null, 2));
 
     // 5) Other AI sections simplified (using direct keys from parsed 'ai' object)
     const currencyInfo = ai?.currencyInfo ?? null; // Prefer primary key
@@ -750,85 +700,59 @@ export function UserPlanScreen() {
         )}
 
         {/* Itinerary Days */}
-        {/* Map over plan.days (which is guaranteed to be an array by useMemo) */}
-        {plan.days.map((day, index) => {
-          console.log(
-            "[UserPlanScreen] Rendering Day:",
-            JSON.stringify(day, null, 2)
-          );
-          return (
-            <View key={`day-${index}`} style={styles.dayContainer}>
-              <Text style={styles.dayLabel}>
-                {t("plan.day", "Day {{number}}", { number: day.day })}
-              </Text>
-              {Array.isArray(day.activities) && day.activities.length > 0 ? (
-                <View style={styles.activitiesContainer}>
-                  {day.activities.map((activity, idx) => (
-                    <Accordion
-                      key={`activity-${idx}`}
-                      title={
-                        <ActivityItem
-                          time={activity.time}
-                          name={activity.name}
-                        />
-                      }
-                    >
-                      {/* Render activity details directly from the activity object */}
-                      <View style={styles.accordionContent}>
-                        {" "}
-                        {/* Add a container with padding */}
-                        {activity.estimatedCosts ||
-                        activity.transportationOptions ||
-                        activity.mealRecommendations ||
-                        activity.accommodationSuggestions ? (
-                          <>
-                            {activity.estimatedCosts && (
-                              <Text style={styles.detailText}>
-                                <Text style={styles.detailLabel}>Costs: </Text>
-                                {activity.estimatedCosts}
-                              </Text>
-                            )}
-                            {activity.transportationOptions && (
-                              <Text style={styles.detailText}>
-                                <Text style={styles.detailLabel}>
-                                  Transport:{" "}
-                                </Text>
-                                {activity.transportationOptions}
-                              </Text>
-                            )}
-                            {activity.mealRecommendations && (
-                              <Text style={styles.detailText}>
-                                <Text style={styles.detailLabel}>Meals: </Text>
-                                {activity.mealRecommendations}
-                              </Text>
-                            )}
-                            {activity.accommodationSuggestions && (
-                              <Text style={styles.detailText}>
-                                <Text style={styles.detailLabel}>
-                                  Accommodation:{" "}
-                                </Text>
-                                {activity.accommodationSuggestions}
-                              </Text>
-                            )}
-                            {/* Optionally render other ...otherDetails fields here */}
-                          </>
-                        ) : (
-                          <Text style={styles.noPlanText}>
-                            No specific details available.
-                          </Text>
-                        )}
+        {plan.days.map((day, index) => (
+          <View key={`day-${index}`} style={styles.dayContainer}>
+            <Text style={styles.dayLabel}>
+              {t("plan.day", "Day {{number}}", { number: day.day })}
+            </Text>
+            {day.activities && day.activities.length > 0 ? (
+              <View style={styles.activitiesContainer}>
+                {day.activities.map((activity, idx) => (
+                  <Accordion
+                    key={`activity-${idx}`}
+                    title={
+                      <View style={styles.activityHeader}>
+                        <Text style={styles.activityTime}>{activity.time}</Text>
+                        <Text style={styles.activityName}>{activity.name}</Text>
                       </View>
-                    </Accordion>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.noActivityText}>
-                  No activities scheduled for this day.
-                </Text>
-              )}
-            </View>
-          );
-        })}
+                    }
+                  >
+                    <View style={styles.activityDetails}>
+                      {activity.estimatedCosts && (
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Cost: </Text>
+                          {activity.estimatedCosts}
+                        </Text>
+                      )}
+                      {activity.transportationOptions && (
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Transport: </Text>
+                          {activity.transportationOptions}
+                        </Text>
+                      )}
+                      {activity.mealRecommendations && (
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Meals: </Text>
+                          {activity.mealRecommendations}
+                        </Text>
+                      )}
+                      {activity.accommodationSuggestions && (
+                        <Text style={styles.detailText}>
+                          <Text style={styles.detailLabel}>Accommodation: </Text>
+                          {activity.accommodationSuggestions}
+                        </Text>
+                      )}
+                    </View>
+                  </Accordion>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noActivityText}>
+                No activities scheduled for this day.
+              </Text>
+            )}
+          </View>
+        ))}
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
@@ -1015,6 +939,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   }, // text-white text-center text-base font-semibold
+  activityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  activityTime: {
+    fontSize: 14,
+    color: '#666',
+    marginRight: 12,
+    minWidth: 100,
+  },
+  activityName: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  activityDetails: {
+    padding: 12,
+    backgroundColor: '#f5f5f5',
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  detailLabel: {
+    fontWeight: '600',
+    color: '#666',
+  },
 });
 
 // Default export for the screen

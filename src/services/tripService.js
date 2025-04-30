@@ -133,7 +133,6 @@ export const WorkspaceCultureInsights = async (nationality, destination) => {
 
 // --- Service Function: Create Trip Orchestration ---
 export const createTrip = async (tripData, callbacks = {}) => {
-    // ... (keep existing implementation) ...
     const {
         onLoadingChange,
         onLoadingMessageChange,
@@ -144,10 +143,15 @@ export const createTrip = async (tripData, callbacks = {}) => {
     const safeOnLoadingMessageChange = typeof onLoadingMessageChange === 'function' ? onLoadingMessageChange : () => {};
     const safeOnError = typeof onError === 'function' ? onError : console.error;
     const safeOnSuccess = typeof onSuccess === 'function' ? onSuccess : () => {};
+    
+    // Create a variable to track if we should consider this a partial success
+    let isPartialSuccess = false;
+    let savedTripData = null;
+    
     try {
         safeOnLoadingChange(true);
         safeOnError('');
-        const finalTripData = { /* ... construct finalTripData ... */
+        const finalTripData = {
             destination: tripData.destination || 'Unknown',
             destinationCity: tripData.destinationCity,
             duration: tripData.duration || 0,
@@ -171,6 +175,7 @@ export const createTrip = async (tripData, callbacks = {}) => {
             aiGenerationFailed: false,
             ...tripData,
         };
+        
         // --- Fetch Visa/Culture ---
         safeOnLoadingMessageChange('Fetching visa & cultural info...');
         try {
@@ -194,20 +199,25 @@ export const createTrip = async (tripData, callbacks = {}) => {
                     console.warn('Cultural insights fetch failed:', cultureResult.reason?.message || cultureResult.reason);
                     finalTripData.cultureInsights = { content: `Failed to load: ${cultureResult.reason?.message || 'Unknown error'}`, source: "Error" };
                  }
-            } else { /* ... handle missing params ... */
+            } else {
                  console.warn('Skipping Visa/Culture fetch: Nationality or Destination missing/unknown.');
                  finalTripData.visaRequirements = { content: "Requires Nationality and Destination.", source: "System" };
                  finalTripData.cultureInsights = { content: "Requires Nationality and Destination.", source: "System" };
             }
-        } catch (err) { /* ... handle concurrent fetch error ... */
+        } catch (err) {
              console.error('Unexpected error during concurrent visa/culture fetch:', err.message);
              finalTripData.visaRequirements = { content: `Failed to load: ${err.message}`, source: "Error" };
              finalTripData.cultureInsights = { content: `Failed to load: ${err.message}`, source: "Error" };
         }
+        
+        // Save a copy of the trip data before AI generation
+        // This will let us still use the trip if AI generation fails
+        savedTripData = { ...finalTripData };
+        
         // --- Generate AI Recs ---
         safeOnLoadingMessageChange('Generating travel recommendations...');
         try {
-             const generationPayload = { /* ... construct payload ... */
+             const generationPayload = {
                 destination: finalTripData.destinationCity || finalTripData.destination,
                 days: finalTripData.duration > 0 ? finalTripData.duration : null,
                 budget: typeof finalTripData.budget === 'string' && !isNaN(parseFloat(finalTripData.budget)) 
@@ -220,7 +230,7 @@ export const createTrip = async (tripData, callbacks = {}) => {
             };
              Object.keys(generationPayload).forEach(key => { const value = generationPayload[key]; if (value == null || (Array.isArray(value) && value.length === 0)) { delete generationPayload[key]; }});
              console.log("Sending to AI Generate:", JSON.stringify(generationPayload, null, 2));
-             const aiData = await fetchWithTimeout(ENDPOINTS.GENERATE, { /* ... options ... */
+             const aiData = await fetchWithTimeout(ENDPOINTS.GENERATE, {
                 method: 'POST',
                 timeout: API.AI_TIMEOUT || 120000,
                 body: JSON.stringify(generationPayload),
@@ -231,18 +241,22 @@ export const createTrip = async (tripData, callbacks = {}) => {
                  AI_RESPONSE.updatePlan(aiData.data.itinerary);
              } else {
                   console.warn("AI Generation response structure not as expected or indicates failure:", aiData);
+                  finalTripData.aiGenerationFailed = true;
+                  isPartialSuccess = true; // Mark as partial success
                   throw new Error(aiData?.message || "AI generation failed or returned unexpected data.");
              }
-        } catch (err) { /* ... handle AI error ... */
+        } catch (err) {
             console.warn('AI recommendations fetch failed:', err.message);
             finalTripData.aiGenerationFailed = true;
+            isPartialSuccess = true; // Mark as partial success
             finalTripData.aiRecommendations = null;
         }
+        
         // --- Fetch Events ---
         safeOnLoadingMessageChange('Finding events near your destination...');
         const hasSpecificDateRange = typeof finalTripData.startDate === 'string' && finalTripData.startDate.includes('-') && typeof finalTripData.endDate === 'string' && finalTripData.endDate.includes('-');
         if (hasSpecificDateRange) {
-             try { /* ... fetch events ... */
+             try {
                  const eventsData = await fetchWithTimeout(ENDPOINTS.EVENTS, {
                      method: 'POST',
                      body: JSON.stringify({
@@ -253,20 +267,33 @@ export const createTrip = async (tripData, callbacks = {}) => {
                  });
                  finalTripData.nearbyEvents = eventsData?._embedded?.events || eventsData?.events || [];
                  console.log('Nearby events fetched:', finalTripData.nearbyEvents.length);
-             } catch (err) { /* ... handle event error ... */
+             } catch (err) {
                   console.warn('Events fetch failed:', err.message);
                   finalTripData.nearbyEvents = [];
              }
-        } else { /* ... skip events ... */
+        } else {
               console.log('Skipping event fetch due to missing specific date range.');
               finalTripData.nearbyEvents = [];
         }
+        
         // --- Finalize ---
         console.log('Final trip data prepared:', JSON.stringify(finalTripData, null, 2));
+        
+        // Still consider the trip creation successful even if AI generation failed
         safeOnSuccess(finalTripData);
         return finalTripData;
-    } catch (err) { /* ... handle overall error ... */
+    } catch (err) {
         console.error('Error in createTrip orchestration:', err);
+        
+        // If we already identified this as a partial success (AI generation failed but rest succeeded)
+        // return the saved trip data with the aiGenerationFailed flag
+        if (isPartialSuccess && savedTripData) {
+            console.log('Returning partial success trip data despite error');
+            savedTripData.aiGenerationFailed = true;
+            safeOnSuccess(savedTripData);
+            return savedTripData;
+        }
+        
         safeOnError(err.message || 'An unknown error occurred during trip creation.');
         return null;
     } finally {

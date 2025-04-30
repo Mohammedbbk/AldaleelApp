@@ -32,6 +32,9 @@ import {
 } from 'lucide-react-native';
 
 import FloatingBottomNav from '../../components/navigation/FloatingBottomNav';
+import { useTheme } from '../../../ThemeProvider';
+import { useThemeAwareStyles } from '../../components/ThemeAwareComponent';
+
 const { width } = Dimensions.get('window');
 const cardWidth = width * 0.75;
 
@@ -85,6 +88,8 @@ const searchData = [
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const { isDarkMode, colors } = useTheme();
+  const { styles, colors: themeColors } = useThemeAwareStyles();
   
   // State variables
   const [userName, setUserName] = useState(null);
@@ -117,10 +122,10 @@ export default function HomeScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center">
-        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-        <ActivityIndicator size="large" color="#24baec" />
-        <Text className="mt-4 text-gray-600">Loading your travel inspiration...</Text>
+      <SafeAreaView className={`flex-1 justify-center items-center ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <StatusBar translucent backgroundColor="transparent" barStyle={isDarkMode ? "light-content" : "dark-content"} />
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text className={`mt-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading your travel inspiration...</Text>
         <FloatingBottomNav activeRouteName="Home" />
       </SafeAreaView>
     );
@@ -129,12 +134,13 @@ export default function HomeScreen() {
   // Error state
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-white justify-center items-center">
-        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <SafeAreaView className={`flex-1 justify-center items-center ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <StatusBar translucent backgroundColor="transparent" barStyle={isDarkMode ? "light-content" : "dark-content"} />
         <AlertCircle size={40} color="#ef4444" />
         <Text className="mt-4 text-red-500 font-medium">{error}</Text>
         <TouchableOpacity 
-          className="mt-4 bg-[#24baec] px-4 py-2 rounded-lg"
+          className="mt-4 px-4 py-2 rounded-lg"
+          style={{ backgroundColor: colors.primary }}
           onPress={() => {
             setIsLoading(true);
             setError(null);
@@ -161,11 +167,11 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white pt-5">
+    <SafeAreaView className={`flex-1 pt-5 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle="dark-content"
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
       />
 
       {/* Header Section */}
@@ -175,28 +181,28 @@ export default function HomeScreen() {
             className="flex-row items-center"
             onPress={() => navigation.navigate("ProfileSetting")}
           >
-            <View className="w-12 h-12 bg-[#f0f8ff] rounded-full items-center justify-center border-2 border-[#e0f0ff]">
-              <UserIcon size={20} color="#24baec" />
+            <View className={`w-12 h-12 rounded-full items-center justify-center border-2 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-[#f0f8ff] border-[#e0f0ff]'}`}>
+              <UserIcon size={20} color={colors.primary} />
             </View>
             <View className="ml-3">
-              <Text className="text-sm text-gray-500 font-medium">Welcome back</Text>
-              <Text className="text-lg font-bold text-[#1b1e28]">{userName}</Text>
+              <Text className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Welcome back</Text>
+              <Text className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-[#1b1e28]'}`}>{userName}</Text>
             </View>
           </TouchableOpacity>
 
           <View className="flex-row">
             <TouchableOpacity
-              className="w-12 h-12 bg-[#f7f7f9] rounded-full items-center justify-center mr-3"
+              className={`w-12 h-12 rounded-full items-center justify-center mr-3 ${isDarkMode ? 'bg-gray-800' : 'bg-[#f7f7f9]'}`}
               onPress={() => navigation.navigate("Bookmarks")}
             >
-              <BookmarkIcon size={20} color="#1b1e28" />
+              <BookmarkIcon size={20} color={isDarkMode ? themeColors.text : "#1b1e28"} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="w-12 h-12 bg-[#f7f7f9] rounded-full items-center justify-center relative"
+              className={`w-12 h-12 rounded-full items-center justify-center relative ${isDarkMode ? 'bg-gray-800' : 'bg-[#f7f7f9]'}`}
               onPress={() => navigation.navigate("Notifications")}
             >
-              <BellIcon size={20} color="#1b1e28" />
+              <BellIcon size={20} color={isDarkMode ? themeColors.text : "#1b1e28"} />
               <View className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full"></View>
             </TouchableOpacity>
           </View>
@@ -207,7 +213,7 @@ export default function HomeScreen() {
         {/* Hero Section with Search */}
         <View className="px-6 mb-8">
           <LinearGradient
-            colors={["#e0f4ff", "#f7f7f9"]}
+            colors={isDarkMode ? ["#1F2937", "#111827"] : ["#e0f4ff", "#f7f7f9"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
@@ -217,21 +223,21 @@ export default function HomeScreen() {
             }}
           >
             <Text className="text-3xl leading-tight mb-4">
-              <Text className="font-light text-[#2d323d]">Explore the </Text>
-              <Text className="font-bold text-[#1b1e28]">Beautiful </Text>
-              <Text className="font-bold text-[#24baec]">world!</Text>
+              <Text className={`font-light ${isDarkMode ? 'text-gray-300' : 'text-[#2d323d]'}`}>Explore the </Text>
+              <Text className={`font-bold ${isDarkMode ? 'text-white' : 'text-[#1b1e28]'}`}>Beautiful </Text>
+              <Text className="font-bold" style={{ color: colors.primary }}>world!</Text>
             </Text>
 
             <TouchableOpacity
-              className="flex-row items-center bg-white p-4 rounded-2xl shadow-sm"
+              className={`flex-row items-center p-4 rounded-2xl shadow-sm ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}
               onPress={() => navigation.navigate("Search")}
             >
-              <SearchIcon size={20} color="#7c838d" />
-              <Text className="ml-3 text-[#7c838d] flex-1">
+              <SearchIcon size={20} color={isDarkMode ? "#9CA3AF" : "#7c838d"} />
+              <Text className={`ml-3 flex-1 ${isDarkMode ? 'text-gray-400' : 'text-[#7c838d]'}`}>
                 Where do you want to go?
               </Text>
-              <View className="bg-[#f7f7f9] p-2 rounded-xl">
-                <MapPinIcon size={16} color="#24baec" />
+              <View className={`p-2 rounded-xl ${isDarkMode ? 'bg-gray-700' : 'bg-[#f7f7f9]'}`}>
+                <MapPinIcon size={16} color={colors.primary} />
               </View>
             </TouchableOpacity>
           </LinearGradient>
