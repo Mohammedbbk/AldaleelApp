@@ -195,7 +195,7 @@ export function CreateTripScreen({ navigation, route }) {
 
   const handleBackToHome = () => {
     // ... (existing handleBackToHome function remains unchanged) ...
-    navigation.navigate("HomePage"); // Assuming 'HomePage' is your main screen route name
+    navigation.navigate("Home"); // Assuming 'HomePage' is your main screen route name
   };
 
   const openSearchModal = () => {
