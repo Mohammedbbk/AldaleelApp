@@ -23,7 +23,7 @@ import { createTrip } from "../../services/tripService"; // Ensure this path is 
 
 // Define styles for better organization
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FFF" },
+  safeArea: { flex: 1, backgroundColor: "#FFF", paddingTop: 20 },
   errorText: {
     color: "#EF4444",
     fontSize: 14,
@@ -383,7 +383,7 @@ export function TripDetailsScreen({ route, navigation }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // Adjust offset as needed
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900 mt-5">
+        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
           <TouchableOpacity
             className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
             onPress={() => navigation.goBack()}

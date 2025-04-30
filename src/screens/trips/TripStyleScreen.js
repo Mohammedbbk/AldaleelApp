@@ -47,11 +47,11 @@ export function TripStyleScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 pt-5">
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900 mt-5">
+      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
         <TouchableOpacity
           className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
           onPress={() => navigation.goBack()}
