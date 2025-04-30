@@ -431,16 +431,17 @@ export function UserPlanScreen() {
     let days = [];
     if (Array.isArray(rawItinerary) && rawItinerary.length > 0) {
       days = rawItinerary.map((dayObj, idx) => {
-        const dayActivities = [];
+        const activities = [];
+        const schedule = dayObj.schedule || {};
         
         // Process morning, afternoon, evening segments
         ['morning', 'afternoon', 'evening'].forEach(period => {
-          const segment = dayObj[period];
+          const segment = schedule[period];
           if (segment) {
-            dayActivities.push({
-              time: segment.timing || 'N/A',
-              name: segment.activities || 'No activity specified',
-              estimatedCosts: segment.estimatedCosts,
+            activities.push({
+              time: segment.time || 'N/A',
+              name: segment.activity || 'No activity specified',
+              estimatedCosts: segment.estimatedCost,
               transportationOptions: segment.transportationOptions,
               mealRecommendations: segment.mealRecommendations,
               accommodationSuggestions: segment.accommodationSuggestions
@@ -449,8 +450,9 @@ export function UserPlanScreen() {
         });
 
         return {
-          day: dayObj.day || idx + 1,
-          activities: dayActivities
+          day: idx + 1,
+          activities: activities,
+          title: dayObj.title || `Day ${idx + 1}`
         };
       });
     }
@@ -703,7 +705,7 @@ export function UserPlanScreen() {
         {plan.days.map((day, index) => (
           <View key={`day-${index}`} style={styles.dayContainer}>
             <Text style={styles.dayLabel}>
-              {t("plan.day", "Day {{number}}", { number: day.day })}
+              {day.title}
             </Text>
             {day.activities && day.activities.length > 0 ? (
               <View style={styles.activitiesContainer}>

@@ -131,6 +131,129 @@ export const WorkspaceCultureInsights = async (nationality, destination) => {
    }
 };
 
+// --- Service Function: Fetch Currency Info ---
+export const WorkspaceCurrencyInfo = async (nationality, destination) => {
+  if (!nationality || !destination) throw new Error('Missing nationality or destination for Currency Info');
+  try {
+    const res = await fetchWithTimeout(ENDPOINTS.CURRENCY_INFO, {
+      method: 'POST',
+      body: JSON.stringify({ nationality, destination }),
+    });
+    
+    const responseData = res.data && res.data.status === 'success' ? res.data : res;
+    
+    if (!responseData || responseData.status !== 'success' || !responseData.currencyInfo) {
+      console.warn('Invalid response structure from Currency endpoint:', res);
+      throw new Error('Received invalid data structure for currency information');
+    }
+    
+    // Format the response
+    const currencyInfo = responseData.currencyInfo;
+    return {
+      currency: currencyInfo.currency,
+      exchangeRate: currencyInfo.exchangeRate,
+      paymentMethods: currencyInfo.paymentMethods,
+      tipping: currencyInfo.tipping,
+      notes: currencyInfo.notes
+    };
+  } catch (error) {
+    console.error(`Error in WorkspaceCurrencyInfo (${nationality} -> ${destination}):`, error);
+    throw new Error(`Failed to fetch currency information: ${error.message}`);
+  }
+};
+
+// --- Service Function: Fetch Health Info ---
+export const WorkspaceHealthInfo = async (nationality, destination) => {
+  if (!nationality || !destination) throw new Error('Missing nationality or destination for Health Info');
+  try {
+    const res = await fetchWithTimeout(ENDPOINTS.HEALTH_INFO, {
+      method: 'POST',
+      body: JSON.stringify({ nationality, destination }),
+    });
+    
+    const responseData = res.data && res.data.status === 'success' ? res.data : res;
+    
+    if (!responseData || responseData.status !== 'success' || !responseData.healthInfo) {
+      console.warn('Invalid response structure from Health endpoint:', res);
+      throw new Error('Received invalid data structure for health information');
+    }
+    
+    // Format the response
+    const healthInfo = responseData.healthInfo;
+    return {
+      vaccinations: healthInfo.vaccinations,
+      precautions: healthInfo.precautions,
+      safetyTips: healthInfo.safetyTips,
+      emergencyContacts: healthInfo.emergencyContacts,
+      notes: healthInfo.notes
+    };
+  } catch (error) {
+    console.error(`Error in WorkspaceHealthInfo (${nationality} -> ${destination}):`, error);
+    throw new Error(`Failed to fetch health information: ${error.message}`);
+  }
+};
+
+// --- Service Function: Fetch Transportation Info ---
+export const WorkspaceTransportationInfo = async (nationality, destination) => {
+  if (!nationality || !destination) throw new Error('Missing nationality or destination for Transportation Info');
+  try {
+    const res = await fetchWithTimeout(ENDPOINTS.TRANSPORTATION_INFO, {
+      method: 'POST',
+      body: JSON.stringify({ nationality, destination }),
+    });
+    
+    const responseData = res.data && res.data.status === 'success' ? res.data : res;
+    
+    if (!responseData || responseData.status !== 'success' || !responseData.transportationInfo) {
+      console.warn('Invalid response structure from Transportation endpoint:', res);
+      throw new Error('Received invalid data structure for transportation information');
+    }
+    
+    // Format the response
+    const transportInfo = responseData.transportationInfo;
+    return {
+      gettingAround: transportInfo.gettingAround,
+      options: transportInfo.options,
+      publicTransport: transportInfo.publicTransport,
+      taxis: transportInfo.taxis,
+      notes: transportInfo.notes
+    };
+  } catch (error) {
+    console.error(`Error in WorkspaceTransportationInfo (${nationality} -> ${destination}):`, error);
+    throw new Error(`Failed to fetch transportation information: ${error.message}`);
+  }
+};
+
+// --- Service Function: Fetch Language Info ---
+export const WorkspaceLanguageInfo = async (nationality, destination) => {
+  if (!nationality || !destination) throw new Error('Missing nationality or destination for Language Info');
+  try {
+    const res = await fetchWithTimeout(ENDPOINTS.LANGUAGE_INFO, {
+      method: 'POST',
+      body: JSON.stringify({ nationality, destination }),
+    });
+    
+    const responseData = res.data && res.data.status === 'success' ? res.data : res;
+    
+    if (!responseData || responseData.status !== 'success' || !responseData.languageInfo) {
+      console.warn('Invalid response structure from Language endpoint:', res);
+      throw new Error('Received invalid data structure for language information');
+    }
+    
+    // Format the response
+    const langInfo = responseData.languageInfo;
+    return {
+      officialLanguage: langInfo.officialLanguage,
+      phrases: langInfo.phrases,
+      communicationTips: langInfo.communicationTips,
+      notes: langInfo.notes
+    };
+  } catch (error) {
+    console.error(`Error in WorkspaceLanguageInfo (${nationality} -> ${destination}):`, error);
+    throw new Error(`Failed to fetch language information: ${error.message}`);
+  }
+};
+
 // --- Service Function: Create Trip Orchestration ---
 export const createTrip = async (tripData, callbacks = {}) => {
     const {

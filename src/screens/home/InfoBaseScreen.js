@@ -15,6 +15,10 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   WorkspaceVisaInfo,
   WorkspaceCultureInsights,
+  WorkspaceCurrencyInfo,
+  WorkspaceHealthInfo,
+  WorkspaceTransportationInfo,
+  WorkspaceLanguageInfo,
 } from "../../services/tripService";
 
 const InfoBaseScreen = () => {
@@ -31,6 +35,9 @@ const InfoBaseScreen = () => {
   const [error, setError] = React.useState("");
   const [dynamicContent, setDynamicContent] = React.useState(null);
 
+  // Add cache state at the top level
+  const [cachedResponses, setCachedResponses] = React.useState({});
+
   // Attempt to load static fallback info (title/image) gracefully
   const staticInfo = (() => {
     try {
@@ -46,12 +53,10 @@ const InfoBaseScreen = () => {
 
   // Effect to fetch dynamic content for specific keys
   React.useEffect(() => {
-    let cancelled = false; // Flag to prevent state update on unmounted component
+    let cancelled = false;
 
     async function fetchContent() {
-      // Check if required context is available for ALL content keys
       if (!nationality || !destination) {
-        // More helpful error message that tells exactly what's missing
         const missingFields = [];
         if (!nationality) missingFields.push("nationality");
         if (!destination) missingFields.push("destination");
@@ -61,44 +66,68 @@ const InfoBaseScreen = () => {
         return;
       }
 
-      // Only fetch for 'visa' or 'local' keys
-      if (contentKey === 'visa' || contentKey === 'local') {
-        // Reset state and start loading
-        if (!cancelled) setIsLoading(true);
-        if (!cancelled) setError("");
-        if (!cancelled) setDynamicContent(null);
-
-        try {
-          let content;
-          // Call the appropriate service function
-          if (contentKey === "visa") {
-            content = await WorkspaceVisaInfo(nationality, destination);
-          } else {
-            // contentKey === 'local'
-            content = await WorkspaceCultureInsights(nationality, destination);
-          }
-          if (!cancelled) setDynamicContent(content); // Update state with fetched content
-        } catch (e) {
-          if (!cancelled)
-            setError(e.message || `Failed to fetch ${contentKey} information.`);
-        } finally {
-          if (!cancelled) setIsLoading(false); // Stop loading regardless of outcome
+      // Check cache first
+      const cacheKey = `${contentKey}-${nationality}-${destination}`;
+      if (cachedResponses[cacheKey]) {
+        if (!cancelled) {
+          setDynamicContent(cachedResponses[cacheKey]);
+          setIsLoading(false);
+          setError("");
         }
-      } else {
-        // For other contentKeys, show a generic message but don't show an error
-        if (!cancelled) setDynamicContent(null);
-        if (!cancelled) setError("");
+        return;
+      }
+
+      if (!cancelled) setIsLoading(true);
+      if (!cancelled) setError("");
+      if (!cancelled) setDynamicContent(null);
+
+      try {
+        let content;
+        // Call the appropriate service function
+        switch (contentKey) {
+          case "visa":
+            content = await WorkspaceVisaInfo(nationality, destination);
+            break;
+          case "local":
+            content = await WorkspaceCultureInsights(nationality, destination);
+            break;
+          case "currency":
+            content = await WorkspaceCurrencyInfo(nationality, destination);
+            break;
+          case "health":
+            content = await WorkspaceHealthInfo(nationality, destination);
+            break;
+          case "transportation":
+            content = await WorkspaceTransportationInfo(nationality, destination);
+            break;
+          case "language":
+            content = await WorkspaceLanguageInfo(nationality, destination);
+            break;
+          default:
+            throw new Error(`Unsupported content type: ${contentKey}`);
+        }
+
+        // Cache the response
+        if (!cancelled) {
+          setCachedResponses(prev => ({
+            ...prev,
+            [cacheKey]: content
+          }));
+          setDynamicContent(content);
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.message || `Failed to fetch ${contentKey} information.`);
+      } finally {
         if (!cancelled) setIsLoading(false);
       }
     }
 
     fetchContent();
 
-    // Cleanup function to set cancelled flag when component unmounts
     return () => {
       cancelled = true;
     };
-  }, [contentKey, nationality, destination]); // Dependencies for the effect
+  }, [contentKey, nationality, destination]);
 
   // Handler to close the screen
   const handleClose = () => {
@@ -120,6 +149,249 @@ const InfoBaseScreen = () => {
 
   // Determine Image: Use static image if available
   const screenImage = staticInfo?.image;
+
+  // Update the content rendering section
+  const renderContent = () => {
+    if (!dynamicContent) return null;
+
+    // If it's a string, render directly
+    if (typeof dynamicContent === 'string') {
+      return (
+        <Text className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+          {dynamicContent}
+        </Text>
+      );
+    }
+
+    // Handle structured content based on contentKey
+    switch (contentKey) {
+      case 'currency':
+        return (
+          <View>
+            {dynamicContent.currency && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Currency
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.currency}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.exchangeRate && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Exchange Rate
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.exchangeRate}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.paymentMethods && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Payment Methods
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.paymentMethods}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.tipping && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Tipping Culture
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.tipping}
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+
+      case 'health':
+        return (
+          <View>
+            {dynamicContent.vaccinations && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Vaccinations
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.vaccinations}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.precautions && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Health Precautions
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.precautions}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.safetyTips && Array.isArray(dynamicContent.safetyTips) && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Safety Tips
+                </Text>
+                {dynamicContent.safetyTips.map((tip, index) => (
+                  <Text key={index} className="text-base text-gray-700 dark:text-gray-300 mb-2">
+                    • {tip}
+                  </Text>
+                ))}
+              </View>
+            )}
+            {dynamicContent.emergencyContacts && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Emergency Contacts
+                </Text>
+                {Object.entries(dynamicContent.emergencyContacts).map(([key, value]) => (
+                  <Text key={key} className="text-base text-gray-700 dark:text-gray-300 mb-1">
+                    <Text className="font-medium">{key}:</Text> {value}
+                  </Text>
+                ))}
+              </View>
+            )}
+          </View>
+        );
+
+      case 'transportation':
+        return (
+          <View>
+            {dynamicContent.gettingAround && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Getting Around
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.gettingAround}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.options && Array.isArray(dynamicContent.options) && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Transportation Options
+                </Text>
+                {dynamicContent.options.map((option, index) => (
+                  <Text key={index} className="text-base text-gray-700 dark:text-gray-300 mb-2">
+                    • {option}
+                  </Text>
+                ))}
+              </View>
+            )}
+            {dynamicContent.publicTransport && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Public Transport
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.publicTransport}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.taxis && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Taxis and Ride-sharing
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.taxis}
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+
+      case 'language':
+        return (
+          <View>
+            {dynamicContent.officialLanguage && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Official Language
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.officialLanguage}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.phrases && Array.isArray(dynamicContent.phrases) && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Common Phrases
+                </Text>
+                {dynamicContent.phrases.map((phrase, index) => (
+                  <Text key={index} className="text-base text-gray-700 dark:text-gray-300 mb-2">
+                    • {phrase}
+                  </Text>
+                ))}
+              </View>
+            )}
+            {dynamicContent.communicationTips && (
+              <View className="mb-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Communication Tips
+                </Text>
+                <Text className="text-base text-gray-700 dark:text-gray-300">
+                  {dynamicContent.communicationTips}
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+
+      // For visa and local customs, use the existing structured content rendering
+      default:
+        return (
+          <View>
+            {dynamicContent.content && (
+              <Text className="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-4">
+                {dynamicContent.content}
+              </Text>
+            )}
+            {dynamicContent.requirements && (
+              <View className="mt-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Requirements:
+                </Text>
+                <Text className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                  {dynamicContent.requirements}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.notes && (
+              <View className="mt-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Additional Notes:
+                </Text>
+                <Text className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
+                  {dynamicContent.notes}
+                </Text>
+              </View>
+            )}
+            {dynamicContent.tips && Array.isArray(dynamicContent.tips) && (
+              <View className="mt-4">
+                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Tips:
+                </Text>
+                {dynamicContent.tips.map((tip, index) => (
+                  <Text key={index} className="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-2">
+                    • {tip}
+                  </Text>
+                ))}
+              </View>
+            )}
+          </View>
+        );
+    }
+  };
 
   return (
     // Use SafeAreaView for notches/status bars
@@ -144,8 +416,8 @@ const InfoBaseScreen = () => {
         )}
         {/* Content Area */}
         <View className="p-5">
-          {/* Logic for Visa/Local (Dynamic) */}
-          {(contentKey === 'visa' || contentKey === 'local') && !error && (
+          {/* Logic for Dynamic Content */}
+          {!error && (
             <>
               {isLoading ? (
                 <View className="items-center justify-center py-10">
@@ -153,13 +425,9 @@ const InfoBaseScreen = () => {
                   <Text className="text-base text-sky-600 mt-3">Loading...</Text>
                 </View>
               ) : dynamicContent ? (
-                // Display fetched dynamic content
-                <Text className="text-base leading-relaxed text-gray-700">
-                  {dynamicContent}
-                </Text>
+                renderContent()
               ) : (
-                // Should ideally not be reached if loading/error/content covers all cases
-                <Text className="text-base text-gray-500">
+                <Text className="text-base text-gray-500 dark:text-gray-400">
                   No information available.
                 </Text>
               )}
@@ -168,22 +436,9 @@ const InfoBaseScreen = () => {
 
           {/* Display common error message */}
           {error && (
-            <View className="items-center justify-center py-10 px-4 bg-red-50 rounded-lg border border-red-200">
-              <Text className="text-base text-red-600 text-center">{error}</Text>
+            <View className="items-center justify-center py-10 px-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <Text className="text-base text-red-600 dark:text-red-400 text-center">{error}</Text>
             </View>
-          )}
-
-          {/* Logic for Other Keys (Static Fallback) */}
-          {contentKey !== 'visa' && contentKey !== 'local' && !error && (
-            <Text className="text-base text-gray-500 italic">
-              Detailed information about {
-                contentKey === 'currency' ? 'currency' : 
-                contentKey === 'health' ? 'health and safety' :
-                contentKey === 'transportation' ? 'transportation' :
-                contentKey === 'language' ? 'language basics' :
-                'this topic'
-              } for {destination} will be available soon.
-            </Text>
           )}
         </View>
       </ScrollView>
