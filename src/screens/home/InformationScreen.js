@@ -77,12 +77,8 @@ const InformationScreen = () => {
 
   // --- Handlers ---
   const handleBack = () => {
-    // Go back if possible, otherwise maybe navigate to a default screen like Home or UserPlanScreen
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate("UserPlanScreen"); // Or 'Home' if more appropriate
-    }
+    // Go back to the previous screen
+    navigation.goBack();
   };
 
   const handleBackToHome = () => {
@@ -143,7 +139,7 @@ const InformationScreen = () => {
         <View style={styles.headerButtons}>
           <TouchableOpacity
             className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
-            onPress={() => navigation.goBack()}
+            onPress={handleBack}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />
           </TouchableOpacity>
