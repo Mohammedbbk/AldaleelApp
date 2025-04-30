@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
@@ -58,7 +59,11 @@ class ChatScreen extends React.Component {
   //Ai response handle
   getAIResponse = async (userMessage) => {
     try {
-      const response = await fetch("TO_BE_ADDED", {
+      // Use 10.0.2.2 to access host machine from Android emulator
+      // For iOS simulator, use localhost
+      const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      
+      const response = await fetch(`${baseUrl}/api/trips/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -66,14 +71,22 @@ class ChatScreen extends React.Component {
         body: JSON.stringify({
           message: userMessage,
           context: "travel_planning",
-          // Include any other necessary context
+          // Include any trip data from previous screens if available
+          tripData: this.props.route.params?.tripData || null
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("AI response error:", errorData);
+        throw new Error(errorData.message || "Failed to get AI response");
+      }
+
       const data = await response.json();
-      return data.response;
+      return data.response || "I'm sorry, I couldn't process your request at this time.";
     } catch (error) {
-      throw new Error("Failed to get AI response");
+      console.error("Error getting AI response:", error);
+      throw new Error("Failed to get AI response: " + error.message);
     }
   };
 

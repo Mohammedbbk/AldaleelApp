@@ -45,7 +45,7 @@ const profileOptions = [
   { id: "theme", label: "Theme", icon: Palette, screen: "ThemeSettings" },
 ];
 
-export default function ProfileScreen() {
+export default function ProfileSetting() {
   const navigation = useNavigation();
   const currentRouteName = "Profile";
   const { logout } = useContext(AuthContext);

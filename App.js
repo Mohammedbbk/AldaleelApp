@@ -20,19 +20,20 @@ import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
 import HomeScreen from "./src/screens/home/HomeScreen";
 import InformationScreen from "./src/screens/home/InformationScreen";
 import InfoBaseScreen from "./src/screens/home/InfoBaseScreen";
-import ProfileSetting from "./src/screens/home/ProfileSetting"; // Kept from upstream
-import AssistantScreen from "./src/screens/assistant/AssistantScreen"; // Kept from stash
-import ProfileInfoScreen from "./src/screens/profile/ProfileInfoScreen";
+import AssistantScreen from "./src/screens/assistant/AssistantScreen";
+
+// Import screens - Trip related
+import UserPlanScreen from "./src/screens/trips/UserPlanScreen";
+import CreateTripScreen from "./src/screens/trips/CreateTripScreen";
+import TripStyleScreen from "./src/screens/trips/TripStyleScreen";
+import { TripDetailsScreen } from "./src/screens/trips/TripDetailsScreen"; 
+import TripListScreen from "./src/screens/trips/TripListScreen";
+import ProfileSetting from "./src/screens/home/ProfileSetting";
 import EditProfileScreen from "./src/screens/profile/EditProfileScreen";
+import ProfileInfoScreen from "./src/screens/profile/ProfileInfoScreen";
 import NotificationSettings from "./src/screens/profile/NotificationSettings";
 import TravelPreferences from "./src/screens/profile/TravelPreferences";
 import ThemeSettings from "./src/screens/profile/ThemeSettings";
-// Import screens - Trip related
-import UserPlanScreen from "./src/screens/trips/UserPlanScreen"; // Kept from stash
-import CreateTripScreen from "./src/screens/trips/CreateTripScreen"; // Kept from stash
-import TripStyleScreen from "./src/screens/trips/TripStyleScreen"; // Kept from stash
-import { TripDetailsScreen } from "./src/screens/trips/TripDetailsScreen"; // Kept from stash
-import TripListScreen from "./src/screens/trips/TripListScreen"; // Kept from stash
 
 // Import the AuthProvider
 import { AuthProvider, AuthContext } from "./AuthProvider";
@@ -75,6 +76,7 @@ function AppStack() {
       <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
       <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
       
+      {/* Information screens with content keys */}
       <Stack.Screen
         name="VisaScreen"
         component={InfoBaseScreen}
@@ -118,8 +120,8 @@ function RootNavigator() {
           return (
             <View 
               style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-              accessibilityLabel="Loading" // Kept accessibility from stash
-              accessibilityRole="progressbar" // Kept accessibility from stash
+              accessibilityLabel="Loading"
+              accessibilityRole="progressbar"
             >
               <ActivityIndicator size="large" color="#00ADEF" />
             </View>
@@ -140,8 +142,8 @@ function NavigationErrorBoundary({ children }) {
         fallback={
           <View 
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-            accessibilityLabel="Navigation loading" // Kept accessibility from stash
-            accessibilityRole="progressbar" // Kept accessibility from stash
+            accessibilityLabel="Navigation loading"
+            accessibilityRole="progressbar"
           >
             <ActivityIndicator size="large" color="#00ADEF" />
           </View>

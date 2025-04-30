@@ -375,7 +375,7 @@ export function TripDetailsScreen({ route, navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error ? <Text className="text-red-500 text-sm text-center mx-5 mb-2">{error}</Text> : null}
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
@@ -465,9 +465,9 @@ export function TripDetailsScreen({ route, navigation }) {
               accessibilityLabel={i18n.t("tripDetails.buttons.createAdventure")}
               accessibilityState={{ disabled: loading }}
             >
-              <View style={styles.createButtonContent}>
+              <View className="flex-row justify-center items-center">
                 {loading ? (
-                  <View style={styles.loadingContainer}>
+                  <View className="flex-col items-center justify-center p-2.5">
                     <ActivityIndicator color="#FFF" size="small" />
                     {loadingMessage && (
                       <Text style={styles.loadingText}>{loadingMessage}</Text>

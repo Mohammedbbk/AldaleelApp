@@ -20,6 +20,9 @@ const InfoBaseScreen = () => {
   // Default to empty object if route.params is undefined
   const { contentKey, nationality, destination } = route.params || {};
 
+  // Debug log parameters
+  console.log("InfoBaseScreen params:", { contentKey, nationality, destination });
+
   // State for dynamic content fetching
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -41,15 +44,20 @@ const InfoBaseScreen = () => {
     let cancelled = false; // Flag to prevent state update on unmounted component
 
     async function fetchContent() {
+      // Check if required context is available for ALL content keys
+      if (!nationality || !destination) {
+        // More helpful error message that tells exactly what's missing
+        const missingFields = [];
+        if (!nationality) missingFields.push("nationality");
+        if (!destination) missingFields.push("destination");
+        
+        if (!cancelled) setError(`Please provide your ${missingFields.join(" and ")} to view this information.`);
+        if (!cancelled) setIsLoading(false);
+        return;
+      }
+
       // Only fetch for 'visa' or 'local' keys
       if (contentKey === 'visa' || contentKey === 'local') {
-        // Check if required context is available
-        if (!nationality || !destination) {
-          if (!cancelled) setError('Missing nationality or destination required for this information.');
-          if (!cancelled) setIsLoading(false);
-          return;
-        }
-
         // Reset state and start loading
         if (!cancelled) setIsLoading(true);
         if (!cancelled) setError("");
@@ -70,7 +78,7 @@ const InfoBaseScreen = () => {
           if (!cancelled) setIsLoading(false); // Stop loading regardless of outcome
         }
       } else {
-        // For other contentKeys, reset loading/error states, dynamic content remains null
+        // For other contentKeys, show a generic message but don't show an error
         if (!cancelled) setDynamicContent(null);
         if (!cancelled) setError("");
         if (!cancelled) setIsLoading(false);
@@ -123,17 +131,13 @@ const InfoBaseScreen = () => {
         {/* Content Area */}
         <View className="p-5">
           {/* Logic for Visa/Local (Dynamic) */}
-          {(contentKey === 'visa' || contentKey === 'local') && (
+          {(contentKey === 'visa' || contentKey === 'local') && !error && (
             <>
               {isLoading ? (
                 <View className="items-center justify-center py-10">
                   <ActivityIndicator size="large" color="#0EA5E9" />
                   <Text className="text-base text-sky-600 mt-3">Loading...</Text>
                 </View>
-              ) : error ? (
-                 <View className="items-center justify-center py-10 px-4 bg-red-50 rounded-lg border border-red-200">
-                   <Text className="text-base text-red-600 text-center">{error}</Text>
-                 </View>
               ) : dynamicContent ? (
                 // Display fetched dynamic content
                 <Text className="text-base leading-relaxed text-gray-700">
@@ -146,12 +150,23 @@ const InfoBaseScreen = () => {
             </>
           )}
 
+          {/* Display common error message */}
+          {error && (
+            <View className="items-center justify-center py-10 px-4 bg-red-50 rounded-lg border border-red-200">
+              <Text className="text-base text-red-600 text-center">{error}</Text>
+            </View>
+          )}
+
           {/* Logic for Other Keys (Static Fallback) */}
-          {contentKey !== 'visa' && contentKey !== 'local' && (
+          {contentKey !== 'visa' && contentKey !== 'local' && !error && (
             <Text className="text-base text-gray-500 italic">
-              Detailed dynamic information for this topic is coming soon. General info may be available elsewhere in the app.
-              {/* Optionally display staticInfo.text here as a fallback? */}
-              {/* {staticInfo?.text ? `\n\n${staticInfo.text}` : ''} */}
+              Detailed information about {
+                contentKey === 'currency' ? 'currency' : 
+                contentKey === 'health' ? 'health and safety' :
+                contentKey === 'transportation' ? 'transportation' :
+                contentKey === 'language' ? 'language basics' :
+                'this topic'
+              } for {destination} will be available soon.
             </Text>
           )}
         </View>

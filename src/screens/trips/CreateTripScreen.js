@@ -26,7 +26,8 @@ import {
 import { debounce } from "lodash";
 
 // --- Configuration ---
-import { OPENWEATHERMAP_API_KEY } from "../../config/keys";
+// IMPORTANT: Store API keys securely in a real app (env variables, config)!
+import { OPENWEATHERMAP_API_KEY } from '../../config/keys';
 
 // --- Constants ---
 const MONTHS = [
@@ -40,10 +41,10 @@ const TRAVELER_STYLES = ["Solo", "Family", "Friends"];
 const BUDGET_LEVELS = ["Economy", "Moderate", "Luxury"];
 
 export function CreateTripScreen({ navigation, route }) {
-  // --- State Hooks ---
-  const [destination, setDestination] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedYear, setSelectedYear] = useState("2025");
+  // State hooks - Adjusted for city search
+  const [destination, setDestination] = useState(''); // Will hold "City, Country" string for display
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedYear, setSelectedYear] = useState('2025');
   const [showYearSelector, setShowYearSelector] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedTravelerStyle, setSelectedTravelerStyle] = useState("");

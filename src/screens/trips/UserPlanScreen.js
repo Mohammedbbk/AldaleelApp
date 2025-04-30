@@ -20,10 +20,6 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AI_RESPONSE } from '../../config/AiResponse'; // Keep for fallback/comparison if needed
-
-// Import components
-import { VisaRequirements } from '../../components/trips/VisaRequirements';
-import { CultureInsights } from '../../components/trips/CultureInsights';
 import { NearbyEvents } from '../../components/trips/NearbyEvents';
 import { DetailItem } from '../../components/shared/DetailItem';
 import { ActivityItem } from '../../components/shared/ActivityItem';
@@ -296,36 +292,50 @@ export function UserPlanScreen() {
       console.log('[UserPlanScreen] Detected flat dailyItinerary structure. Mapped activities:', JSON.stringify(flatActivities, null, 2));
       days = [{ day: 1, activities: flatActivities }];
     } else if (Array.isArray(rawItinerary)) {
-      // Nested by day segments (Structure A)
+      // Nested segments per day (Structure A)
       days = rawItinerary.map((dayObj, idx) => {
         const dayNumber = dayObj.day ?? idx + 1;
         const dayActivities = [];
-        ['morning', 'afternoon', 'evening'].forEach(period => {
-          const segment = dayObj.activities?.[period];
-          if (segment && typeof segment.activity === 'string' && segment.activity.trim() !== '') {
-            const { timing, activity, ...otherDetails } = segment;
-            dayActivities.push({
-              time: timing || 'N/A',
-              name: activity,
-              ...otherDetails,
-              plan: [],
-            });
+
+        // Extract morning, afternoon, evening segments
+        ['morning', 'afternoon', 'evening'].forEach((period) => {
+          const segment = dayObj[period] || (dayObj.activities && dayObj.activities[period]);
+          if (segment) {
+            const description = segment.activities || segment.activity || segment.name;
+            if (description && typeof description === 'string') {
+              const time = segment.timing || segment.time || 'N/A';
+              const estimatedCosts = segment.estimatedCosts || segment.estimatedCost;
+              const transportationOptions = segment.transportationOptions;
+              const mealRecommendations = segment.mealRecommendations;
+              const accommodationSuggestions = segment.accommodationSuggestions;
+              dayActivities.push({
+                time,
+                name: description.trim(),
+                estimatedCosts,
+                transportationOptions,
+                mealRecommendations,
+                accommodationSuggestions,
+                plan: segment.plan || [],
+              });
+            }
           }
         });
-        // Fallback to flat plan for this day
+
+        // Fallback: if no segments added and a flat plan array exists
         if (dayActivities.length === 0 && Array.isArray(dayObj.plan)) {
-          dayObj.plan.forEach(item => {
+          dayObj.plan.forEach((item) => {
             dayActivities.push({
-              time: item.time ?? 'N/A',
-              name: item.event ?? 'Unnamed Event',
-              plan: [],
+              time: item.time ?? item.timing ?? 'N/A',
+              name: item.event || item.activity || item.activities || 'Unnamed Event',
+              plan: item.plan || [],
             });
           });
         }
-        console.log(`[UserPlanScreen] Day ${dayNumber} mapped activities:`, JSON.stringify(dayActivities, null, 2));
+
+        console.log(`[UserPlanScreen] Day ${dayNumber} final activities:`, JSON.stringify(dayActivities, null, 2));
         return { day: dayNumber, activities: dayActivities };
       });
-      console.log('[UserPlanScreen] Mapped nested days structure:', JSON.stringify(days, null, 2));
+      console.log('[UserPlanScreen] Final mapped days structure:', JSON.stringify(days, null, 2));
     } else {
       days = [];
     }
@@ -376,11 +386,18 @@ export function UserPlanScreen() {
   const handleEditPlan = useCallback(() => navigation.navigate('AssistantScreen'), [navigation]); // Ensure route exists
   const handleNext = useCallback(() => {
     const tripData = route.params?.tripData;
+    // Create hardcoded nationality if it doesn't exist
+    const userNationality = tripData?.nationality || "USA"; 
+    
     navigation.navigate('InformationScreen', {
-        nationality: tripData?.nationality, // Pass nationality
-        destination: tripData?.destination || plan?.details?.find(d => d.name === 'Destination')?.value // Pass destination
+        nationality: userNationality,
+        destination: tripData?.destination || plan?.details?.find(d => d.name === 'Destination')?.value
     });
-  }, [navigation, route.params?.tripData, plan?.details]); // Add dependencies
+    console.log("Navigation params:", {
+        nationality: userNationality,
+        destination: tripData?.destination || plan?.details?.find(d => d.name === 'Destination')?.value
+    });
+  }, [navigation, route.params?.tripData, plan?.details]);
 
   const handleShare = useCallback(async () => {
      if (!plan) {
@@ -439,6 +456,10 @@ export function UserPlanScreen() {
         </SafeAreaView>
       );
   }
+
+  // Add this temporary code at the beginning of the render function
+  console.log('PLAN STRUCTURE:', JSON.stringify(plan, null, 2));
+  console.log('DAYS STRUCTURE:', JSON.stringify(plan.days, null, 2));
 
   // --- Main Render ---
   // Uses the 'plan' object derived directly from route.params via useMemo
@@ -544,7 +565,7 @@ export function UserPlanScreen() {
           return (
             <View key={`day-${index}`} style={styles.dayContainer}>
               <Text style={styles.dayLabel}>
-                {t('plan.day', 'Day {{number}}', { number: day.day })}
+                {`Day ${day.day}`}
               </Text>
               {(Array.isArray(day.activities) && day.activities.length > 0) ? (
                 <View style={styles.activitiesContainer}>
@@ -557,29 +578,32 @@ export function UserPlanScreen() {
                       <View style={styles.accordionContent}> {/* Add a container with padding */}
                         {
                           (activity.estimatedCosts || activity.transportationOptions || activity.mealRecommendations || activity.accommodationSuggestions) ? (
-                            <>
+                            <View>
                               {activity.estimatedCosts && (
                                 <Text style={styles.detailText}>
-                                  <Text style={styles.detailLabel}>Costs: </Text>{activity.estimatedCosts}
+                                  <Text style={styles.detailLabel}>Costs: </Text>
+                                  <Text>{activity.estimatedCosts}</Text>
                                 </Text>
                               )}
                               {activity.transportationOptions && (
                                 <Text style={styles.detailText}>
-                                  <Text style={styles.detailLabel}>Transport: </Text>{activity.transportationOptions}
+                                  <Text style={styles.detailLabel}>Transport: </Text>
+                                  <Text>{activity.transportationOptions}</Text>
                                 </Text>
                               )}
                               {activity.mealRecommendations && (
                                 <Text style={styles.detailText}>
-                                  <Text style={styles.detailLabel}>Meals: </Text>{activity.mealRecommendations}
+                                  <Text style={styles.detailLabel}>Meals: </Text>
+                                  <Text>{activity.mealRecommendations}</Text>
                                 </Text>
                               )}
                               {activity.accommodationSuggestions && (
                                 <Text style={styles.detailText}>
-                                  <Text style={styles.detailLabel}>Accommodation: </Text>{activity.accommodationSuggestions}
+                                  <Text style={styles.detailLabel}>Accommodation: </Text>
+                                  <Text>{activity.accommodationSuggestions}</Text>
                                 </Text>
                               )}
-                              {/* Optionally render other ...otherDetails fields here */}
-                            </>
+                            </View>
                           ) : (
                             <Text style={styles.noPlanText}>No specific details available.</Text>
                           )
