@@ -431,30 +431,98 @@ export function UserPlanScreen() {
     let days = [];
     if (Array.isArray(rawItinerary) && rawItinerary.length > 0) {
       days = rawItinerary.map((dayObj, idx) => {
-        const activities = [];
-        const schedule = dayObj.schedule || {};
+        // Create a default day object
+        const dayNumber = idx + 1;
+        const dayTitle = dayObj?.title || `Day ${dayNumber}`;
         
-        // Process morning, afternoon, evening segments
-        ['morning', 'afternoon', 'evening'].forEach(period => {
+        // Initialize an empty activities array
+        const activities = [];
+        
+        // Handle different possible schedule formats
+        const schedule = dayObj?.schedule || {};
+        
+        // Process each time segment (morning, afternoon, evening)
+        // Using nullish coalescing and optional chaining for robustness
+        const timeSegments = ['morning', 'afternoon', 'evening'];
+        
+        timeSegments.forEach(period => {
           const segment = schedule[period];
           if (segment) {
+            // Create an activity with defensive processing for all properties
             activities.push({
-              time: segment.time || 'N/A',
-              name: segment.activity || 'No activity specified',
-              estimatedCosts: segment.estimatedCost,
-              transportationOptions: segment.transportationOptions,
-              mealRecommendations: segment.mealRecommendations,
-              accommodationSuggestions: segment.accommodationSuggestions
+              time: segment.time || `${period.charAt(0).toUpperCase() + period.slice(1)}`,
+              name: segment.activity || segment.name || segment.title || `${period.charAt(0).toUpperCase() + period.slice(1)} Activity`,
+              estimatedCosts: segment.estimatedCost || segment.cost || segment.estimation || 'Not specified',
+              transportationOptions: segment.transportation || segment.transportationOptions || 'Not specified',
+              mealRecommendations: segment.meal || segment.mealRecommendations || segment.food || 'Not specified',
+              accommodationSuggestions: segment.accommodation || segment.accommodationSuggestions || period === 'evening' ? schedule.accommodation || 'Not specified' : null
             });
           }
         });
-
+        
+        // If no schedule segments were found, try alternative formats
+        if (activities.length === 0 && Array.isArray(dayObj.activities)) {
+          // Handle the case where activities might be directly in an array
+          dayObj.activities.forEach(act => {
+            if (act) {
+              activities.push({
+                time: act.time || act.startTime || 'Flexible',
+                name: act.activity || act.name || act.title || act.description || 'Activity',
+                estimatedCosts: act.estimatedCost || act.cost || 'Not specified',
+                transportationOptions: act.transportation || act.transportationOptions || 'Not specified',
+                mealRecommendations: act.meal || act.mealRecommendations || act.food || 'Not specified',
+                accommodationSuggestions: act.accommodation || act.accommodationSuggestions || null
+              });
+            }
+          });
+        }
+        
+        // If still no activities, create a placeholder
+        if (activities.length === 0) {
+          activities.push({
+            time: 'All Day',
+            name: dayObj.summary || dayObj.description || `Explore ${tripData?.destinationCity || tripData?.destination || 'your destination'}`,
+            estimatedCosts: 'Not specified',
+            transportationOptions: 'Not specified',
+            mealRecommendations: 'Not specified',
+            accommodationSuggestions: 'Not specified'
+          });
+        }
+        
+        // Create the final day object with all information
         return {
-          day: idx + 1,
+          day: dayNumber,
+          title: dayTitle,
           activities: activities,
-          title: dayObj.title || `Day ${idx + 1}`
+          summary: dayObj.summary || dayObj.description || '',
+          accommodation: dayObj.accommodation || schedule?.accommodation || null
         };
       });
+    } else if (plan?.days && Array.isArray(plan.days) && plan.days.length > 0) {
+      // If rawItinerary is not available, try to use existing days if they exist
+      console.log('[UserPlanScreen] Using existing days from plan:', JSON.stringify(plan.days, null, 2));
+      days = plan.days;
+    } else {
+      // Create a fallback day if no itinerary data is available
+      const destination = tripData?.destinationCity || tripData?.destination || 'your destination';
+      console.log('[UserPlanScreen] No itinerary data found, creating fallback day');
+      days = [
+        {
+          day: 1,
+          title: `Day 1: Explore ${destination}`,
+          activities: [
+            {
+              time: 'All Day',
+              name: `Explore ${destination}`,
+              estimatedCosts: 'Not available - AI generation failed',
+              transportationOptions: 'Not available',
+              mealRecommendations: 'Not available',
+              accommodationSuggestions: 'Not available'
+            }
+          ],
+          summary: 'AI recommendation generation failed. This is a placeholder itinerary.'
+        }
+      ];
     }
 
     console.log("[UserPlanScreen] Transformed days:", JSON.stringify(days, null, 2));
@@ -531,13 +599,69 @@ export function UserPlanScreen() {
     [navigation]
   ); // Ensure route exists
   const handleNext = useCallback(() => {
-    const tripData = route.params?.tripData;
-    navigation.navigate("InformationScreen", {
-      nationality: tripData?.nationality, // Pass nationality
-      destination:
-        tripData?.destination ||
-        plan?.details?.find((d) => d.name === "Destination")?.value, // Pass destination
-    });
+    try {
+      const tripData = route.params?.tripData;
+      console.log("[UserPlanScreen] handleNext called with tripData:", JSON.stringify(tripData, null, 2));
+      
+      // Get destination either from tripData or from plan details
+      const destination = tripData?.destination || 
+        plan?.details?.find(d => d.name === "Destination")?.value;
+      
+      // Get nationality from tripData
+      const nationality = tripData?.nationality || tripData?.userCountry;
+      
+      console.log(`[UserPlanScreen] Navigating to InformationScreen with:
+        - nationality: ${nationality}
+        - destination: ${destination}`);
+      
+      // Check if parameters are available
+      if (!nationality || !destination) {
+        console.warn(`[UserPlanScreen] Missing parameters: ${!nationality ? 'nationality ' : ''}${!destination ? 'destination' : ''}`);
+        
+        // Show an alert with options
+        Alert.alert(
+          "Missing Information",
+          "Some information is missing to show the travel information. Would you like to provide it?",
+          [
+            {
+              text: "Go to Trip Creation",
+              onPress: () => navigation.navigate("CreateTrip"),
+            },
+            {
+              text: "Use Default Values",
+              onPress: () => {
+                const defaultNationality = "International";
+                const defaultDestination = destination || "Unknown Destination";
+                console.log(`[UserPlanScreen] Using default values: nationality=${defaultNationality}, destination=${defaultDestination}`);
+                
+                navigation.navigate("InformationScreen", {
+                  nationality: defaultNationality,
+                  destination: defaultDestination,
+                });
+              }
+            },
+            {
+              text: "Cancel",
+              style: "cancel"
+            }
+          ]
+        );
+        return;
+      }
+      
+      // Navigate to the InformationScreen with the required parameters
+      navigation.navigate("InformationScreen", {
+        nationality: nationality,
+        destination: destination,
+      });
+    } catch (error) {
+      console.error("[UserPlanScreen] Navigation error in handleNext:", error);
+      Alert.alert(
+        "Navigation Error",
+        "Unable to navigate to the information screen. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   }, [navigation, route.params?.tripData, plan?.details]);
 
   const handleShare = useCallback(async () => {
@@ -758,20 +882,28 @@ export function UserPlanScreen() {
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pt-3 pb-5 border-t border-gray-100">
+      <View className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-700 shadow-lg">
         <View className="flex-row justify-between gap-2 items-center h-[50px]">
           {/* Home Button */}
           <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5" // Adjusted size/shadow
-            onPress={handleBackToHome}
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-700 justify-center items-center shadow shadow-black/5" // Adjusted size/shadow
+            onPress={() => {
+              console.log("[UserPlanScreen] Home button pressed");
+              handleBackToHome();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Go to home screen"
           >
             <FontAwesome name="home" size={26} color="#444" />
           </TouchableOpacity>
 
           {/* Edit Button */}
           <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5"
-            onPress={handleEditPlan}
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-700 justify-center items-center shadow shadow-black/5"
+            onPress={() => {
+              console.log("[UserPlanScreen] Edit button pressed");
+              handleEditPlan();
+            }}
             accessibilityRole="button"
             accessibilityLabel={t("accessibility.editButton", "Edit Plan")}
           >
@@ -780,13 +912,26 @@ export function UserPlanScreen() {
 
           {/* Next Button */}
           <TouchableOpacity
-            className="flex-row flex-1 items-center justify-center rounded-full px-6 py-3 shadow shadow-black/10 bg-sky-500"
-            onPress={handleNext}
+            className="flex-row flex-1 items-center justify-center rounded-full px-6 py-3.5 shadow-md shadow-blue-500/20 bg-blue-500 dark:bg-blue-600"
+            onPress={() => {
+              console.log("[UserPlanScreen] Next button pressed - Attempting to navigate to InformationScreen");
+              // Verify that navigation is available
+              if (!navigation) {
+                console.error("[UserPlanScreen] Navigation object is undefined!");
+                Alert.alert("Navigation Error", "Cannot navigate to the next screen. Please try again.");
+                return;
+              }
+              
+              // Call the navigation function
+              handleNext();
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t("accessibility.nextButton", "Next Step")}
           >
             <Text className="text-white text-lg font-semibold mr-1.5">
-              Next
+              View Travel Info
             </Text>
-            <Ionicons name="chevron-forward" size={22} color="#FFF" />
+            <Ionicons name="information-circle-outline" size={22} color="#FFF" />
           </TouchableOpacity>
         </View>
       </View>

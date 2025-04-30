@@ -238,8 +238,8 @@ export function CreateTripScreen({ navigation, route }) {
             onPress={() => handleSelectPlace(item)}
           >
             <Text className="text-base text-gray-800">
-              {item.name}, {item.state ? `${item.state}, ` : ""}
-              {item.country}
+              {item.name}{item.state ? <Text>, {item.state}</Text> : <Text></Text>}
+              <Text>, {item.country}</Text>
             </Text>
           </TouchableOpacity>
         ))}
@@ -490,7 +490,9 @@ export function CreateTripScreen({ navigation, route }) {
             <Text className="text-lg font-semibold text-gray-800">
               Search Destination
             </Text>
-            <View className="w-8" /> {/* Spacer */}
+            <View className="w-8">
+              <Text> </Text>
+            </View> {/* Spacer with empty Text component */}
           </View>
 
           {/* Search Input Area */}
@@ -530,7 +532,6 @@ export function CreateTripScreen({ navigation, route }) {
         animationType="fade"
         onRequestClose={() => setShowYearSelector(false)}
       >
-        {/* ... (Year Selector Modal content remains unchanged) ... */}
         <TouchableOpacity
           className="flex-1 bg-black/50 justify-center items-center"
           activeOpacity={1}
@@ -589,7 +590,9 @@ export function CreateTripScreen({ navigation, route }) {
           >
             <FontAwesome name="home" size={26} color="#444" />
           </TouchableOpacity>
-
+          <View style={{flex: 0.05}}>
+            <Text> </Text>
+          </View>
           {/* Next Button */}
           <TouchableOpacity
             className={`flex-row flex-1 items-center justify-center rounded-full px-6 py-3 shadow shadow-black/10 ml-4 ${

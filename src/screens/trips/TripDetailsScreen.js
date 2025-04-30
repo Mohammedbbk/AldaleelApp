@@ -4,6 +4,7 @@ import {
   Text,
   SafeAreaView,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   TextInput,
   StatusBar,
@@ -89,13 +90,21 @@ const styles = StyleSheet.create({
   },
   createButtonContainer: { marginBottom: 40, marginTop: 10 }, // Added marginTop
   createButton: {
+    width: '100%',  // Span full width for easier tapping
+    flexDirection: 'row', // Arrange icon and text in row
+    justifyContent: 'center', // Center content horizontally
+    alignItems: 'center', // Center content vertically
     borderRadius: 999,
+    backgroundColor: "#0EA5E9",
     paddingVertical: 16,
+    height: 56, // Explicit height
+    borderWidth: 0, // No border
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 5, // Increased elevation for Android
+    zIndex: 10, // Ensure it's on top
   },
   createButtonEnabled: { backgroundColor: "#0EA5E9" },
   createButtonDisabled: { backgroundColor: "#9CA3AF" },
@@ -116,7 +125,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 14,
   },
-  createButtonText: { color: "#FFF", fontSize: 18, fontWeight: "600" },
+  createButtonText: { 
+    color: "#FFF", 
+    fontSize: 18, 
+    fontWeight: "600",
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1
+  },
   iconStyle: { marginLeft: 8 },
   bottomButtonsContainer: {
     flexDirection: "row",
@@ -213,16 +229,40 @@ export function TripDetailsScreen({ route, navigation }) {
     );
   }, []);
 
-  const handleCreateAdventure = async () => {
+  const handleCreateAdventure = async (simplifiedData = null) => {
     setError(""); // Clear previous errors
-    const tripData = {
+    const tripData = simplifiedData || {
       ...fullTripData,
       specialRequirements: selectedRequirements,
       additionalRequirement: additionalRequirement.trim(), // Trim whitespace
       transportationPreference: selectedTransport,
     };
 
-    // Optional: Add validation here if needed before calling createTrip
+    console.log("Trip data before validation:", JSON.stringify(tripData, null, 2));
+
+    // Validate trip data before sending
+    if (!tripData.duration && !tripData.days) {
+      setError("Trip duration is required. Please go back and select a duration for your trip.");
+      Alert.alert(
+        "Missing Information",
+        "Trip duration is required. Please go back and select a duration for your trip.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Field mapping is now consolidated in apiClient.generateTripPlan
+    
+    // Validate budget data
+    if (!tripData.budget && !tripData.budgetLevel) {
+      setError("Trip budget is required. Please go back and select a budget for your trip.");
+      Alert.alert(
+        "Missing Information",
+        "Trip budget is required. Please go back and select a budget for your trip.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
 
     console.log(
       "Attempting to create trip with data:",
@@ -230,8 +270,7 @@ export function TripDetailsScreen({ route, navigation }) {
     ); // Log data being sent
 
     try {
-      // Note: The original code structure suggests createTrip might not return the final data directly,
-      // relying on the onSuccess callback instead. Adjust if createTrip actually returns data.
+      // Note: createTrip now handles retries through ApiClient internally
       const tripResult = await createTrip(tripData, {
         onLoadingChange: setLoading,
         onLoadingMessageChange: setLoadingMessage,
@@ -241,10 +280,85 @@ export function TripDetailsScreen({ route, navigation }) {
             // This is likely a case where the trip was created but AI recommendations failed
             console.log("AI generation error but trip may have been created. Checking...");
             // We'll handle this in the try/catch, not here
-          } else {
+          } 
+          // Handle duration/days error
+          else if (err.includes("duration") || err.includes("days")) {
+            console.error("Duration error:", err);
+            setError(err);
+            setLoading(false);
+            
+            // Navigate back to previous screen where duration is set
+            Alert.alert(
+              "Missing Information",
+              err,
+              [
+                {
+                  text: "Go Back",
+                  onPress: () => navigation.goBack(),
+                }
+              ]
+            );
+          }
+          // Handle budget error
+          else if (err.includes("budget")) {
+            console.error("Budget error:", err);
+            setError(err);
+            setLoading(false);
+            
+            // Navigate back to previous screen where budget is set
+            Alert.alert(
+              "Missing Information",
+              err,
+              [
+                {
+                  text: "Go Back",
+                  onPress: () => navigation.goBack(),
+                }
+              ]
+            );
+          }
+          // Handle "not allowed" field errors
+          else if (err.includes("not allowed") || err.includes("compatibility issue")) {
+            console.error("Field compatibility error:", err);
+            setError(err);
+            setLoading(false);
+            
+            // Show a more user-friendly message
+            Alert.alert(
+              "Data Compatibility Issue",
+              "There was an issue with some of the trip data. Please try again.",
+              [
+                {
+                  text: "Try Again",
+                  onPress: () => {
+                    // Remove the error and try to resubmit with just the essential fields
+                    setError("");
+                    const essentialData = {
+                      destination: tripData.destination,
+                      days: tripData.duration || tripData.days,
+                      budget: tripData.budgetLevel || tripData.budget,
+                      interests: tripData.interests || ['culture'],
+                      specialRequirements: tripData.specialRequirements,
+                      transportationPreference: tripData.transportationPreference,
+                    };
+                    
+                    // Recursively call with simplified data
+                    setTimeout(() => {
+                      handleCreateAdventure(essentialData);
+                    }, 500);
+                  },
+                },
+                {
+                  text: "Cancel",
+                  style: "cancel",
+                }
+              ]
+            );
+          }
+          else {
             // Use onError callback for service-level errors
             console.error("Error reported by createTrip service:", err);
-            setError(err?.message || i18n.t("tripDetails.alerts.error.message"));
+            setError(err || i18n.t("tripDetails.alerts.error.message"));
             setLoading(false); // Ensure loading is stopped on error
           }
         },
@@ -252,32 +366,16 @@ export function TripDetailsScreen({ route, navigation }) {
           console.log("Trip created successfully:", data);
           setLoading(false); // Ensure loading is stopped on success
 
-          // Check if AI generation failed but trip was created
-          if (data && data.aiGenerationFailed) {
-            // Show a warning that the trip was created but without AI recommendations
-            Alert.alert(
-              "Trip Created with Limited Features",
-              "Your trip was created successfully, but we couldn't generate AI recommendations. You can still view and edit your trip details.",
-              [
-                {
-                  text: "View Trip",
-                  onPress: () => navigation.navigate("UserPlanScreen", { tripData: data }),
-                },
-              ]
-            );
-          } else {
-            // Normal success flow
-            Alert.alert(
-              i18n.t("tripDetails.alerts.success.title"),
-              i18n.t("tripDetails.alerts.success.message"),
-              [
-                {
-                  text: i18n.t("tripDetails.alerts.success.ok"),
-                  onPress: () => navigation.navigate("UserPlanScreen", { tripData: data }),
-                },
-              ]
-            );
-          }
+          // Combine original trip data with AI-generated itinerary
+          const combinedTripData = {
+            ...fullTripData,
+            tripId: data.tripId,
+            aiRecommendations: { additionalInfo: JSON.stringify({ dailyItinerary: data.itinerary }) },
+            itinerary: data.itinerary,
+          };
+
+          // Navigate to UserPlanScreen with combined data
+          navigation.navigate("UserPlanScreen", { tripData: combinedTripData });
         },
       });
 
@@ -285,31 +383,60 @@ export function TripDetailsScreen({ route, navigation }) {
       if (tripResult) {
         console.log("Trip creation completed with direct return:", tripResult);
         
-        // Check if this is a partial success (trip created but AI generation failed)
-        if (tripResult.aiGenerationFailed) {
-          Alert.alert(
-            "Trip Created with Limited Features",
-            "Your trip was created successfully, but we couldn't generate AI recommendations. You can still view and edit your trip details.",
-            [
-              {
-                text: "View Trip",
-                onPress: () => navigation.navigate("UserPlanScreen", { tripData: tripResult }),
-              },
-            ]
-          );
-        }
+        // Combine fullTripData with tripResult data
+        const combinedTripResultData = {
+          ...fullTripData,
+          tripId: tripResult.tripId,
+          aiRecommendations: { additionalInfo: JSON.stringify({ dailyItinerary: tripResult.itinerary || [] }) },
+          itinerary: tripResult.itinerary || []
+        };
+        
+        // Navigate to UserPlanScreen
+        navigation.navigate("UserPlanScreen", { tripData: combinedTripResultData });
       }
     } catch (err) {
-      // This catch block handles errors thrown *synchronously* by createTrip
-      // or errors during the setup before the async operation within createTrip starts.
-      // Asynchronous errors within createTrip (like network failures) should ideally be caught
-      // and handled via the onError callback passed to it.
+      // Handle errors thrown synchronously by createTrip
       console.error(
-        "Synchronous error during createTrip call or in subsequent handling:",
+        "Error during trip creation:",
         err
       );
       setLoading(false); // Ensure loading is stopped
 
+      // Check if the error is related to missing duration/days
+      if (err.message && (
+          err.message.includes("duration") || 
+          err.message.includes("days")
+      )) {
+        setError(err.message);
+        Alert.alert(
+          "Missing Information",
+          err.message,
+          [
+            {
+              text: "Go Back",
+              onPress: () => navigation.goBack(),
+            }
+          ]
+        );
+        return;
+      }
+      
+      // Check if the error is related to missing budget
+      if (err.message && err.message.includes("budget")) {
+        setError(err.message);
+        Alert.alert(
+          "Missing Information",
+          err.message,
+          [
+            {
+              text: "Go Back",
+              onPress: () => navigation.goBack(),
+            }
+          ]
+        );
+        return;
+      }
+      
       // Check if the error might indicate a partial success
       if (err.message && (
           err.message.includes("AI generation") || 
@@ -338,37 +465,12 @@ export function TripDetailsScreen({ route, navigation }) {
         return;
       }
 
-      // Retry logic for specific network-related errors
-      if (
-        retryCount < 2 &&
-        (err.message.includes("timed out") ||
-          err.message.includes("Network request failed") ||
-          err.message.includes("Failed to fetch"))
-      ) {
-        setRetryCount((prev) => prev + 1);
-        Alert.alert(
-          i18n.t("tripDetails.alerts.serverStarting.title"),
-          i18n.t("tripDetails.alerts.serverStarting.message"),
-          [
-            {
-              text: i18n.t("tripDetails.alerts.serverStarting.cancel"),
-              style: "cancel",
-              onPress: () => setLoading(false),
-            }, // Ensure loading stops on cancel
-            {
-              text: i18n.t("tripDetails.alerts.serverStarting.retry"),
-              onPress: handleCreateAdventure,
-            }, // No arrow function needed
-          ]
-        );
-      } else {
-        // Generic error for other issues or after retries fail
-        setError(err.message || i18n.t("tripDetails.alerts.error.message")); // Show specific error if available
-        Alert.alert(
-          i18n.t("tripDetails.alerts.error.title"),
-          err.message || i18n.t("tripDetails.alerts.error.message")
-        );
-      }
+      // Show a generic error alert for other issues
+      setError(err.message || i18n.t("tripDetails.alerts.error.message"));
+      Alert.alert(
+        i18n.t("tripDetails.alerts.error.title"),
+        err.message || i18n.t("tripDetails.alerts.error.message")
+      );
     }
   };
 
@@ -472,6 +574,7 @@ export function TripDetailsScreen({ route, navigation }) {
         <ScrollView
           style={styles.scrollView}
           scrollEnabled={!loading}
+          keyboardShouldPersistTaps="always"
           contentContainerStyle={{ paddingBottom: 40 }}
         >
           {/* Special Requirements */}
@@ -518,48 +621,34 @@ export function TripDetailsScreen({ route, navigation }) {
 
           {/* Create Adventure Button */}
           <View style={styles.createButtonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.createButton,
-                loading
-                  ? styles.createButtonDisabled
-                  : styles.createButtonEnabled,
-              ]}
-              onPress={handleCreateAdventure}
+            <Pressable
+              onPress={() => {
+                console.log("[TripDetailsScreen] Create Adventure Pressable pressed");
+                handleCreateAdventure();
+              }}
               disabled={loading}
+              android_ripple={{ color: '#ddd' }}
+              style={({ pressed }) => [
+                styles.createButton,
+                loading ? styles.createButtonDisabled : styles.createButtonEnabled,
+                pressed && { opacity: 0.7 }
+              ]}
               accessibilityRole="button"
               accessibilityLabel={i18n.t("tripDetails.buttons.createAdventure")}
               accessibilityState={{ disabled: loading }}
             >
-              <View className="flex-row justify-center items-center">
-                {loading ? (
-                  <View className="flex-col items-center justify-center p-2.5">
-                    <ActivityIndicator color="#FFF" size="small" />
-                    {loadingMessage && (
-                      <Text style={styles.loadingText}>{loadingMessage}</Text>
-                    )}
-                  </View>
-                ) : (
-                  <>
-                    <Text style={styles.createButtonText}>
-                      {i18n.t("tripDetails.buttons.createAdventure")}
-                    </Text>
-                    <Ionicons
-                      name="star"
-                      size={20}
-                      color="#FFF"
-                      style={styles.iconStyle}
-                    />
-                    <Feather
-                      name="arrow-up-right"
-                      size={20}
-                      color="#FFF"
-                      style={styles.iconStyle}
-                    />
-                  </>
-                )}
-              </View>
-            </TouchableOpacity>
+              {loading ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <View style={styles.createButtonContent}>
+                  <Text style={styles.createButtonText}>
+                    {i18n.t("tripDetails.buttons.createAdventure")}
+                  </Text>
+                  <Ionicons name="star" size={20} color="#FFF" style={styles.iconStyle} />
+                  <Feather name="arrow-up-right" size={20} color="#FFF" style={styles.iconStyle} />
+                </View>
+              )}
+            </Pressable>
           </View>
 
           {/* Bottom Buttons */}
