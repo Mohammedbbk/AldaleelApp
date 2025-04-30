@@ -255,7 +255,7 @@ export function CreateTripScreen({ navigation, route }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0} // Adjust offset if needed
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
+        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900 mt-5">
           {/* Back Button */}
           <TouchableOpacity
             className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"

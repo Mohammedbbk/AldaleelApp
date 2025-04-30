@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 20,
     backgroundColor: "#FFF",
+    marginTop: 20,
   },
   backButton: {
     width: 40,
