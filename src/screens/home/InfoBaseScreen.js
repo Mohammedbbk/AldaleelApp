@@ -122,7 +122,6 @@ const InfoBaseScreen = () => {
       {/* // Use device status bar setting
       <StatusBar barStyle="dark-content" /> */}
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {" "}
         {/* Add padding for Close button */}
         {/* Title */}
         <View className="flex-1 items-center">
@@ -175,8 +174,6 @@ const InfoBaseScreen = () => {
             <Text className="text-base text-gray-500 italic">
               Detailed dynamic information for this topic is coming soon.
               General info may be available elsewhere in the app.
-              {/* Optionally display staticInfo.text here as a fallback? */}
-              {/* {staticInfo?.text ? `\n\n${staticInfo.text}` : ''} */}
             </Text>
           )}
         </View>
