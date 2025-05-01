@@ -130,6 +130,86 @@ export interface TripListResponseData {
 
 export type TripListResponse = SuccessResponse<TripListResponseData>;
 
+// Visa Requirements types
+export interface VisaRequirementsData {
+  required: boolean;
+  type?: string;
+  duration?: string;
+  processingTime?: string;
+  cost?: string;
+  documents?: string[];
+  notes?: string;
+  embassyUrl?: string;
+  content?: string;
+}
+
+export type VisaRequirementsResponse = SuccessResponse<VisaRequirementsData>;
+
+// Culture Insights types
+export interface CultureInsightsData {
+  customs?: string[];
+  etiquette?: string[];
+  religion?: string;
+  dressCodes?: string;
+  taboos?: string[];
+  greetings?: string[];
+  tipping?: string;
+  businessCulture?: string;
+  content?: string;
+}
+
+export type CultureInsightsResponse = SuccessResponse<CultureInsightsData>;
+
+// Currency Info types
+export interface CurrencyInfoData {
+  currency?: string;
+  exchangeRate?: string;
+  paymentMethods?: string;
+  tipping?: string;
+  costOfLiving?: string;
+  bankingHours?: string;
+  atmAvailability?: string;
+  content?: string;
+}
+
+export type CurrencyInfoResponse = SuccessResponse<CurrencyInfoData>;
+
+// Health Info types
+export interface HealthInfoData {
+  vaccinations?: string;
+  precautions?: string;
+  safetyTips?: string[];
+  emergencyContacts?: Record<string, string>;
+  hospitals?: string[];
+  insurance?: string;
+  content?: string;
+}
+
+export type HealthInfoResponse = SuccessResponse<HealthInfoData>;
+
+// Transportation Info types
+export interface TransportationInfoData {
+  gettingAround?: string;
+  options?: string[];
+  publicTransport?: string;
+  taxis?: string;
+  rentalOptions?: string;
+  airports?: string[];
+  content?: string;
+}
+
+export type TransportationInfoResponse = SuccessResponse<TransportationInfoData>;
+
+// Language Info types
+export interface LanguageInfoData {
+  officialLanguage?: string;
+  phrases?: string[];
+  communicationTips?: string;
+  content?: string;
+}
+
+export type LanguageInfoResponse = SuccessResponse<LanguageInfoData>;
+
 // API client types
 export interface ApiClientConfig {
   baseUrl: string;
@@ -144,6 +224,7 @@ export interface ApiRequestOptions {
   body?: any;
   timeout?: number;
   retryAttempts?: number;
+  retryDelay?: number;
 }
 
 export interface ApiError extends Error {

@@ -8,22 +8,29 @@ export function Accordion({ title, children }) {
   const isMeasured = useRef(false);
 
   const handleLayout = useCallback((event) => {
-    if (!isMeasured.current && event.nativeEvent.layout.height > 0) {
-      setContentHeight(event.nativeEvent.layout.height);
+    const measuredHeight = event.nativeEvent.layout.height;
+    if (!isMeasured.current && measuredHeight > 0) {
+      console.log('[Accordion] Content measured height:', measuredHeight);
+      setContentHeight(measuredHeight);
       isMeasured.current = true;
     }
   }, []);
 
   const toggleAccordion = useCallback(() => {
-    if (!isMeasured.current || contentHeight <= 0) return;
+    if (!isMeasured.current || contentHeight <= 0) {
+      console.warn('[Accordion] Toggle prevented. Measured:', isMeasured.current, 'Height:', contentHeight);
+      return;
+    }
+
+    const expanding = !isExpanded;
+    setIsExpanded(expanding);
+    console.log('[Accordion] Toggling state to:', expanding ? 'Expanded' : 'Collapsed');
 
     Animated.timing(animatedHeight, {
-      toValue: isExpanded ? 0 : contentHeight,
+      toValue: expanding ? contentHeight : 0,
       duration: 300,
       useNativeDriver: false,
-    }).start(() => {
-      setIsExpanded(!isExpanded);
-    });
+    }).start();
   }, [isExpanded, contentHeight, animatedHeight]);
 
   const measurementStyle = {
@@ -39,19 +46,16 @@ export function Accordion({ title, children }) {
       accessibilityState={{ expanded: isExpanded }}
       accessibilityHint="Toggle to expand or collapse content"
     >
-      {/* Measurement View */}
       {!isMeasured.current && (
         <View style={measurementStyle} onLayout={handleLayout} pointerEvents="none">
-          <View className="bg-white border-t border-neutral-300">{children}</View>
+          {children}
         </View>
       )}
 
-      {/* Clickable Header */}
       <TouchableOpacity onPress={toggleAccordion} activeOpacity={0.8}>
         {title}
       </TouchableOpacity>
 
-      {/* Animated Content */}
       <Animated.View
         style={{ height: animatedHeight, overflow: 'hidden' }}
         className="bg-white border-t border-neutral-300"

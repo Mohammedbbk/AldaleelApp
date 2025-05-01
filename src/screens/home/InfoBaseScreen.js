@@ -27,13 +27,19 @@ const InfoBaseScreen = () => {
   const { isDarkMode, colors } = useTheme();
   const route = useRoute();
   // Default to empty object if route.params is undefined
-  const { contentKey, nationality, destination } = route.params || {};
+  const {
+    contentKey,
+    nationality,
+    destination,
+    tripData = null,
+  } = route.params || {};
 
   // Debug log parameters
   console.log("InfoBaseScreen params:", {
     contentKey,
     nationality,
     destination,
+    hasTripData: !!tripData,
   });
 
   // State for dynamic content fetching
@@ -62,76 +68,112 @@ const InfoBaseScreen = () => {
     let cancelled = false;
 
     async function fetchContent() {
+      setIsLoading(true);
+      setError("");
+      setDynamicContent(null);
+
+      // --- Step 1: Prioritize pre-fetched data ---
+      let prefetchedData = null;
+      if (tripData) {
+        switch (contentKey) {
+          case "visa":
+            prefetchedData = tripData.visaRequirements;
+            break;
+          case "local":
+            prefetchedData = tripData.cultureInsights;
+            break; // Use cultureInsights
+          case "currency":
+            prefetchedData = tripData.currencyInfo;
+            break;
+          case "health":
+            prefetchedData = tripData.healthAndSafety;
+            break;
+          case "transportation":
+            prefetchedData = tripData.transportation;
+            break;
+          case "language":
+            prefetchedData = tripData.languageBasics;
+            break;
+        }
+      }
+
+      if (prefetchedData && !cancelled) {
+        console.log(`[InfoBaseScreen] Using pre-fetched ${contentKey} data.`);
+        setDynamicContent(prefetchedData);
+        setIsLoading(false);
+        return; // Data found, no need to fetch
+      }
+
+      // --- Step 2: Fetch data if not pre-fetched or unavailable ---
+      console.log(
+        `[InfoBaseScreen] Pre-fetched ${contentKey} data not found or empty. Attempting API fetch.`
+      );
+
       if (!nationality || !destination) {
         const missingFields = [];
         if (!nationality) missingFields.push("nationality");
         if (!destination) missingFields.push("destination");
-
-        if (!cancelled)
+        if (!cancelled) {
           setError(
             `Please provide your ${missingFields.join(
               " and "
             )} to view this information.`
           );
-        if (!cancelled) setIsLoading(false);
-        return;
-      }
-
-      // Check cache first
-      const cacheKey = `${contentKey}-${nationality}-${destination}`;
-      if (cachedResponses[cacheKey]) {
-        if (!cancelled) {
-          setDynamicContent(cachedResponses[cacheKey]);
           setIsLoading(false);
-          setError("");
         }
         return;
       }
 
-      if (!cancelled) setIsLoading(true);
-      if (!cancelled) setError("");
-      if (!cancelled) setDynamicContent(null);
-
       try {
-        let content;
+        let fetchedContent;
+        console.log(
+          `[InfoBaseScreen] Fetching ${contentKey} for ${nationality} -> ${destination}`
+        );
         // Call the appropriate service function
         switch (contentKey) {
           case "visa":
-            content = await WorkspaceVisaInfo(nationality, destination);
+            fetchedContent = await WorkspaceVisaInfo(nationality, destination);
             break;
           case "local":
-            content = await WorkspaceCultureInsights(nationality, destination);
+            fetchedContent = await WorkspaceCultureInsights(destination);
             break;
           case "currency":
-            content = await WorkspaceCurrencyInfo(nationality, destination);
+            fetchedContent = await WorkspaceCurrencyInfo(destination);
             break;
           case "health":
-            content = await WorkspaceHealthInfo(nationality, destination);
+            fetchedContent = await WorkspaceHealthInfo(destination);
             break;
           case "transportation":
-            content = await WorkspaceTransportationInfo(
-              nationality,
-              destination
-            );
+            fetchedContent = await WorkspaceTransportationInfo(destination);
             break;
           case "language":
-            content = await WorkspaceLanguageInfo(nationality, destination);
+            fetchedContent = await WorkspaceLanguageInfo(destination);
             break;
           default:
             throw new Error(`Unsupported content type: ${contentKey}`);
         }
 
-        // Cache the response
         if (!cancelled) {
-          setCachedResponses((prev) => ({
-            ...prev,
-            [cacheKey]: content,
-          }));
-          setDynamicContent(content);
+          setDynamicContent(fetchedContent);
         }
       } catch (e) {
-        if (!cancelled)
-          setError(e.message || `Failed to fetch ${contentKey} information.`);
+        console.error(`[InfoBaseScreen] Error fetching ${contentKey}:`, e);
+        if (!cancelled) {
+          // Check if we have *any* fallback data from tripData, even if API failed
+          if (prefetchedData) {
+            console.warn(
+              `[InfoBaseScreen] API fetch failed for ${contentKey}, but using prefetched data as fallback.`
+            );
+            setDynamicContent(prefetchedData);
+            setError(
+              `Could not refresh ${contentKey} data, showing previously generated info. Error: ${
+                e.message || "Failed to fetch"
+              }`
+            ); // Non-blocking error
+          } else {
+            setError(e.message || `Failed to fetch ${contentKey} information.`);
+          }
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -142,7 +184,7 @@ const InfoBaseScreen = () => {
     return () => {
       cancelled = true;
     };
-  }, [contentKey, nationality, destination]);
+  }, [contentKey, nationality, destination, tripData]);
 
   // Handler to close the screen
   const handleClose = () => {

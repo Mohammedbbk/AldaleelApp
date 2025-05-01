@@ -1,17 +1,16 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ScrollView,
   View,
   Text,
   TouchableOpacity,
-  // Image, // Image seems unused now
-  ActivityIndicator, // Keep for potential future loading states
-  // Animated, // Animated seems unused now
-  Platform, // Keep for Platform checks
-  StyleSheet, // Add StyleSheet
-  Alert, // Use Alert for better error display
-  Linking, // Import Linking for URLs
+  StatusBar,
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,295 +18,328 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { FontAwesome } from "@expo/vector-icons";
-import { AI_RESPONSE } from "../../config/AiResponse"; // Keep for fallback/comparison if needed
 
 // Import components
 import { VisaRequirements } from "../../components/trips/VisaRequirements";
 import { CultureInsights } from "../../components/trips/CultureInsights";
 import { NearbyEvents } from "../../components/trips/NearbyEvents";
 import { DetailItem } from "../../components/shared/DetailItem";
-import { ActivityItem } from "../../components/shared/ActivityItem";
 import { Accordion } from "../../components/shared/Accordion";
+// Removed ActivityItem as it wasn't directly used here
+// Removed TravelRecommendations as its content is now in accordions
 
 // --- Static Content / Maps ---
+// Restore detailEmojis as it's used in renderDetailItem
 const detailEmojis = {
   Destination: "✈️",
   Duration: "⏳",
   Expenses: "💵",
 };
 
+// Updated icons map for consistency
 const sectionIcons = {
+  dailyItinerary: "map-outline",
   currencyInfo: "cash-outline",
   healthAndSafety: "medkit-outline",
   transportation: "car-sport-outline",
   languageBasics: "language-outline",
   weatherInfo: "partly-sunny-outline",
-  localCustoms: "earth-outline", // Reuse for consistency if needed elsewhere
-  visaRequirements: "document-text-outline", // Reuse for consistency
+  visaRequirements: "document-text-outline",
+  cultureInsights: "earth-outline",
   nearbyEvents: "calendar-outline",
-  dailyItinerary: "map-outline",
 };
 
-// --- Helper Function for PDF Generation ---
-// (generatePdfContent remains the same as you provided, including defensive checks)
-function generatePdfContent(plan) {
-  // Ensure plan and plan.details exist
+// --- Helper Function for PDF Generation (Accepts t function for i18n) ---
+function generatePdfContent(plan, t) {
   const details = plan?.details || [];
   const destination =
     details.find((d) => d.name === "Destination")?.value || "N/A";
   const duration = details.find((d) => d.name === "Duration")?.value || "N/A";
   const expenses = details.find((d) => d.name === "Expenses")?.value || "N/A";
-  const days = Array.isArray(plan?.days) ? plan.days : []; // Ensure days is an array
+  const days = Array.isArray(plan?.days) ? plan.days : [];
+
+  // Use t function for titles and static text
+  const pdfMainTitle = t("userPlan.pdf.mainTitle", { destination });
+  const pdfSubtitle = t("userPlan.pdf.subtitle", { destination });
+  const detailDestinationLabel = t("userPlan.details.destination");
+  const detailDurationLabel = t("userPlan.details.duration");
+  const detailExpensesLabel = t("userPlan.details.expenses");
+  const noPlanItemsText = t("userPlan.pdf.noPlanItems");
 
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8">
-        <title>${destination} Travel Plan</title>
+        <title>${pdfMainTitle}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-          body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background: linear-gradient(135deg, #f5f5f5, #e8e8e8); }
-           .container { margin: 40px auto; max-width: 800px; background: #ffffff; border-radius: 12px; padding: 30px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
-          .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #00adef; }
-          .header h1 { margin: 0; font-size: 32px; color: #007aff; }
-          .header p { margin: 5px 0 0; font-size: 18px; color: #555; }
-          .details { display: flex; justify-content: space-around; margin-bottom: 30px; border-bottom: 1px solid #e5e5ea; padding-bottom: 20px; }
+          body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background-color: #f8f8f8; color: #333; }
+          .container { margin: 30px auto; max-width: 800px; background: #ffffff; border-radius: 8px; padding: 25px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
+          .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #0EA5E9; /* Primary Blue */ }
+          .header h1 { margin: 0; font-size: 28px; color: #0EA5E9; }
+          .header p { margin: 5px 0 0; font-size: 16px; color: #555; }
+          .details { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
           .detail { text-align: center; }
-          .detail h3 { margin: 0; font-size: 16px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-          .detail p { margin: 5px 0 0; font-size: 20px; font-weight: 500; color: #333; }
-          .day-section { margin-bottom: 40px; }
-          .day-section h2 { font-size: 24px; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #00adef; }
-          .plan-item { margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-left: 5px solid #00adef; border-radius: 8px; transition: background 0.3s ease; }
-          .plan-item:hover { background: #f1faff; }
-          .plan-item span.time { font-weight: 700; color: #007aff; margin-right: 15px; display: inline-block; width: 90px; }
-          .plan-item span.event { color: #333; }
-          /* Add styles for new sections */
-          .section-block { margin-bottom: 30px; background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 5px solid #6A0DAD; } /* Example purple accent */
-          .section-block h2 { font-size: 20px; color: #333; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-          .section-block p, .section-block li { color: #555; line-height: 1.6; }
-          .section-block ul { padding-left: 20px; list-style-type: disc; }
-          .section-block .key-value { margin-bottom: 10px; }
-          .section-block .key-value strong { color: #007aff; margin-right: 5px; }
+          .detail h3 { margin: 0 0 5px 0; font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+          .detail p { margin: 0; font-size: 18px; font-weight: 500; color: #333; }
+          .section-block { margin-bottom: 25px; background: #f9f9f9; padding: 15px 20px; border-radius: 6px; border-left: 4px solid #0EA5E9; /* Accent */ }
+          .section-block h2 { font-size: 20px; color: #333; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+          .section-block p, .section-block li { color: #555; line-height: 1.6; font-size: 14px; }
+          .section-block ul { padding-left: 20px; margin-top: 5px; list-style-type: disc; }
+          .section-block .key-value { margin-bottom: 8px; font-size: 14px; }
+          .section-block .key-value strong { color: #1F2937; /* Darker text */ margin-right: 5px; }
+          .day-section { margin-bottom: 30px; }
+          .day-section h2 { font-size: 22px; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #0EA5E9; }
+          .plan-item { margin-bottom: 12px; padding: 12px; background: #f9f9f9; border-left: 4px solid #0EA5E9; border-radius: 6px; display: flex; align-items: flex-start; }
+          .plan-item span.time { font-weight: 700; color: #0EA5E9; margin-right: 12px; display: inline-block; width: 80px; font-size: 14px; flex-shrink: 0; }
+          .plan-item span.event { color: #333; font-size: 14px; flex-grow: 1; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>${destination} Travel Plan</h1>
-            <p>Embark on a journey to ${destination}</p>
+            <h1>${pdfMainTitle}</h1>
+            <p>${pdfSubtitle}</p>
           </div>
           <div class="details">
-            <div class="detail"><h3>Destination</h3><p>${destination}</p></div>
-            <div class="detail"><h3>Duration</h3><p>${duration}</p></div>
-            <div class="detail"><h3>Expenses</h3><p>${expenses}</p></div>
+            <div class="detail"><h3>${detailDestinationLabel}</h3><p>${destination}</p></div>
+            <div class="detail"><h3>${detailDurationLabel}</h3><p>${duration}</p></div>
+            <div class="detail"><h3>${detailExpensesLabel}</h3><p>${expenses}</p></div>
           </div>
+
           ${days
             .map((day) => {
-              // Ensure day and its properties exist
               const dayNumber = day?.day || "?";
               const dayActivities = Array.isArray(day?.activities)
                 ? day.activities
                 : [];
               const dayPlan = Array.isArray(day?.plan) ? day.plan : [];
-              const dayTitle = dayActivities[0]?.name || "Activities"; // Use first activity name or default
+              const dayTitle =
+                day?.title ||
+                dayActivities[0]?.name ||
+                t("userPlan.itinerary.dayTitleFallback", { dayNumber });
 
               return `
               <div class="day-section">
-                <h2>Day ${dayNumber}: ${dayTitle}</h2>
-                ${dayPlan
-                  .map((item) => {
-                    // Ensure item and its properties exist
-                    const itemTime = item?.time || "N/A";
-                    const itemEvent = item?.event || "No details";
-                    return `
-                    <div class="plan-item">
-                      <span class="time">${itemTime}</span>
-                      <span class="event">${itemEvent}</span>
-                    </div>`;
-                  })
-                  .join("")}
+                <h2>${dayTitle}</h2>
+                ${
+                  dayPlan.length > 0
+                    ? dayPlan
+                        .map((item) => {
+                          const itemTime = item?.time || "";
+                          const itemEvent =
+                            item?.event || t("userPlan.itinerary.noDetails");
+                          return `
+                      <div class="plan-item">
+                        ${
+                          itemTime
+                            ? `<span class="time">${itemTime}</span>`
+                            : ""
+                        }
+                        <span class="event">${itemEvent}</span>
+                      </div>`;
+                        })
+                        .join("")
+                    : `<p>${noPlanItemsText}</p>`
+                }
               </div>`;
             })
             .join("")}
 
-          <!-- Visa Requirements -->
-          ${
-            plan.visaRequirements
-              ? `
-            <div class="section-block">
-              <h2>Visa Requirements</h2>
-              <p>${
-                typeof plan.visaRequirements === "string"
-                  ? plan.visaRequirements
-                  : plan.visaRequirements.content ||
-                    plan.visaRequirements.notes ||
-                    "See app for details"
-              }</p>
-            </div>
-          `
-              : ""
-          }
+          ${Object.entries({
+            visaRequirements: plan.visaRequirements,
+            cultureInsights: plan.cultureInsights,
+            currencyInfo: plan.currencyInfo,
+            healthAndSafety: plan.healthAndSafety,
+            transportation: plan.transportation,
+            languageBasics: plan.languageBasics,
+            weatherInfo: plan.weatherInfo,
+          })
+            .map(([key, data]) => {
+              if (!data) return "";
+              let contentHtml = "";
+              let title = "";
 
-          <!-- Culture Insights -->
-          ${
-            plan.cultureInsights
-              ? `
-            <div class="section-block">
-              <h2>Culture Insights</h2>
-              <p>${
-                typeof plan.cultureInsights === "string"
-                  ? plan.cultureInsights
-                  : plan.cultureInsights.content || "See app for details"
-              }</p>
-            </div>
-          `
-              : ""
-          }
+              switch (key) {
+                case "visaRequirements":
+                  contentHtml = `<p>${
+                    typeof data === "string"
+                      ? data
+                      : data.content ||
+                        data.notes ||
+                        t("userPlan.pdf.seeAppDetails")
+                  }</p>`;
+                  title = t("userPlan.pdf.visaTitle");
+                  break;
+                case "cultureInsights":
+                  contentHtml = `<p>${
+                    typeof data === "string"
+                      ? data
+                      : data.content || t("userPlan.pdf.seeAppDetails")
+                  }</p>`;
+                  title = t("userPlan.pdf.cultureTitle");
+                  break;
+                case "currencyInfo":
+                  title = t("userPlan.pdf.currencyTitle");
+                  contentHtml = `
+                           ${
+                             data.currency
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.currencyLabel"
+                                 )}</strong> ${data.currency}</div>`
+                               : ""
+                           }
+                           ${
+                             data.exchangeRate
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.exchangeRateLabel"
+                                 )}</strong> ${data.exchangeRate}</div>`
+                               : ""
+                           }
+                           ${
+                             data.paymentMethods
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.paymentMethodsLabel"
+                                 )}</strong> ${data.paymentMethods}</div>`
+                               : ""
+                           }
+                           ${
+                             data.tipping
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.tippingLabel"
+                                 )}</strong> ${data.tipping}</div>`
+                               : ""
+                           }
+                       `;
+                  break;
+                case "healthAndSafety":
+                  title = t("userPlan.pdf.healthTitle");
+                  const safetyTipsTitle = t("userPlan.pdf.safetyTipsLabel");
+                  const emergencyContactsTitle = t(
+                    "userPlan.pdf.emergencyContactsLabel"
+                  );
+                  contentHtml = `
+                           ${
+                             data.vaccinations
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.vaccinationsLabel"
+                                 )}</strong> ${data.vaccinations}</div>`
+                               : ""
+                           }
+                           ${
+                             data.precautions
+                               ? `<p><strong>${t(
+                                   "userPlan.pdf.precautionsLabel"
+                                 )}</strong> ${data.precautions}</p>`
+                               : ""
+                           }
+                           ${
+                             Array.isArray(data.safetyTips) &&
+                             data.safetyTips.length > 0
+                               ? `<h3>${safetyTipsTitle}</h3><ul>${data.safetyTips
+                                   .map((tip) => `<li>${tip}</li>`)
+                                   .join("")}</ul>`
+                               : ""
+                           }
+                           ${
+                             data.emergencyContacts
+                               ? `<h3>${emergencyContactsTitle}</h3><ul>${Object.entries(
+                                   data.emergencyContacts
+                                 )
+                                   .map(
+                                     ([k, v]) =>
+                                       `<li><strong>${k
+                                         .replace(/([A-Z])/g, " $1")
+                                         .replace(/^./, (str) =>
+                                           str.toUpperCase()
+                                         )}:</strong> ${v}</li>`
+                                   )
+                                   .join("")}</ul>`
+                               : ""
+                           }
+                       `;
+                  break;
+                case "transportation":
+                  title = t("userPlan.pdf.transportationTitle");
+                  const optionsTitle = t("userPlan.pdf.optionsLabel");
+                  contentHtml = `
+                           ${
+                             data.gettingAround
+                               ? `<p>${data.gettingAround}</p>`
+                               : ""
+                           }
+                           ${
+                             Array.isArray(data.options) &&
+                             data.options.length > 0
+                               ? `<h3>${optionsTitle}</h3><ul>${data.options
+                                   .map((opt) => `<li>${opt}</li>`)
+                                   .join("")}</ul>`
+                               : ""
+                           }
+                       `;
+                  break;
+                case "languageBasics":
+                  title = t("userPlan.pdf.languageTitle");
+                  const phrasesTitle = t("userPlan.pdf.commonPhrasesLabel");
+                  const tipsTitle = t("userPlan.pdf.tipsLabel");
+                  contentHtml = `
+                           ${
+                             data.officialLanguage
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.officialLanguageLabel"
+                                 )}</strong> ${data.officialLanguage}</div>`
+                               : ""
+                           }
+                           ${
+                             Array.isArray(data.phrases) &&
+                             data.phrases.length > 0
+                               ? `<h3>${phrasesTitle}</h3><ul>${data.phrases
+                                   .map((p) => `<li>${p}</li>`)
+                                   .join("")}</ul>`
+                               : ""
+                           }
+                           ${
+                             data.communicationTips
+                               ? `<p><strong>${tipsTitle}</strong> ${data.communicationTips}</p>`
+                               : ""
+                           }
+                       `;
+                  break;
+                case "weatherInfo":
+                  title = t("userPlan.pdf.weatherTitle");
+                  contentHtml = `
+                           ${
+                             data.climate
+                               ? `<div class="key-value"><strong>${t(
+                                   "userPlan.pdf.climateLabel"
+                                 )}</strong> ${data.climate}</div>`
+                               : ""
+                           }
+                           ${
+                             data.packingTips
+                               ? `<p><strong>${t(
+                                   "userPlan.pdf.packingTipsLabel"
+                                 )}</strong> ${data.packingTips}</p>`
+                               : ""
+                           }
+                       `;
+                  break;
+                default:
+                  title = key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase());
+                  contentHtml = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+              }
 
-          <!-- Currency Info -->
-          ${
-            plan.currencyInfo
-              ? `
-            <div class="section-block">
-              <h2>Currency & Payments</h2>
-              ${
-                plan.currencyInfo.currency
-                  ? `<div class="key-value"><strong>Currency:</strong> ${plan.currencyInfo.currency}</div>`
-                  : ""
-              }
-              ${
-                plan.currencyInfo.exchangeRate
-                  ? `<div class="key-value"><strong>Exchange Rate:</strong> ${plan.currencyInfo.exchangeRate}</div>`
-                  : ""
-              }
-              ${
-                plan.currencyInfo.paymentMethods
-                  ? `<div class="key-value"><strong>Payment Methods:</strong> ${plan.currencyInfo.paymentMethods}</div>`
-                  : ""
-              }
-              ${
-                plan.currencyInfo.tipping
-                  ? `<div class="key-value"><strong>Tipping:</strong> ${plan.currencyInfo.tipping}</div>`
-                  : ""
-              }
-            </div>
-          `
-              : ""
-          }
-
-          <!-- Health & Safety -->
-          ${
-            plan.healthAndSafety
-              ? `
-            <div class="section-block">
-              <h2>Health & Safety</h2>
-              ${
-                plan.healthAndSafety.vaccinations
-                  ? `<div class="key-value"><strong>Vaccinations:</strong> ${plan.healthAndSafety.vaccinations}</div>`
-                  : ""
-              }
-              ${
-                plan.healthAndSafety.precautions
-                  ? `<p><strong>Precautions:</strong> ${plan.healthAndSafety.precautions}</p>`
-                  : ""
-              }
-              ${
-                Array.isArray(plan.healthAndSafety.safetyTips)
-                  ? `<h3>Safety Tips:</h3><ul>${plan.healthAndSafety.safetyTips
-                      .map((tip) => `<li>${tip}</li>`)
-                      .join("")}</ul>`
-                  : ""
-              }
-              ${
-                plan.healthAndSafety.emergencyContacts
-                  ? `<h3>Emergency Contacts:</h3><ul>${Object.entries(
-                      plan.healthAndSafety.emergencyContacts
-                    )
-                      .map(
-                        ([key, value]) =>
-                          `<li><strong>${key}:</strong> ${value}</li>`
-                      )
-                      .join("")}</ul>`
-                  : ""
-              }
-            </div>
-          `
-              : ""
-          }
-
-          <!-- Transportation -->
-          ${
-            plan.transportation
-              ? `
-            <div class="section-block">
-              <h2>Transportation</h2>
-              ${
-                plan.transportation.gettingAround
-                  ? `<p>${plan.transportation.gettingAround}</p>`
-                  : ""
-              }
-              ${
-                Array.isArray(plan.transportation.options)
-                  ? `<h3>Options:</h3><ul>${plan.transportation.options
-                      .map((opt) => `<li>${opt}</li>`)
-                      .join("")}</ul>`
-                  : ""
-              }
-            </div>
-          `
-              : ""
-          }
-
-          <!-- Language Basics -->
-          ${
-            plan.languageBasics
-              ? `
-            <div class="section-block">
-              <h2>Language Basics</h2>
-              ${
-                plan.languageBasics.officialLanguage
-                  ? `<div class="key-value"><strong>Official Language:</strong> ${plan.languageBasics.officialLanguage}</div>`
-                  : ""
-              }
-              ${
-                Array.isArray(plan.languageBasics.phrases)
-                  ? `<h3>Common Phrases:</h3><ul>${plan.languageBasics.phrases
-                      .map((p) => `<li>${p}</li>`)
-                      .join("")}</ul>`
-                  : ""
-              }
-              ${
-                plan.languageBasics.communicationTips
-                  ? `<p><strong>Tips:</strong> ${plan.languageBasics.communicationTips}</p>`
-                  : ""
-              }
-            </div>
-          `
-              : ""
-          }
-
-           <!-- Weather Info -->
-          ${
-            plan.weatherInfo
-              ? `
-            <div class="section-block">
-                <h2>Weather Info</h2>
-                ${
-                  plan.weatherInfo.climate
-                    ? `<div class="key-value"><strong>Climate:</strong> ${plan.weatherInfo.climate}</div>`
-                    : ""
-                }
-                ${
-                  plan.weatherInfo.packingTips
-                    ? `<p><strong>Packing Tips:</strong> ${plan.weatherInfo.packingTips}</p>`
-                    : ""
-                }
-            </div>
-          `
-              : ""
-          }
+              return `
+                   <div class="section-block">
+                       <h2>${title}</h2>
+                       ${contentHtml}
+                   </div>
+               `;
+            })
+            .join("")}
 
         </div>
       </body>
@@ -317,89 +349,74 @@ function generatePdfContent(plan) {
 
 // --- Component ---
 export function UserPlanScreen() {
-  const { t } = useTranslation(); // Hook called at top level - OK
-  const navigation = useNavigation(); // Hook called at top level - OK
-  const route = useRoute(); // Hook called at top level - OK
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const route = useRoute();
 
-  // State for features potentially loaded separately
-  // You might fetch these using useQuery if they aren't part of tripData
-  const [isLoadingCulture, setIsLoadingCulture] = useState(false);
-  const [cultureError, setCultureError] = useState(null);
-  const [isLoadingVisa, setIsLoadingVisa] = useState(false); // Added for consistency
-  const [visaError, setVisaError] = useState(null); // Added for consistency
-
-  // --- Process route params directly using useMemo ---
-  // This replaces useQuery and usePlanData for transforming route params
+  // Process route params using useMemo for efficiency
   const plan = useMemo(() => {
-    // Hook called at top level - OK
     const tripData = route.params?.tripData;
 
-    // Handle case where tripData is missing entirely
     if (!tripData) {
-      console.warn("UserPlanScreen: No tripData found in route params.");
-      // Return a default structure or potentially the last known AI_RESPONSE as fallback
-      return (
-        AI_RESPONSE.UserPlan || {
-          details: [],
-          days: [],
-          visaRequirements: null,
-          nearbyEvents: [],
-          recommendations: {},
-        }
-      );
+      console.warn("UserPlanScreen: No tripData found.");
+      return null; // Return null if no data, handled by loading state
+    }
+    // console.log("UserPlanScreen received tripData:", tripData); // Keep for debugging if needed
+
+    // Prioritize pre-processed data
+    if (tripData.dataProcessed) {
+      // console.log("[UserPlanScreen] Using pre-processed data.");
+      const details = [
+        { name: "Destination", value: tripData.destination || "N/A" },
+        {
+          name: "Duration",
+          value: tripData.duration ? `${tripData.duration} days` : "N/A",
+        },
+        {
+          name: "Expenses",
+          value: tripData.budgetLevel || tripData.budget || "N/A",
+        },
+      ];
+      return {
+        tripId: tripData.tripId,
+        destination: tripData.destination,
+        nationality: tripData.nationality,
+        details: details,
+        days: Array.isArray(tripData.days) ? tripData.days : [],
+        visaRequirements: tripData.visaRequirements,
+        cultureInsights: tripData.cultureInsights,
+        currencyInfo: tripData.currencyInfo,
+        healthAndSafety: tripData.healthAndSafety,
+        transportation: tripData.transportation,
+        languageBasics: tripData.languageBasics,
+        weatherInfo: tripData.weatherInfo,
+        nearbyEvents: Array.isArray(tripData.nearbyEvents)
+          ? tripData.nearbyEvents
+          : [],
+      };
     }
 
-    console.log("UserPlanScreen received tripData:", tripData);
-
-    // 1) Try to parse the AI JSON (string inside additionalInfo)
+    // Fallback: Process data if not pre-processed
+    console.warn(
+      "[UserPlanScreen] Data not pre-processed, attempting fallback parsing."
+    );
     let ai = null;
-    const raw = tripData.aiRecommendations?.additionalInfo;
-    if (raw && typeof raw === "string") {
+    const rawAiInfo = tripData.aiRecommendations?.additionalInfo;
+    if (rawAiInfo && typeof rawAiInfo === "string") {
       try {
-        ai = JSON.parse(raw);
-        console.log(
-          "[UserPlanScreen] Successfully PARSED ai object:",
-          JSON.stringify(ai, null, 2)
-        );
-        console.log(
-          "[UserPlanScreen] Parsed dailyItinerary:",
-          JSON.stringify(ai.dailyItinerary, null, 2)
-        );
-        console.log(
-          "[UserPlanScreen] Parsed currencyInfo:",
-          JSON.stringify(ai.currencyInfo ?? ai.currency ?? null, null, 2)
-        );
+        ai = JSON.parse(rawAiInfo);
       } catch (err) {
-        console.warn(
-          "[UserPlanScreen] FAILED to parse AI recommendations JSON:",
+        console.error(
+          "[UserPlanScreen] Fallback: FAILED to parse AI recommendations JSON:",
           err
         );
-        console.error("[UserPlanScreen] Raw additionalInfo JSON:", raw);
       }
     } else if (tripData.aiRecommendations?.additionalInfo) {
       ai = tripData.aiRecommendations.additionalInfo;
-      console.log(
-        "[UserPlanScreen] aiRecommendations.additionalInfo is already an object:",
-        JSON.stringify(ai, null, 2)
-      );
-    }
-    if (!ai) {
-      console.error("[UserPlanScreen] FAILED to parse or find AI data.");
-    }
-    if (ai) {
-      console.log("[UserPlanScreen] AI object keys:", Object.keys(ai));
-    } else {
-      console.error(
-        "[UserPlanScreen] AI object is null or undefined after parsing."
-      );
     }
 
-    // 2) Build base details
     const details = [
-      {
-        name: "Destination",
-        value: tripData.destinationCity || tripData.destination || "N/A",
-      },
+      { name: "Destination", value: tripData.destination || "N/A" },
       {
         name: "Duration",
         value: tripData.duration ? `${tripData.duration} days` : "N/A",
@@ -410,227 +427,333 @@ export function UserPlanScreen() {
       },
     ];
 
-    // 3) AI-provided Visa and Culture Insights
-    const visaRequirements =
-      ai?.visaRequirements ?? tripData.visaRequirements ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed visaRequirements:",
-      JSON.stringify(visaRequirements, null, 2)
-    );
-    const cultureInsights =
-      ai?.cultureInsights ?? tripData.cultureInsights ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed cultureInsights:",
-      JSON.stringify(cultureInsights, null, 2)
-    );
-
-    // 4) Normalize itinerary into days array
-    const rawItinerary = ai?.dailyItinerary ?? [];
-    console.log(
-      "[UserPlanScreen] Processing rawItinerary:",
-      JSON.stringify(rawItinerary, null, 2)
-    );
-
     let days = [];
-    if (Array.isArray(rawItinerary) && rawItinerary.length > 0) {
-      days = rawItinerary.map((dayObj, idx) => {
-        const activities = [];
-        const schedule = dayObj.schedule || {};
-
-        // Process morning, afternoon, evening segments
-        ["morning", "afternoon", "evening"].forEach((period) => {
-          const segment = schedule[period];
-          if (segment) {
-            activities.push({
-              time: segment.time || "N/A",
-              name: segment.activity || "No activity specified",
-              estimatedCosts: segment.estimatedCost,
-              transportationOptions: segment.transportationOptions,
-              mealRecommendations: segment.mealRecommendations,
-              accommodationSuggestions: segment.accommodationSuggestions,
-            });
-          }
-        });
-
-        return {
-          day: idx + 1,
-          activities: activities,
-          title: dayObj.title || `Day ${idx + 1}`,
-        };
-      });
+    if (ai?.dailyItinerary && Array.isArray(ai.dailyItinerary)) {
+      days = ai.dailyItinerary.map((daySource, index) => ({
+        day: daySource.day || index + 1,
+        title: daySource.title || `Day ${daySource.day || index + 1}`, // Use provided title or generate one
+        plan: daySource.plan || [], // Ensure plan is an array
+        // Keep other potential fields like activities if they exist
+        ...(daySource.activities && { activities: daySource.activities }),
+        ...(daySource.morning && { morning: daySource.morning }),
+        ...(daySource.afternoon && { afternoon: daySource.afternoon }),
+        ...(daySource.evening && { evening: daySource.evening }),
+      }));
+    } else if (tripData.itinerary && Array.isArray(tripData.itinerary)) {
+      days = tripData.itinerary; // Assuming this has the correct structure
+    } else {
+      const duration = parseInt(tripData.duration, 10) || 1;
+      days = Array.from({ length: duration }, (_, i) => ({
+        day: i + 1,
+        title: `Day ${i + 1}`,
+        plan: [],
+      }));
     }
 
-    console.log(
-      "[UserPlanScreen] Transformed days:",
-      JSON.stringify(days, null, 2)
-    );
-
-    // 5) Other AI sections simplified (using direct keys from parsed 'ai' object)
-    const currencyInfo = ai?.currencyInfo ?? null; // Prefer primary key
-    console.log(
-      "[UserPlanScreen] Parsed currencyInfo:",
-      JSON.stringify(currencyInfo, null, 2)
-    );
-    const healthAndSafety = ai?.healthAndSafety ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed healthAndSafety:",
-      JSON.stringify(healthAndSafety, null, 2)
-    );
-    const transportation = ai?.transportation ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed transportation:",
-      JSON.stringify(transportation, null, 2)
-    );
-    const languageBasics = ai?.languageBasics ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed languageBasics:",
-      JSON.stringify(languageBasics, null, 2)
-    );
-    const weatherInfo = ai?.weatherInfo ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed weatherInfo:",
-      JSON.stringify(weatherInfo, null, 2)
-    );
-
-    // 6) Nearby events (from tripData)
-    const nearbyEvents = Array.isArray(tripData.nearbyEvents)
-      ? tripData.nearbyEvents
-      : [];
-    console.log(
-      "[UserPlanScreen] Parsed nearbyEvents:",
-      JSON.stringify(nearbyEvents, null, 2)
-    );
-
-    // Build final plan object
-    const finalPlan = {
-      details,
-      visaRequirements,
-      cultureInsights,
-      days,
-      currencyInfo,
-      healthAndSafety,
-      transportation,
-      languageBasics,
-      weatherInfo,
-      nearbyEvents,
+    return {
+      tripId: tripData.tripId,
+      destination: tripData.destination,
+      nationality: tripData.nationality,
+      details: details,
+      days: days,
+      visaRequirements:
+        ai?.visaRequirements || tripData.visaRequirements || null,
+      cultureInsights:
+        ai?.localCustoms ||
+        ai?.cultureInsights ||
+        tripData.cultureInsights ||
+        null,
+      currencyInfo: ai?.currencyInfo || tripData.currencyInfo || null,
+      healthAndSafety: ai?.healthAndSafety || tripData.healthAndSafety || null,
+      transportation: ai?.transportation || tripData.transportation || null,
+      languageBasics: ai?.languageBasics || tripData.languageBasics || null,
+      weatherInfo: ai?.weatherInfo || tripData.weatherInfo || null,
+      nearbyEvents: ai?.nearbyEvents || tripData.nearbyEvents || [],
     };
-    console.log(
-      "[UserPlanScreen] FINAL plan object being returned:",
-      JSON.stringify(finalPlan, null, 2)
-    );
-    return finalPlan;
-  }, [route.params?.tripData]); // Depend on tripData object
+  }, [route.params?.tripData]);
 
   // --- Event Handlers ---
-  // (Keep the same handlers: handleBack, handleHome, handleEditPlan, handleNext, handleShare)
-  const handleBack = useCallback(() => {
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate("Home"); // Use actual home route name from App.js
-  }, [navigation]);
-
-  const handleBackToHome = useCallback(
-    () => navigation.navigate("Home"),
-    [navigation]
-  ); // Use actual home route name
-  const handleEditPlan = useCallback(
-    () => navigation.navigate("AssistantScreen"),
-    [navigation]
-  ); // Ensure route exists
-  const handleNext = useCallback(() => {
-    const tripData = route.params?.tripData;
-    navigation.navigate("InformationScreen", {
-      nationality: tripData?.nationality, // Pass nationality
-      destination:
-        tripData?.destination ||
-        plan?.details?.find((d) => d.name === "Destination")?.value, // Pass destination
-    });
-  }, [navigation, route.params?.tripData, plan?.details]);
-
-  const handleShare = useCallback(async () => {
-    if (!plan) {
-      Alert.alert("Error", "Plan data is not available to share.");
-      return;
-    }
-
-    const htmlContent = generatePdfContent(plan);
+  const handleShare = async () => {
+    if (!plan) return; // Don't share if plan isn't ready
     try {
+      const htmlContent = generatePdfContent(plan, t);
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
+      const pdfName = `${
+        FileSystem.cacheDirectory || FileSystem.documentDirectory
+      }TripPlan_${plan.destination?.replace(/ /g, "_") || "Shared"}.pdf`;
 
-      const details = plan?.details || [];
-      const destinationName =
-        details.find((d) => d.name === "Destination")?.value || "TravelPlan";
-      const safeFilename = destinationName.replace(/[^a-zA-Z0-9]/g, "_");
-      const newPath = `${FileSystem.documentDirectory}AlDaleel_${safeFilename}.pdf`;
-
-      // Ensure directory exists (optional, usually handled by FileSystem)
-      // await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory, { intermediates: true });
-
-      await FileSystem.moveAsync({ from: uri, to: newPath });
+      await FileSystem.moveAsync({ from: uri, to: pdfName });
 
       if (!(await Sharing.isAvailableAsync())) {
         Alert.alert(
-          "Sharing Error",
-          "Sharing isn't available on this platform."
+          t("userPlan.alerts.sharingNotAvailableTitle"),
+          t("userPlan.alerts.sharingNotAvailableMessage")
         );
         return;
       }
-
-      await Sharing.shareAsync(newPath, {
+      await Sharing.shareAsync(pdfName, {
         mimeType: "application/pdf",
-        dialogTitle: "Share your Travel Plan",
-        UTI: "com.adobe.pdf", // UTI for better iOS compatibility
+        dialogTitle: t(
+          "userPlan.alerts.shareDialogTitle",
+          "Share your Trip Plan"
+        ),
       });
     } catch (error) {
       console.error("Error sharing PDF:", error);
       Alert.alert(
-        "Sharing Failed",
-        "Failed to generate or share PDF. Please try again."
-      ); // User-friendly error
+        t("userPlan.alerts.errorTitle"),
+        t("userPlan.alerts.pdfError")
+      );
     }
-  }, [plan]); // Dependency: re-create if plan changes
+  };
 
-  // --- Render Logic ---
+  const handleNext = () => {
+    if (!plan || !plan.destination || !plan.nationality) {
+      Alert.alert(
+        t("userPlan.alerts.missingDataTitle"),
+        t("userPlan.alerts.missingDataMessage")
+      );
+      return;
+    }
+    // Pass the full processed plan data
+    navigation.navigate("InformationScreen", {
+      nationality: plan.nationality,
+      destination: plan.destination,
+      tripData: plan,
+    });
+  };
 
-  // Removed the top-level isLoading/error check related to useQuery
-
-  // Check if plan data (derived from route.params) is available.
-  // This check happens after useMemo runs.
-  if (!plan) {
-    // This case might be hit if route.params.tripData was initially undefined
-    // and the fallback in useMemo was also nullish.
+  // --- Render Helper Functions ---
+  const renderDetailItem = (item, index) => {
+    if (!item || !item.name || !item.value) return null;
+    // The label is already handled by t(`userPlan.details.${item.name.toLowerCase()}`)
     return (
-      <SafeAreaView style={styles.centeredScreen}>
-        <Text style={styles.errorText}>Trip plan data is not available.</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>
-            {t("common.goBack", "Go Back")}
-          </Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+      <DetailItem
+        key={`${item.name}-${index}`}
+        iconName={detailEmojis[item.name] || "information-circle"}
+        label={t(`userPlan.details.${item.name.toLowerCase()}`, item.name)}
+        value={item.value}
+      />
     );
-  }
+  };
 
-  // Add this temporary code at the beginning of the render function
-  console.log("PLAN STRUCTURE:", JSON.stringify(plan, null, 2));
-  console.log("DAYS STRUCTURE:", JSON.stringify(plan.days, null, 2));
+  const renderAccordionSection = (titleKey, iconName, data, renderContent) => {
+    // More robust check for "empty" data
+    const isEmpty =
+      !data ||
+      (typeof data === "object" && Object.keys(data).length === 0) ||
+      (Array.isArray(data) && data.length === 0);
+
+    if (isEmpty) return null;
+
+    return (
+      <View style={styles.card} key={titleKey}>
+        <Accordion
+          title={
+            <View style={styles.accordionHeader}>
+              <Ionicons
+                name={iconName}
+                size={22}
+                color="#4B5563"
+                style={styles.accordionIcon}
+              />
+              <Text style={styles.accordionTitle}>{t(titleKey)}</Text>
+            </View>
+          }
+        >
+          <View style={styles.accordionContent}>{renderContent(data)}</View>
+        </Accordion>
+      </View>
+    );
+  };
+
+  // Specific render functions for accordion content
+  const renderItineraryContent = (days) => {
+    if (!Array.isArray(days) || days.length === 0) {
+      return (
+        <Text style={styles.emptyText}>{t("userPlan.itinerary.empty")}</Text>
+      );
+    }
+    return days.map((day, index) => (
+      <View key={`day-${day.day || index}`} style={styles.dayContainer}>
+        <Text style={styles.dayTitle}>{day.title || `Day ${day.day}`}</Text>
+        {Array.isArray(day.plan) && day.plan.length > 0 ? (
+          day.plan.map((item, itemIndex) => (
+            <View key={itemIndex} style={styles.planItem}>
+              {item.time && <Text style={styles.planTime}>{item.time}</Text>}
+              <Text style={styles.planEvent}>
+                {item.event || t("userPlan.itinerary.noDetails")}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.planEvent}>
+            {t("userPlan.itinerary.noActivities")}
+          </Text>
+        )}
+      </View>
+    ));
+  };
+
+  const renderKeyValueContent = (data) => {
+    if (!data || typeof data !== "object") return null;
+    return Object.entries(data).map(([key, value]) => {
+      if (!value) return null; // Don't render if value is null/empty
+      // Simple formatting for key names (e.g., officialLanguage -> Official Language)
+      const formattedKey = key
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase());
+      return (
+        <View key={key} style={styles.keyValueItem}>
+          <Text style={styles.keyText}>{formattedKey}:</Text>
+          <Text style={styles.valueText}>{value.toString()}</Text>
+        </View>
+      );
+    });
+  };
+
+  const renderHealthSafetyContent = (data) => {
+    return (
+      <View>
+        {data.vaccinations && (
+          <View style={styles.keyValueItem}>
+            <Text style={styles.keyText}>
+              {t("userPlan.health.vaccinationsLabel")}
+            </Text>
+            <Text style={styles.valueText}>{data.vaccinations}</Text>
+          </View>
+        )}
+        {data.precautions && (
+          <View style={styles.keyValueItem}>
+            <Text style={styles.keyText}>
+              {t("userPlan.health.precautionsLabel")}
+            </Text>
+            <Text style={styles.valueText}>{data.precautions}</Text>
+          </View>
+        )}
+        {Array.isArray(data.safetyTips) && data.safetyTips.length > 0 && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>
+              {t("userPlan.health.safetyTipsLabel")}
+            </Text>
+            {data.safetyTips.map((tip, index) => (
+              <Text key={index} style={styles.listItem}>
+                • {tip}
+              </Text>
+            ))}
+          </View>
+        )}
+        {data.emergencyContacts &&
+          typeof data.emergencyContacts === "object" &&
+          Object.keys(data.emergencyContacts).length > 0 && (
+            <View style={styles.sectionBlock}>
+              <Text style={styles.sectionTitle}>
+                {t("userPlan.health.emergencyContactsLabel")}
+              </Text>
+              {Object.entries(data.emergencyContacts).map(([key, value]) => (
+                <View key={key} style={styles.keyValueItem}>
+                  <Text style={styles.keyText}>
+                    {key
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())}
+                    :
+                  </Text>
+                  <Text style={styles.valueText}>{value}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+      </View>
+    );
+  };
+
+  const renderTransportationContent = (data) => {
+    return (
+      <View>
+        {data.gettingAround && (
+          <Text style={styles.paragraphText}>{data.gettingAround}</Text>
+        )}
+        {Array.isArray(data.options) && data.options.length > 0 && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>
+              {t("userPlan.transportation.optionsLabel")}
+            </Text>
+            {data.options.map((opt, index) => (
+              <Text key={index} style={styles.listItem}>
+                • {opt}
+              </Text>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderLanguageBasicsContent = (data) => {
+    return (
+      <View>
+        {data.officialLanguage && (
+          <View style={styles.keyValueItem}>
+            <Text style={styles.keyText}>
+              {t("userPlan.language.officialLanguageLabel")}
+            </Text>
+            <Text style={styles.valueText}>{data.officialLanguage}</Text>
+          </View>
+        )}
+        {Array.isArray(data.phrases) && data.phrases.length > 0 && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>
+              {t("userPlan.language.commonPhrasesLabel")}
+            </Text>
+            {data.phrases.map((phrase, index) => (
+              <Text key={index} style={styles.listItem}>
+                • {phrase}
+              </Text>
+            ))}
+          </View>
+        )}
+        {data.communicationTips && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>
+              {t("userPlan.language.communicationTipsLabel")}
+            </Text>
+            <Text style={styles.paragraphText}>{data.communicationTips}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderWeatherContent = (data) => {
+    return (
+      <View>
+        {data.climate && (
+          <View style={styles.keyValueItem}>
+            <Text style={styles.keyText}>
+              {t("userPlan.weather.climateLabel")}
+            </Text>
+            <Text style={styles.valueText}>{data.climate}</Text>
+          </View>
+        )}
+        {data.packingTips && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>
+              {t("userPlan.weather.packingTipsLabel")}
+            </Text>
+            <Text style={styles.paragraphText}>{data.packingTips}</Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   // --- Main Render ---
-  // Uses the 'plan' object derived directly from route.params via useMemo
-  return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
-        {/* Header Left Buttons */}
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="chevron-back" size={28} color="#000" />
-          </TouchableOpacity>
+  if (!plan) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0EA5E9" />
+          <Text style={styles.loadingText}>{t("userPlan.loading")}</Text>
         </View>
 
         {/* Header Title (Centered) */}
@@ -651,332 +774,322 @@ export function UserPlanScreen() {
             <Ionicons name="share-outline" size={28} style={styles.iconColor} />
           </TouchableOpacity>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.iconButton}
+        >
+          <Ionicons name="chevron-back" size={28} color="#374151" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t("userPlan.title")}</Text>
+        <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
+          <Ionicons name="share-outline" size={24} color="#374151" />
+        </TouchableOpacity>
       </View>
 
-      {/* Body */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Plan Details */}
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailsColumn}>
-            {plan.details.map((detail, index) => (
-              <DetailItem
-                key={`${index}-label`}
-                label={detail.name}
-                value={null}
-              />
-            ))}
-          </View>
-          <View style={styles.detailsEmojiColumn}>
-            {plan.details.map((detail, index) => (
-              <View key={`${index}-emoji`} style={styles.emojiWrapper}>
-                <Text style={styles.emojiText}>
-                  {detailEmojis[detail.name] || ""}
-                </Text>
-              </View>
-            ))}
-          </View>
-          <View style={styles.detailsColumn}>
-            {plan.details.map((detail, index) => (
-              <DetailItem
-                key={`${index}-value`}
-                label={null}
-                value={detail.value}
-              />
-            ))}
-          </View>
+        {/* Basic Trip Details */}
+        <View style={[styles.card, styles.detailsContainer]}>
+          {plan.details.map(renderDetailItem)}
         </View>
 
-        {/* --- Dynamic Sections --- */}
-        {/* Only render sections if data exists */}
-
-        {/* Render NearbyEvents if data is available */}
-        {console.log(
-          "[UserPlanScreen] Rendering NearbyEvents with data:",
-          plan.nearbyEvents
-        )}
-        {plan.nearbyEvents?.length > 0 && (
-          <NearbyEvents
-            eventsData={plan.nearbyEvents}
-            // Assuming events data loading is part of the main plan data now
-            isLoading={false}
-            error={null}
-          />
+        {/* Itinerary Section */}
+        {renderAccordionSection(
+          "userPlan.sections.itinerary",
+          sectionIcons.dailyItinerary,
+          plan.days,
+          renderItineraryContent
         )}
 
-        {/* Itinerary Days */}
-        {plan.days.map((day, index) => (
-          <View key={`day-${index}`} style={styles.dayContainer}>
-            <Text style={styles.dayLabel}>{day.title}</Text>
-            {day.activities && day.activities.length > 0 ? (
-              <View style={styles.activitiesContainer}>
-                {day.activities.map((activity, idx) => (
-                  <Accordion
-                    key={`activity-${idx}`}
-                    title={
-                      <View style={styles.activityHeader}>
-                        <Text style={styles.activityTime}>{activity.time}</Text>
-                        <Text style={styles.activityName}>{activity.name}</Text>
-                      </View>
-                    }
-                  >
-                    <View style={styles.activityDetails}>
-                      {activity.estimatedCosts && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Cost: </Text>
-                          {activity.estimatedCosts}
-                        </Text>
-                      )}
-                      {activity.transportationOptions && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Transport: </Text>
-                          {activity.transportationOptions}
-                        </Text>
-                      )}
-                      {activity.mealRecommendations && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Meals: </Text>
-                          {activity.mealRecommendations}
-                        </Text>
-                      )}
-                      {activity.accommodationSuggestions && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>
-                            Accommodation:{" "}
-                          </Text>
-                          {activity.accommodationSuggestions}
-                        </Text>
-                      )}
-                    </View>
-                  </Accordion>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.noActivityText}>
-                No activities scheduled for this day.
-              </Text>
-            )}
-          </View>
-        ))}
+        {/* Currency Section */}
+        {renderAccordionSection(
+          "userPlan.sections.currency",
+          sectionIcons.currencyInfo,
+          plan.currencyInfo,
+          renderKeyValueContent
+        )}
+
+        {/* Health & Safety Section */}
+        {renderAccordionSection(
+          "userPlan.sections.health",
+          sectionIcons.healthAndSafety,
+          plan.healthAndSafety,
+          renderHealthSafetyContent
+        )}
+
+        {/* Transportation Section */}
+        {renderAccordionSection(
+          "userPlan.sections.transportation",
+          sectionIcons.transportation,
+          plan.transportation,
+          renderTransportationContent
+        )}
+
+        {/* Language Basics Section */}
+        {renderAccordionSection(
+          "userPlan.sections.language",
+          sectionIcons.languageBasics,
+          plan.languageBasics,
+          renderLanguageBasicsContent
+        )}
+
+        {/* Weather Info Section */}
+        {renderAccordionSection(
+          "userPlan.sections.weather",
+          sectionIcons.weatherInfo,
+          plan.weatherInfo,
+          renderWeatherContent
+        )}
+
+        {/* Visa Requirements Section */}
+        {renderAccordionSection(
+          "userPlan.sections.visa",
+          sectionIcons.visaRequirements,
+          plan.visaRequirements,
+          (data) => (
+            <VisaRequirements data={data} />
+          )
+        )}
+
+        {/* Culture Insights Section */}
+        {renderAccordionSection(
+          "userPlan.sections.culture",
+          sectionIcons.cultureInsights,
+          plan.cultureInsights,
+          (data) => (
+            <CultureInsights data={data} />
+          )
+        )}
+
+        {/* Nearby Events Section */}
+        {renderAccordionSection(
+          "userPlan.sections.events",
+          sectionIcons.nearbyEvents,
+          plan.nearbyEvents,
+          (data) => (
+            <NearbyEvents events={data} />
+          )
+        )}
       </ScrollView>
 
-      {/* Bottom Navigation Bar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pt-3 pb-5 border-t border-gray-100">
-        <View className="flex-row justify-between gap-2 items-center h-[50px]">
-          {/* Home Button */}
-          <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5" // Adjusted size/shadow
-            onPress={handleBackToHome}
-          >
-            <FontAwesome name="home" size={26} color="#444" />
-          </TouchableOpacity>
-
-          {/* Edit Button */}
-          <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5"
-            onPress={handleEditPlan}
-            accessibilityRole="button"
-            accessibilityLabel={t("accessibility.editButton", "Edit Plan")}
-          >
-            <Ionicons name="pencil-outline" size={26} color="#444" />
-          </TouchableOpacity>
-
-          {/* Next Button */}
-          <TouchableOpacity
-            className="flex-row flex-1 items-center justify-center rounded-full px-6 py-3 shadow shadow-black/10 bg-sky-500"
-            onPress={handleNext}
-          >
-            <Text className="text-white text-lg font-semibold mr-1.5">
-              Next
-            </Text>
-            <Ionicons name="chevron-forward" size={22} color="#FFF" />
-          </TouchableOpacity>
-        </View>
+      {/* Footer Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {t("userPlan.buttons.next")}
+          </Text>
+          <Ionicons name="arrow-forward" size={20} color="#FFF" />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-// --- Styles --- (Using StyleSheet for better organization)
+// --- Styles ---
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F4F4F5" }, // bg-neutral-100
-  centeredScreen: {
+  container: {
     flex: 1,
-    backgroundColor: "#F4F4F5",
+    backgroundColor: "#F9FAFB", // Light Gray
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 16,
+    backgroundColor: "#F9FAFB",
   },
-  errorText: { color: "#EF4444", marginBottom: 16, textAlign: "center" }, // text-red-500 mb-4 text-center
-  backButton: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  }, // bg-blue-500 px-4 py-2 rounded-lg
-  backButtonText: { color: "#FFFFFF" }, // text-white
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: "#6B7280", // Medium Gray
+  },
   header: {
-    backgroundColor: "#FFFFFF",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12, // Reduced horizontal padding slightly
+    paddingVertical: 10,
+    backgroundColor: "#FFF", // White
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-  }, // bg-white flex-row items-center justify-between py-2 px-4 border-b border-neutral-200
-  headerButtons: { flexDirection: "row", alignItems: "center", gap: 16 }, // flex-row items-center gap-4
-  iconColor: { color: "#2563EB" }, // text-blue-600 (Applied via style prop)
-  headerTitleContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: "none",
+    borderBottomColor: "#E5E7EB", // Light Gray border
   },
-  headerTitle: { fontSize: 18, fontWeight: "600", color: "#000000" }, // text-lg font-semibold text-black
-  hitSlop: { top: 10, bottom: 10, left: 10, right: 10 },
-  scrollView: { flex: 1 },
-  scrollViewContent: { padding: 16, paddingBottom: 96 }, // p-4 pb-32 (Adjust paddingBottom as needed)
+  iconButton: {
+    padding: 8, // Hit area for icons
+  },
+  headerTitle: {
+    fontSize: 18, // Slightly smaller title
+    fontWeight: "600",
+    color: "#1F2937", // Dark Gray
+    textAlign: "center",
+    flex: 1, // Allow title to take space but center
+    marginHorizontal: 10, // Add margin around title
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    padding: 16,
+    paddingBottom: 90, // Increased padding for footer button clearance
+  },
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: "hidden", // Ensures accordion content stays within card bounds
+  },
   detailsContainer: {
+    paddingVertical: 8, // Adjust padding inside details card
+    paddingHorizontal: 16,
+  },
+  accordionHeader: {
     flexDirection: "row",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 12,
-    marginVertical: 12,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  }, // flex-row justify-center bg-white p-3 my-3 rounded-lg shadow-md
-  detailsColumn: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  detailsEmojiColumn: {
-    flexDirection: "column",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16, // Consistent padding
   },
-  emojiWrapper: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    height: 44,
-  }, // p-2.5 items-center justify-center h-[44px] (Approximation)
-  emojiText: { fontSize: 16 }, // text-base
-  dayContainer: { marginBottom: 20 }, // mb-5
-  dayLabel: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#3F3F46",
-    marginBottom: 6,
-    marginLeft: 4,
-  }, // text-sm font-normal text-neutral-700 mb-1.5 ml-1
-  activitiesContainer: {
-    backgroundColor: "#06B6D4",
-    borderRadius: 8,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  }, // bg-cyan-500 rounded-lg overflow-hidden shadow-md
-  planItem: {
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-  }, // flex-row gap-2 justify-between p-3 border-b border-neutral-200
-  planTime: {
-    color: "#71717A",
-    width: 64,
-    paddingRight: 8,
-    borderRightWidth: 1,
-    borderRightColor: "#D4D4D8",
-  }, // text-neutral-500 w-16 pr-2 border-r border-neutral-300
-  planEvent: { flex: 1, color: "#27272A" }, // flex-1 text-neutral-800
-  noPlanText: { padding: 12, color: "#71717A", fontStyle: "italic" },
-  noActivityText: {
-    padding: 12,
-    color: "#71717A",
-    fontStyle: "italic",
-    textAlign: "center",
+  accordionIcon: {
+    marginRight: 12,
   },
-  nextButtonContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: 32,
-    backgroundColor: "transparent",
-    pointerEvents: "box-none",
-  }, // absolute bottom-0 left-0 right-0 p-5 pb-8 bg-transparent pointer-events-box
-  // Styles for Accordion Content
-  accordionContent: { padding: 12, backgroundColor: "#FFFFFF" }, // bg-white for contrast inside accordion
-  detailText: { color: "#3F3F46", marginBottom: 4 }, // text-neutral-700
-  detailLabel: { fontWeight: "600" }, // font-semibold
-  nextButton: {
-    backgroundColor: "#0EA5E9",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-  }, // bg-sky-500 py-4 px-5 rounded-lg shadow
-  nextButtonText: {
-    color: "#FFFFFF",
-    textAlign: "center",
+  accordionTitle: {
     fontSize: 16,
     fontWeight: "600",
-  }, // text-white text-center text-base font-semibold
-  activityHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-  },
-  activityTime: {
-    fontSize: 14,
-    color: "#666",
-    marginRight: 12,
-    minWidth: 100,
-  },
-  activityName: {
-    fontSize: 16,
-    color: "#333",
+    color: "#1F2937", // Dark Gray
     flex: 1,
   },
-  activityDetails: {
-    padding: 12,
-    backgroundColor: "#f5f5f5",
+  accordionContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8, // Add a bit of space above content
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6", // Very light separator line
   },
-  detailText: {
-    fontSize: 14,
-    color: "#333",
+  // Styles for Itinerary content
+  dayContainer: {
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    "&:last-child": {
+      // Target last child if possible (might need specific logic in RN)
+      borderBottomWidth: 0,
+      marginBottom: 0,
+      paddingBottom: 0,
+    },
+  },
+  dayTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827", // Slightly darker heading
     marginBottom: 8,
   },
-  detailLabel: {
+  planItem: {
+    flexDirection: "row",
+    marginBottom: 5,
+    alignItems: "flex-start",
+  },
+  planTime: {
+    width: 70, // Fixed width for time alignment
+    fontSize: 14,
+    color: "#0EA5E9", // Blue accent
+    fontWeight: "500",
+    marginRight: 10,
+  },
+  planEvent: {
+    flex: 1,
+    fontSize: 14,
+    color: "#4B5563", // Medium Gray
+    lineHeight: 20, // Improved readability
+  },
+  // Styles for Key-Value pairs
+  keyValueItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    alignItems: "flex-start",
+  },
+  keyText: {
+    fontSize: 14,
+    color: "#374151", // Darker Gray
+    fontWeight: "500",
+    marginRight: 8,
+  },
+  valueText: {
+    fontSize: 14,
+    color: "#4B5563", // Medium Gray
+    textAlign: "right",
+    flexShrink: 1, // Allow text to wrap if needed
+  },
+  // Styles for Lists and Paragraphs within accordions
+  sectionBlock: {
+    marginTop: 10,
+  },
+  sectionTitle: {
+    fontSize: 14,
     fontWeight: "600",
-    color: "#666",
+    color: "#111827",
+    marginBottom: 5,
+  },
+  listItem: {
+    fontSize: 14,
+    color: "#4B5563",
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  paragraphText: {
+    fontSize: 14,
+    color: "#4B5563",
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+    paddingVertical: 10,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20, // Adjusted bottom padding
+    backgroundColor: "#FFF", // White background
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB", // Light Gray border
+  },
+  nextButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#0EA5E9", // Primary Blue
+    paddingVertical: 12,
+    borderRadius: 8, // Slightly less rounded corners
+    height: 50,
+  },
+  nextButtonText: {
+    color: "#FFF", // White text
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 8,
   },
 });
 
-// Default export for the screen
 export default UserPlanScreen;
