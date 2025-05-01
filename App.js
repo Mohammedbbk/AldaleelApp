@@ -1,6 +1,10 @@
 // App.js
 import React from "react";
+import "./src/config/i18n";
 import { ActivityIndicator, View } from "react-native";
+import { I18nManager } from "react-native";
+import { useTranslation } from "react-i18next";
+
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -170,20 +174,27 @@ function NavigationErrorBoundary({ children }) {
 // Create a QueryClient instance
 const queryClient = new QueryClient();
 
-class App extends React.Component {
-  render() {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <AuthProvider>
-            <NavigationErrorBoundary>
-              <RootNavigator />
-            </NavigationErrorBoundary>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    );
-  }
+function App() {
+  const { i18n } = useTranslation();
+
+  React.useEffect(() => {
+    const isRTL = i18n.language === "ar";
+    if (I18nManager.isRTL !== isRTL) {
+      I18nManager.forceRTL(isRTL);
+    }
+  }, [i18n.language]);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <NavigationErrorBoundary>
+            <RootNavigator />
+          </NavigationErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;

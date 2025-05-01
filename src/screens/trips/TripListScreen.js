@@ -1,4 +1,3 @@
-// src/screens/trips/TripListScreen.js
 import React, { useState, useCallback, useEffect } from "react";
 import {
   SafeAreaView,
@@ -14,24 +13,22 @@ import {
 import { useTheme } from "../../../ThemeProvider";
 import { Filter, AlertCircle } from "lucide-react-native";
 import { useColorScheme } from "react-native";
+import { useTranslation } from "react-i18next"; // Add this import
 import SearchBar from "../../components/common/SearchBar";
 import TripCard from "../../components/home/TripCard";
 import FloatingBottomNav from "../../components/navigation/FloatingBottomNav";
-import i18n from "../../config/appConfig";
-// ---> IMPORT getTrips FROM tripService <---
 import { getTrips } from "../../services/tripService";
-// Keep constants import if needed elsewhere, but API/ENDPOINTS not used directly now
-import { API, ENDPOINTS } from "../../config/constants";
 
 // Define filter options
 const filterOptions = [
-  { id: "all", i18nKey: "all" },
-  { id: "upcoming", i18nKey: "upcoming" },
-  { id: "past", i18nKey: "past" },
-  // Add more filters as needed (e.g., shared, favorite)
+  { id: "all", translationKey: "trips.list.filters.all" },
+  { id: "upcoming", translationKey: "trips.list.filters.upcoming" },
+  { id: "past", translationKey: "trips.list.filters.past" },
 ];
 
 function TripListScreen({ navigation }) {
+  // Add translation hook
+  const { t } = useTranslation();
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [trips, setTrips] = useState([]);
@@ -83,14 +80,12 @@ function TripListScreen({ navigation }) {
         }
       } catch (err) {
         console.error("Error fetching trips in screen:", err);
-        setError(err.message || i18n.t("trips.list.errors.fetchFailed"));
-        if (!append) setTrips([]); // Clear trips on error if not appending
-      } finally {
-        setIsLoading(false);
+        setError(err.message || t("trips.list.errors.fetchFailed"));
+        if (!append) setTrips([]);
       }
     },
-    [selectedFilter, sortBy, searchText]
-  ); // Dependencies for useCallback
+    [selectedFilter, sortBy, searchText, t]
+  );
 
   // Initial fetch on mount
   useEffect(() => {
@@ -179,24 +174,19 @@ function TripListScreen({ navigation }) {
           : "bg-gray-50 border-gray-200"
       }`}
     >
-      {/* StatusBar */}
       <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
-      {/* Header - Containts search bar and filters */}
       <View className="px-4 mb-2">
-        {/* Search Bar - Positioned above the list */}
         <SearchBar
           value={searchText}
           onChangeText={setSearchText}
-          placeholder={i18n.t("trips.list.searchPlaceholder")}
-          // onSearchPress removed as search triggers via useEffect
+          placeholder={t("trips.list.searchPlaceholder")}
           containerClassName="mt-4 mb-2 h-16"
         />
 
-        {/* Filter and Sort Options - Positioned above the list */}
         <View
           className={`${
             isDarkMode
@@ -204,15 +194,14 @@ function TripListScreen({ navigation }) {
               : "bg-gray-50 border-gray-200"
           } rounded-3xl shadow py-2 px-4 gap-2`}
         >
-          {/* Title and Sort Button */}
-          <View className="flex-row justify-between items-center ">
+          <View className="flex-row justify-between items-center">
             <Text
               className={`text-xl font-bold ${
                 isDarkMode ? "text-gray-200" : "text-gray-800"
               }`}
               accessibilityRole="header"
             >
-              {i18n.t("trips.list.title")}
+              {t("trips.list.title")}
             </Text>
             <TouchableOpacity
               onPress={handleSort}
@@ -220,22 +209,16 @@ function TripListScreen({ navigation }) {
             >
               <Filter size={20} color="#3B82F6" />
               <Text className="text-sm text-blue-500 font-medium ml-1.5">
-                {i18n.t("trips.list.sortBy")}{" "}
-                {i18n.t(
-                  `trips.list.sortOptions.${
-                    sortBy === "date" ? "date" : "destination"
-                  }`
-                )}
+                {t("trips.list.sortBy")} {t(`trips.list.sortOptions.${sortBy}`)}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Filter Buttons */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            className="-mx-1 mb-2" // Add negative margin to align edges visually
-            contentContainerStyle={{ paddingHorizontal: 4 }} // Add padding inside scroll
+            className="-mx-1 mb-2"
+            contentContainerStyle={{ paddingHorizontal: 4 }}
           >
             {filterOptions.map((option) => (
               <TouchableOpacity
@@ -256,7 +239,7 @@ function TripListScreen({ navigation }) {
                       : "text-gray-700"
                   }`}
                 >
-                  {i18n.t(`trips.list.filters.${option.id}`)}
+                  {t(option.translationKey)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -264,14 +247,12 @@ function TripListScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Body - Contains List aria */}
       <View className="flex-1 px-4">
-        {/* List Area */}
-        {isLoading && trips.length === 0 ? ( // Show loader only on initial load
+        {isLoading && trips.length === 0 ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color="#3B82F6" />
           </View>
-        ) : !isLoading && trips.length === 0 ? ( // Show empty/error state
+        ) : !isLoading && trips.length === 0 ? (
           <View className="flex-1 justify-center items-center">
             <AlertCircle
               size={40}
@@ -282,52 +263,39 @@ function TripListScreen({ navigation }) {
                 colorScheme === "dark" ? "text-gray-400" : "text-gray-500"
               }`}
             >
-              {error ? error : i18n.t("trips.list.noTripsFound")}
+              {error ? error : t("trips.list.noTripsFound")}
             </Text>
-            {error ? (
+            {error && (
               <TouchableOpacity
                 className="mt-6 bg-blue-500 px-5 py-2.5 rounded-lg shadow"
-                onPress={() => fetchTripsData({ page: 1 })} // Retry initial fetch
+                onPress={() => fetchTripsData({ page: 1 })}
               >
                 <Text className="text-white font-medium">
-                  {i18n.t("trips.list.retry")}
+                  {t("trips.list.retry")}
                 </Text>
               </TouchableOpacity>
-            ) : null}
+            )}
           </View>
         ) : (
-          // Show list
           <FlatList
             data={trips}
             renderItem={renderTripItem}
-            keyExtractor={(item) => item.id?.toString()} // Ensure key is string
+            keyExtractor={(item) => item.id?.toString()}
             contentContainerStyle={{ paddingBottom: 180 }}
             showsVerticalScrollIndicator={false}
-            // Add onRefresh and onEndReached for pull-to-refresh/load-more
-            // onRefresh={() => fetchTripsData({ page: 1 })}
-            // refreshing={isLoading}
-            // onEndReached={() => {
-            //    if (paginationInfo && currentPage < paginationInfo.total) {
-            //        fetchTripsData({ page: currentPage + 1, append: true });
-            //    }
-            // }}
-            // onEndReachedThreshold={0.5}
-            // ListFooterComponent={isLoading && trips.length > 0 ? <ActivityIndicator /> : null}
           />
         )}
       </View>
 
-      {/* Create Button - Outside FlatList, Positioned relative to SafeAreaView */}
       <TouchableOpacity
-        className="bg-blue-500 absolute bottom-36 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow mx-4" // Adjust margins
+        className="bg-blue-500 absolute bottom-36 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow mx-4"
         onPress={() => navigation.navigate("CreateTrip")}
       >
         <Text className="text-white text-lg font-bold">
-          {i18n.t("trips.list.createNew")}
+          {t("trips.list.createNew")}
         </Text>
       </TouchableOpacity>
 
-      {/* Floating Nav - Positioned relative to SafeAreaView */}
       <FloatingBottomNav activeRouteName="Trips" />
     </SafeAreaView>
   );

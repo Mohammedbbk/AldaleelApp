@@ -1,5 +1,3 @@
-// TripStyleScreen.js
-
 import React, { useState } from "react";
 import {
   View,
@@ -13,30 +11,38 @@ import {
 } from "react-native";
 import { useTheme } from "../../../ThemeProvider";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
-import i18n from "../../config/appConfig";
+import { useTranslation } from "react-i18next"; // Replace i18n import
 import { INTERESTS, TRIP_PACES } from "../../config/tripConstants";
 
 export function TripStyleScreen({ navigation, route }) {
-  const stepOneData = route.params?.stepOneData || {};
+  // Initialize hooks first
+  const { t } = useTranslation();
+  const { isDarkMode, colors } = useTheme();
   const colorScheme = useColorScheme();
+  const stepOneData = route.params?.stepOneData || {};
+
+  // State declarations
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [selectedTripPace, setSelectedTripPace] = useState("");
   const [validationError, setValidationError] = useState("");
 
-  const isFormValid = selectedInterests.length > 0 && selectedTripPace !== "";
-
+  // Functions after hooks and state
   const toggleInterest = (interest) => {
-    setValidationError("");
-    if (selectedInterests.includes(interest)) {
-      setSelectedInterests(selectedInterests.filter((i) => i !== interest));
-    } else {
-      setSelectedInterests([...selectedInterests, interest]);
-    }
+    setValidationError(""); // Clear any validation error
+    setSelectedInterests((prevInterests) => {
+      if (prevInterests.includes(interest)) {
+        return prevInterests.filter((i) => i !== interest);
+      } else {
+        return [...prevInterests, interest];
+      }
+    });
   };
+
+  const isFormValid = selectedInterests.length > 0 && selectedTripPace !== "";
 
   const handleNextStep = () => {
     if (!isFormValid) {
-      setValidationError(i18n.t("tripStyle.validation.missingFields"));
+      setValidationError(t("tripStyle.validation.missingFields"));
       return;
     }
     const mergedData = {
@@ -47,7 +53,7 @@ export function TripStyleScreen({ navigation, route }) {
     navigation.navigate("TripDetailsScreen", { fullTripData: mergedData });
   };
 
-  const { isDarkMode, colors } = useTheme();
+  // Rest of the component logic remains the same...
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
@@ -62,7 +68,7 @@ export function TripStyleScreen({ navigation, route }) {
           className="w-[50] h-[50] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("accessibility.backButton")}
         >
           <Ionicons
             name="chevron-back"
@@ -72,18 +78,18 @@ export function TripStyleScreen({ navigation, route }) {
         </TouchableOpacity>
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-            {i18n.t("tripStyle.title")}
+            {t("tripStyle.title")}
           </Text>
         </View>
         <Text className="text-base text-orange-500 font-semibold">
-          {i18n.t("tripStyle.stepIndicator")}
+          {t("tripStyle.stepIndicator")}
         </Text>
       </View>
 
       <ScrollView className="px-5 pb-24">
         {/* Interests Section */}
         <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-5">
-          {i18n.t("tripStyle.interests.title")}
+          {t("tripStyle.interests.title")}
         </Text>
         {validationError && (
           <Text className="text-red-500 mb-4">{validationError}</Text>
@@ -102,7 +108,7 @@ export function TripStyleScreen({ navigation, route }) {
                 onPress={() => toggleInterest(item.value)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: isSelected }}
-                accessibilityLabel={i18n.t(`tripStyle.interests.${item.value}`)}
+                accessibilityLabel={t(`tripStyle.interests.${item.value}`)}
               >
                 <View className="flex-row items-center">
                   <Text className="text-lg mr-2">{item.emoji}</Text>
@@ -113,7 +119,7 @@ export function TripStyleScreen({ navigation, route }) {
                         : "text-gray-700 dark:text-gray-300"
                     }`}
                   >
-                    {i18n.t(`tripStyle.interests.${item.value}`)}
+                    {t(`tripStyle.interests.${item.value}`)}
                   </Text>
                 </View>
                 <View
@@ -134,7 +140,7 @@ export function TripStyleScreen({ navigation, route }) {
 
         {/* Trip Pace Section */}
         <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-10">
-          {i18n.t("tripStyle.pace.title")}
+          {t("tripStyle.pace.title")}
         </Text>
         <View className="flex-row justify-between">
           {TRIP_PACES.map((pace) => {
@@ -153,7 +159,7 @@ export function TripStyleScreen({ navigation, route }) {
                 }}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: isSelected }}
-                accessibilityLabel={i18n.t(`tripStyle.pace.${pace.value}`)}
+                accessibilityLabel={t(`tripStyle.pace.${pace.value}`)}
               >
                 <Text
                   className={`text-base ${
@@ -162,7 +168,7 @@ export function TripStyleScreen({ navigation, route }) {
                       : "text-gray-700 dark:text-gray-300"
                   }`}
                 >
-                  {i18n.t(`tripStyle.pace.${pace.value}`)}
+                  {t(`tripStyle.pace.${pace.value}`)}
                 </Text>
               </TouchableOpacity>
             );
@@ -173,12 +179,11 @@ export function TripStyleScreen({ navigation, route }) {
       {/* Bottom Navigation */}
       <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pt-3 pb-5 border-t border-gray-100">
         <View className="flex-row justify-between items-center h-[50px]">
-          {/* Home Button */}
           <TouchableOpacity
             className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5"
             onPress={() => navigation.navigate("HomePage")}
             accessibilityRole="button"
-            accessibilityLabel="Go to home"
+            accessibilityLabel={t("accessibility.homeButton")}
           >
             <FontAwesome
               name="home"
@@ -187,19 +192,18 @@ export function TripStyleScreen({ navigation, route }) {
             />
           </TouchableOpacity>
 
-          {/* Next Step Button */}
           <TouchableOpacity
             className={`flex-row flex-1 items-center justify-center rounded-full px-6 py-3 shadow shadow-black/10 ml-4 ${
-              isFormValid ? "bg-sky-500" : "bg-sky-300" // Use updated isFormValid
+              isFormValid ? "bg-sky-500" : "bg-sky-300"
             }`}
             onPress={handleNextStep}
             disabled={!isFormValid}
             accessibilityRole="button"
             accessibilityState={{ disabled: !isFormValid }}
-            accessibilityLabel={i18n.t("tripStyle.buttons.next")}
+            accessibilityLabel={t("tripStyle.buttons.next")}
           >
             <Text className="text-white font-medium mr-2">
-              {i18n.t("tripStyle.buttons.next")}
+              {t("tripStyle.buttons.next")}
             </Text>
             <Ionicons name="chevron-forward" size={20} color="#FFF" />
           </TouchableOpacity>
@@ -209,5 +213,4 @@ export function TripStyleScreen({ navigation, route }) {
   );
 }
 
-// Add default export at the end of the file
 export default TripStyleScreen;

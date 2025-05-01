@@ -349,7 +349,7 @@ function generatePdfContent(plan, t) {
 
 // --- Component ---
 export function UserPlanScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -474,19 +474,7 @@ export function UserPlanScreen() {
   };
 
   const handleNext = () => {
-    if (!plan || !plan.destination || !plan.nationality) {
-      Alert.alert(
-        t("userPlan.alerts.missingDataTitle"),
-        t("userPlan.alerts.missingDataMessage")
-      );
-      return;
-    }
-    // Pass the full processed plan data
-    navigation.navigate("InformationScreen", {
-      nationality: plan.nationality,
-      destination: plan.destination,
-      tripData: plan,
-    });
+    navigation.navigate("Home");
   };
 
   // --- Render Helper Functions ---
@@ -854,10 +842,7 @@ export function UserPlanScreen() {
       {/* Footer Button */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {t("userPlan.buttons.next")}
-          </Text>
-          <Ionicons name="arrow-forward" size={20} color="#FFF" />
+          <Text style={styles.nextButtonText}>Home</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

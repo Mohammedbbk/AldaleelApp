@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react"; // Added useEffect
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  StyleSheet, // Added StyleSheet
+  StyleSheet,
 } from "react-native";
 import { useTheme } from "../../../ThemeProvider";
 import { Ionicons, FontAwesome, Feather } from "@expo/vector-icons";
-import i18n from "../../config/appConfig"; // Ensure this path is correct
+import { useTranslation } from "react-i18next"; // Replace i18n import
 import {
   SPECIAL_REQUIREMENTS,
   TRANSPORTATION_OPTIONS,
-} from "../../config/constants"; // Ensure this path is correct
-import { createTrip } from "../../services/tripService"; // Ensure this path is correct
+} from "../../config/constants";
+import { createTrip } from "../../services/tripService";
 
 // Define styles for better organization
 const styles = StyleSheet.create({
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     marginRight: 10,
   },
-  checkboxSelected: { borderColor: "#F97316", backgroundColor: "#FFF7ED" },
+  checkboxSelected: { borderColor: "#F97316", backgroundColor: "#F97316" },
   checkboxUnselected: { borderColor: "#0EA5E9" },
   optionText: { fontSize: 16, color: "#4B5563" },
   textInputContainer: { marginTop: 10 },
@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
 });
 
 export function TripDetailsScreen({ route, navigation }) {
+  const { t } = useTranslation(); // Add translation hook
   const { isDarkMode, colors } = useTheme();
   const fullTripData = route.params?.fullTripData || {};
   const [loading, setLoading] = useState(false);
@@ -164,38 +165,7 @@ export function TripDetailsScreen({ route, navigation }) {
   const [selectedTransport, setSelectedTransport] = useState([]);
 
   // --- TEST FETCH ---
-  useEffect(() => {
-    const testFetch = async () => {
-      console.log(
-        "[Test Fetch] Attempting fetch to https://httpbin.org/get..."
-      );
-      try {
-        const response = await fetch("https://httpbin.org/get");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log("[Test Fetch] Success:", data);
-        Alert.alert(
-          "Test Fetch Success",
-          "Successfully fetched from httpbin.org"
-        );
-      } catch (error) {
-        console.error("[Test Fetch] Failed:", error);
-        Alert.alert(
-          "Test Fetch Failed",
-          `Failed to fetch from httpbin.org: ${error.message}`
-        );
-        if (error.message.includes("Network request failed")) {
-          console.warn(
-            '[Test Fetch] Encountered "Network request failed". This might indicate a general network issue within the app environment.'
-          );
-        }
-      }
-    };
 
-    testFetch();
-  }, []); // Empty dependency array ensures this runs only once on mount
   // --- END TEST FETCH ---
 
   // Use useCallback for functions passed to TouchableOpacity to prevent unnecessary re-renders
@@ -216,75 +186,31 @@ export function TripDetailsScreen({ route, navigation }) {
   }, []);
 
   const handleCreateAdventure = async () => {
-    setError(""); // Clear previous errors
+    setError("");
     const tripData = {
       ...fullTripData,
       specialRequirements: selectedRequirements,
-      additionalRequirement: additionalRequirement.trim(), // Trim whitespace
+      additionalRequirement: additionalRequirement.trim(),
       transportationPreference: selectedTransport,
     };
 
-    // Optional: Add validation here if needed before calling createTrip
-
-    console.log(
-      "Attempting to create trip with data:",
-      JSON.stringify(tripData, null, 2)
-    ); // Log data being sent
-
     try {
-      // Note: The original code structure suggests createTrip might not return the final data directly,
-      // relying on the onSuccess callback instead. Adjust if createTrip actually returns data.
       const tripResult = await createTrip(tripData, {
         onLoadingChange: setLoading,
         onLoadingMessageChange: setLoadingMessage,
         onError: (err) => {
-          // Check if this might be a partial success case
-          if (err.includes("AI generation") || err.includes("recommendation")) {
-            // This is likely a case where the trip was created but AI recommendations failed
-            console.log(
-              "AI generation error but trip may have been created. Checking..."
-            );
-            // We'll handle this in the try/catch, not here
-          } else {
-            // Use onError callback for service-level errors
-            console.error("Error reported by createTrip service:", err);
-            setError(
-              err?.message || i18n.t("tripDetails.alerts.error.message")
-            );
-            setLoading(false); // Ensure loading is stopped on error
-          }
+          console.error("Error reported by createTrip service:", err);
+          setError(err?.message || t("tripDetails.alerts.error.message"));
+          setLoading(false);
         },
         onSuccess: (data) => {
           console.log("Trip created successfully:", data);
-          setLoading(false); // Ensure loading is stopped on success
+          setLoading(false);
 
-          // Check if AI generation failed but trip was created
           if (data && data.aiGenerationFailed) {
-            // Show a warning that the trip was created but without AI recommendations
-            Alert.alert(
-              "Trip Created with Limited Features",
-              "Your trip was created successfully, but we couldn't generate AI recommendations. You can still view and edit your trip details.",
-              [
-                {
-                  text: "View Trip",
-                  onPress: () =>
-                    navigation.navigate("UserPlanScreen", { tripData: data }),
-                },
-              ]
-            );
+            navigation.navigate("UserPlanScreen", { tripData: data });
           } else {
-            // Normal success flow
-            Alert.alert(
-              i18n.t("tripDetails.alerts.success.title"),
-              i18n.t("tripDetails.alerts.success.message"),
-              [
-                {
-                  text: i18n.t("tripDetails.alerts.success.ok"),
-                  onPress: () =>
-                    navigation.navigate("UserPlanScreen", { tripData: data }),
-                },
-              ]
-            );
+            navigation.navigate("UserPlanScreen", { tripData: data });
           }
         },
       });
@@ -311,74 +237,31 @@ export function TripDetailsScreen({ route, navigation }) {
         }
       }
     } catch (err) {
-      // This catch block handles errors thrown *synchronously* by createTrip
-      // or errors during the setup before the async operation within createTrip starts.
-      // Asynchronous errors within createTrip (like network failures) should ideally be caught
-      // and handled via the onError callback passed to it.
-      console.error(
-        "Synchronous error during createTrip call or in subsequent handling:",
-        err
-      );
-      setLoading(false); // Ensure loading is stopped
+      console.error("Error during trip creation:", err);
+      setLoading(false);
 
-      // Check if the error might indicate a partial success
-      if (
-        err.message &&
-        (err.message.includes("AI generation") ||
-          err.message.includes("recommendation") ||
-          err.message.includes("itinerary"))
-      ) {
-        // This is likely a case where the trip was created but AI recommendations failed
-        Alert.alert(
-          "Trip May Have Been Created",
-          "We encountered an issue with AI recommendations, but your trip may have been created. Would you like to check your trips or try again?",
-          [
-            {
-              text: "View My Trips",
-              onPress: () => navigation.navigate("TripListScreen"),
-            },
-            {
-              text: "Try Again",
-              onPress: handleCreateAdventure,
-            },
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-          ]
-        );
-        return;
-      }
-
-      // Retry logic for specific network-related errors
-      if (
-        retryCount < 2 &&
-        (err.message.includes("timed out") ||
-          err.message.includes("Network request failed") ||
-          err.message.includes("Failed to fetch"))
-      ) {
+      if (retryCount < 2) {
         setRetryCount((prev) => prev + 1);
         Alert.alert(
-          i18n.t("tripDetails.alerts.serverStarting.title"),
-          i18n.t("tripDetails.alerts.serverStarting.message"),
+          t("tripDetails.alerts.serverStarting.title"),
+          t("tripDetails.alerts.serverStarting.message"),
           [
             {
-              text: i18n.t("tripDetails.alerts.serverStarting.cancel"),
+              text: t("tripDetails.alerts.serverStarting.cancel"),
               style: "cancel",
               onPress: () => setLoading(false),
-            }, // Ensure loading stops on cancel
+            },
             {
-              text: i18n.t("tripDetails.alerts.serverStarting.retry"),
+              text: t("tripDetails.alerts.serverStarting.retry"),
               onPress: handleCreateAdventure,
-            }, // No arrow function needed
+            },
           ]
         );
       } else {
-        // Generic error for other issues or after retries fail
-        setError(err.message || i18n.t("tripDetails.alerts.error.message")); // Show specific error if available
+        setError(err.message || t("tripDetails.alerts.error.message"));
         Alert.alert(
-          i18n.t("tripDetails.alerts.error.title"),
-          err.message || i18n.t("tripDetails.alerts.error.message")
+          t("tripDetails.alerts.error.title"),
+          err.message || t("tripDetails.alerts.error.message")
         );
       }
     }
@@ -386,15 +269,15 @@ export function TripDetailsScreen({ route, navigation }) {
 
   const handleStartFresh = () => {
     Alert.alert(
-      i18n.t("tripDetails.alerts.startFresh.title"),
-      i18n.t("tripDetails.alerts.startFresh.message"),
+      t("tripDetails.alerts.startFresh.title"),
+      t("tripDetails.alerts.startFresh.message"),
       [
         {
-          text: i18n.t("tripDetails.alerts.startFresh.cancel"),
+          text: t("tripDetails.alerts.startFresh.cancel"),
           style: "cancel",
         },
         {
-          text: i18n.t("tripDetails.alerts.startFresh.ok"),
+          text: t("tripDetails.alerts.startFresh.ok"),
           onPress: () => navigation.popToTop(),
         },
       ],
@@ -406,7 +289,7 @@ export function TripDetailsScreen({ route, navigation }) {
 
   const renderRequirementOption = (item) => {
     const isSelected = selectedRequirements.includes(item.value);
-    const label = i18n.t(`tripDetails.specialRequirements.${item.value}`);
+    const label = t(`tripDetails.specialRequirements.${item.value}`);
     return (
       <TouchableOpacity
         key={item.value}
@@ -429,7 +312,7 @@ export function TripDetailsScreen({ route, navigation }) {
 
   const renderTransportOption = (option) => {
     const isSelected = selectedTransport.includes(option.value);
-    const label = i18n.t(`tripDetails.transportation.${option.value}`);
+    const label = t(`tripDetails.transportation.${option.value}`);
     return (
       <TouchableOpacity
         key={option.value}
@@ -479,12 +362,12 @@ export function TripDetailsScreen({ route, navigation }) {
           </TouchableOpacity>
           <View className="flex-1 items-center">
             <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-              {i18n.t("tripDetails.title")}
+              {t("tripDetails.title")}
             </Text>
           </View>
           {/* Adjusted to not rely on absolute positioning if header structure changes */}
           <Text className="text-base text-orange-500 font-semibold">
-            {i18n.t("tripDetails.stepIndicator")}
+            {t("tripDetails.stepIndicator")}
           </Text>
         </View>
 
@@ -495,7 +378,7 @@ export function TripDetailsScreen({ route, navigation }) {
         >
           {/* Special Requirements */}
           <Text style={styles.sectionTitle}>
-            {i18n.t("tripDetails.specialRequirements.title")}
+            {t("tripDetails.specialRequirements.title")}
           </Text>
           <View style={styles.optionsContainer}>
             {/* Defensive check before mapping */}
@@ -508,13 +391,13 @@ export function TripDetailsScreen({ route, navigation }) {
             <View style={styles.textInputContainer}>
               <TextInput
                 style={styles.textInput}
-                placeholder={i18n.t(
+                placeholder={t(
                   "tripDetails.specialRequirements.additionalPlaceholder"
                 )}
                 placeholderTextColor="#9CA3AF" // Use a less intrusive color
                 value={additionalRequirement}
                 onChangeText={setAdditionalRequirement}
-                accessibilityLabel={i18n.t(
+                accessibilityLabel={t(
                   "tripDetails.specialRequirements.additionalPlaceholder"
                 )}
                 accessibilityRole="text" // Correct role
@@ -524,7 +407,7 @@ export function TripDetailsScreen({ route, navigation }) {
 
           {/* Transportation Preference */}
           <Text style={styles.sectionTitle}>
-            {i18n.t("tripDetails.transportation.title")}
+            {t("tripDetails.transportation.title")}
           </Text>
           <View style={styles.optionsContainer}>
             {/* Defensive check before mapping */}
@@ -547,7 +430,7 @@ export function TripDetailsScreen({ route, navigation }) {
               onPress={handleCreateAdventure}
               disabled={loading}
               accessibilityRole="button"
-              accessibilityLabel={i18n.t("tripDetails.buttons.createAdventure")}
+              accessibilityLabel={t("tripDetails.buttons.createAdventure")}
               accessibilityState={{ disabled: loading }}
             >
               <View className="flex-row justify-center items-center">
@@ -561,7 +444,7 @@ export function TripDetailsScreen({ route, navigation }) {
                 ) : (
                   <>
                     <Text style={styles.createButtonText}>
-                      {i18n.t("tripDetails.buttons.createAdventure")}
+                      {t("tripDetails.buttons.createAdventure")}
                     </Text>
                     <Ionicons
                       name="star"
@@ -588,11 +471,11 @@ export function TripDetailsScreen({ route, navigation }) {
               onPress={handleStartFresh}
               disabled={loading} // Disable if loading
               accessibilityRole="button"
-              accessibilityLabel={i18n.t("tripDetails.buttons.startFresh")}
+              accessibilityLabel={t("tripDetails.buttons.startFresh")}
               accessibilityState={{ disabled: loading }}
             >
               <Text style={styles.startFreshText}>
-                {i18n.t("tripDetails.buttons.startFresh")}
+                {t("tripDetails.buttons.startFresh")}
               </Text>
             </TouchableOpacity>
 

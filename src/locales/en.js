@@ -1,0 +1,189 @@
+export default {
+  tripDetails: {
+    title: "Trip Details",
+    stepIndicator: "Step 3/3",
+    specialRequirements: {
+      title: "Special Requirements",
+      halal: "Halal Food Required",
+      wheelchair: "Wheelchair Accessible",
+      kidFriendly: "Kid-Friendly",
+      petFriendly: "Pet-Friendly",
+      additionalPlaceholder: "Enter more ...",
+    },
+    transportation: {
+      title: "Transportation Preference",
+      publicTransport: "Public Transport",
+      privateCar: "Private Car",
+      walkingBiking: "Walking/Biking",
+      mix: "Mix of all",
+    },
+    buttons: {
+      createAdventure: "Create Adventure",
+      startFresh: "Start Fresh ↗",
+    },
+    alerts: {
+      success: {
+        title: "Trip Created",
+        message:
+          "Your adventure has been created successfully! Check your itinerary for details.",
+        ok: "OK",
+      },
+      serverStarting: {
+        title: "Server Starting Up",
+        message:
+          "Our server may be starting up after inactivity. Would you like to retry?",
+        cancel: "Cancel",
+        retry: "Retry",
+      },
+      error: {
+        title: "Error",
+        message: "Failed to create trip. Please try again later.",
+      },
+      startFresh: {
+        title: "Start Fresh",
+        message: "This will clear all trip data and take you back to step 1.",
+        cancel: "Cancel",
+        ok: "OK",
+      },
+    },
+    loading: {
+      visaRequirements: "Fetching visa requirements...",
+      travelRecommendations:
+        "Generating travel recommendations...\nThis may take a minute if the server is starting up.",
+      events: "Finding events near your destination...",
+    },
+  },
+  userPlan: {
+    title: "Your Trip Plan",
+    loading: "Loading Your Trip Plan...",
+    details: {
+      destination: "Destination",
+      duration: "Duration",
+      expenses: "Expenses",
+    },
+    sections: {
+      itinerary: "Daily Itinerary",
+      currency: "Currency & Payments",
+      health: "Health & Safety",
+      transportation: "Transportation",
+      language: "Language Basics",
+      weather: "Weather Info",
+      visa: "Visa Requirements",
+      culture: "Culture Insights",
+      events: "Nearby Events",
+    },
+    itinerary: {
+      empty: "No itinerary details available.",
+      noDetails: "No details",
+      noActivities: "No specific activities listed for this day.",
+      dayTitleFallback: "Day {{dayNumber}} Activities",
+    },
+    health: {
+      vaccinationsLabel: "Vaccinations:",
+      precautionsLabel: "Precautions:",
+      safetyTipsLabel: "Safety Tips:",
+      emergencyContactsLabel: "Emergency Contacts:",
+    },
+    transportation: {
+      optionsLabel: "Options:",
+    },
+    language: {
+      officialLanguageLabel: "Official Language:",
+      commonPhrasesLabel: "Common Phrases:",
+      communicationTipsLabel: "Tips:",
+    },
+    weather: {
+      climateLabel: "Climate:",
+      packingTipsLabel: "Packing Tips:",
+    },
+    alerts: {
+      sharingNotAvailableTitle: "Sharing Not Available",
+      sharingNotAvailableMessage: "Sharing is not available on this device.",
+      errorTitle: "Error",
+      pdfError: "Could not generate or share the PDF plan. Please try again.",
+      missingDataTitle: "Missing Data",
+      missingDataMessage: "Cannot proceed without destination and nationality.",
+    },
+    buttons: {
+      next: "Next",
+    },
+    pdf: {
+      mainTitle: "{{destination}} Travel Plan",
+      subtitle: "Your personalized journey to {{destination}}",
+      noPlanItems: "No specific plan items listed for this day.",
+      visaTitle: "Visa Requirements",
+      cultureTitle: "Culture Insights",
+      currencyTitle: "Currency & Payments",
+      healthTitle: "Health & Safety",
+      transportationTitle: "Transportation",
+      languageTitle: "Language Basics",
+      weatherTitle: "Weather Info",
+      currencyLabel: "Currency:",
+      exchangeRateLabel: "Exchange Rate:",
+      paymentMethodsLabel: "Payment Methods:",
+      tippingLabel: "Tipping:",
+      vaccinationsLabel: "Vaccinations:",
+      precautionsLabel: "Precautions:",
+      safetyTipsLabel: "Safety Tips:",
+      emergencyContactsLabel: "Emergency Contacts:",
+      optionsLabel: "Options:",
+      officialLanguageLabel: "Official Language:",
+      commonPhrasesLabel: "Common Phrases:",
+      tipsLabel: "Tips:",
+      climateLabel: "Climate:",
+      packingTipsLabel: "Packing Tips:",
+    },
+  },
+  trips: {
+    list: {
+      title: "Your Trips",
+      searchPlaceholder: "Search trips...",
+      sortBy: "Sort by",
+      sortOptions: {
+        date: "Date",
+        destination: "Destination",
+      },
+      filters: {
+        all: "All",
+        upcoming: "Upcoming",
+        past: "Past",
+        planning: "Planning",
+      },
+      noTripsFound: "No trips found",
+      retry: "Retry",
+      createNew: "Create New Trip",
+      errors: {
+        fetchFailed: "Failed to load trips. Please try again.",
+      },
+    },
+  },
+  tripStyle: {
+    title: "Trip Style",
+    stepIndicator: "Step 2/3",
+    interests: {
+      title: "Choose Your Interests",
+      culture: "Culture",
+      nature: "Nature",
+      food: "Food",
+      shopping: "Shopping",
+      adventure: "Adventure",
+      relaxation: "Relaxation",
+    },
+    pace: {
+      title: "Trip Pace",
+      relaxed: "Relaxed",
+      balanced: "Balanced",
+      intense: "Intense",
+    },
+    validation: {
+      missingFields: "Please select at least one interest and trip pace.",
+    },
+    buttons: {
+      next: "Next",
+    },
+  },
+  accessibility: {
+    backButton: "Go back",
+    homeButton: "Go to home",
+  },
+};
