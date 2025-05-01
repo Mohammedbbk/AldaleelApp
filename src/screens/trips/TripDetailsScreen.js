@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   StyleSheet, // Added StyleSheet
 } from "react-native";
+import { useTheme } from "../../../ThemeProvider";
 import { Ionicons, FontAwesome, Feather } from "@expo/vector-icons";
 import i18n from "../../config/appConfig"; // Ensure this path is correct
 import {
@@ -151,6 +152,7 @@ const styles = StyleSheet.create({
 });
 
 export function TripDetailsScreen({ route, navigation }) {
+  const { isDarkMode, colors } = useTheme();
   const fullTripData = route.params?.fullTripData || {};
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -239,12 +241,16 @@ export function TripDetailsScreen({ route, navigation }) {
           // Check if this might be a partial success case
           if (err.includes("AI generation") || err.includes("recommendation")) {
             // This is likely a case where the trip was created but AI recommendations failed
-            console.log("AI generation error but trip may have been created. Checking...");
+            console.log(
+              "AI generation error but trip may have been created. Checking..."
+            );
             // We'll handle this in the try/catch, not here
           } else {
             // Use onError callback for service-level errors
             console.error("Error reported by createTrip service:", err);
-            setError(err?.message || i18n.t("tripDetails.alerts.error.message"));
+            setError(
+              err?.message || i18n.t("tripDetails.alerts.error.message")
+            );
             setLoading(false); // Ensure loading is stopped on error
           }
         },
@@ -261,7 +267,8 @@ export function TripDetailsScreen({ route, navigation }) {
               [
                 {
                   text: "View Trip",
-                  onPress: () => navigation.navigate("UserPlanScreen", { tripData: data }),
+                  onPress: () =>
+                    navigation.navigate("UserPlanScreen", { tripData: data }),
                 },
               ]
             );
@@ -273,7 +280,8 @@ export function TripDetailsScreen({ route, navigation }) {
               [
                 {
                   text: i18n.t("tripDetails.alerts.success.ok"),
-                  onPress: () => navigation.navigate("UserPlanScreen", { tripData: data }),
+                  onPress: () =>
+                    navigation.navigate("UserPlanScreen", { tripData: data }),
                 },
               ]
             );
@@ -284,7 +292,7 @@ export function TripDetailsScreen({ route, navigation }) {
       // Handle case where tripResult is returned directly
       if (tripResult) {
         console.log("Trip creation completed with direct return:", tripResult);
-        
+
         // Check if this is a partial success (trip created but AI generation failed)
         if (tripResult.aiGenerationFailed) {
           Alert.alert(
@@ -293,7 +301,10 @@ export function TripDetailsScreen({ route, navigation }) {
             [
               {
                 text: "View Trip",
-                onPress: () => navigation.navigate("UserPlanScreen", { tripData: tripResult }),
+                onPress: () =>
+                  navigation.navigate("UserPlanScreen", {
+                    tripData: tripResult,
+                  }),
               },
             ]
           );
@@ -311,11 +322,12 @@ export function TripDetailsScreen({ route, navigation }) {
       setLoading(false); // Ensure loading is stopped
 
       // Check if the error might indicate a partial success
-      if (err.message && (
-          err.message.includes("AI generation") || 
+      if (
+        err.message &&
+        (err.message.includes("AI generation") ||
           err.message.includes("recommendation") ||
-          err.message.includes("itinerary")
-      )) {
+          err.message.includes("itinerary"))
+      ) {
         // This is likely a case where the trip was created but AI recommendations failed
         Alert.alert(
           "Trip May Have Been Created",
@@ -440,8 +452,15 @@ export function TripDetailsScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      {error ? <Text className="text-red-500 text-sm text-center mx-5 mb-2">{error}</Text> : null}
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
+      />
+      {error ? (
+        <Text className="text-red-500 text-sm text-center mx-5 mb-2">
+          {error}
+        </Text>
+      ) : null}
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
@@ -451,7 +470,7 @@ export function TripDetailsScreen({ route, navigation }) {
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
           <TouchableOpacity
-            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
             onPress={() => navigation.goBack()}
             accessibilityLabel="Go back"
             accessibilityRole="button"

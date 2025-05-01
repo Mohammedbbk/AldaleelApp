@@ -16,6 +16,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useTheme } from "../../../ThemeProvider";
 import {
   Ionicons,
   AntDesign,
@@ -27,7 +28,7 @@ import { debounce } from "lodash";
 
 // --- Configuration ---
 // IMPORTANT: Store API keys securely in a real app (env variables, config)!
-import { OPENWEATHERMAP_API_KEY } from '../../config/keys';
+import { OPENWEATHERMAP_API_KEY } from "../../config/keys";
 
 // --- Constants ---
 const MONTHS = [
@@ -42,9 +43,9 @@ const BUDGET_LEVELS = ["Economy", "Moderate", "Luxury"];
 
 export function CreateTripScreen({ navigation, route }) {
   // State hooks - Adjusted for city search
-  const [destination, setDestination] = useState(''); // Will hold "City, Country" string for display
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedYear, setSelectedYear] = useState('2025');
+  const [destination, setDestination] = useState(""); // Will hold "City, Country" string for display
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedYear, setSelectedYear] = useState("2025");
   const [showYearSelector, setShowYearSelector] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedTravelerStyle, setSelectedTravelerStyle] = useState("");
@@ -57,6 +58,7 @@ export function CreateTripScreen({ navigation, route }) {
   const [duration, setDuration] = useState(""); // ADDED: State for trip duration (days)
   const [nationality, setNationality] = useState(""); // ADDED: State for user nationality
   const [isFormValid, setIsFormValid] = useState(false);
+  const { isDarkMode, colors } = useTheme();
 
   // --- Form Validation ---
   // Now includes duration and nationality
@@ -248,8 +250,17 @@ export function CreateTripScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 pt-5">
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView
+      className={`flex-1 ${
+        isDarkMode
+          ? "bg-gray-900 border-gray-700"
+          : "bg-gray-200 border-gray-200"
+      } pt-5`}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
@@ -259,7 +270,7 @@ export function CreateTripScreen({ navigation, route }) {
         <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
           {/* Back Button */}
           <TouchableOpacity
-            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />
@@ -288,7 +299,7 @@ export function CreateTripScreen({ navigation, route }) {
             Enter your desired city destination.
           </Text>
           <TouchableOpacity
-            className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-6 shadow shadow-black/5"
+            className="flex-row items-center bg-gray-100 dark:bg-gray-900 rounded-full p-4 mb-6 shadow shadow-black/5"
             onPress={openSearchModal}
           >
             <Ionicons name="search" size={20} color="#999" className="mr-2" />
@@ -351,7 +362,7 @@ export function CreateTripScreen({ navigation, route }) {
                 Year
               </Text>
               <TouchableOpacity
-                className="flex-row items-center justify-between bg-gray-100 dark:bg-gray-800 rounded-full p-3 border border-gray-300 dark:border-gray-600"
+                className="flex-row items-center justify-between bg-gray-100 dark:bg-gray-900 rounded-full p-3 border border-gray-300 dark:border-gray-600"
                 onPress={() => setShowYearSelector(true)}
               >
                 <Text className="text-base font-semibold text-gray-800 dark:text-gray-200">
@@ -369,7 +380,7 @@ export function CreateTripScreen({ navigation, route }) {
           <Text className="text-base text-gray-500 dark:text-gray-400 mb-3">
             Enter the total number of days for your trip.
           </Text>
-          <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-6 shadow shadow-black/5">
+          <View className="flex-row items-center bg-gray-100 dark:bg-gray-900 rounded-full p-4 mb-6 shadow shadow-black/5">
             <MaterialCommunityIcons
               name="calendar-range"
               size={22}
@@ -399,7 +410,7 @@ export function CreateTripScreen({ navigation, route }) {
           <Text className="text-base text-gray-500 dark:text-gray-400 mb-3">
             Needed for visa checks and personalized tips.
           </Text>
-          <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-6 shadow shadow-black/5">
+          <View className="flex-row items-center bg-gray-100 dark:bg-gray-900 rounded-full p-4 mb-6 shadow shadow-black/5">
             <FontAwesome name="flag" size={20} color="#999" className="mr-3" />
             <TextInput
               className="flex-1 text-base text-gray-800 dark:text-gray-200"

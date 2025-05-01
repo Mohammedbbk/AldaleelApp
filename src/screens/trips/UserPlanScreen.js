@@ -426,25 +426,28 @@ export function UserPlanScreen() {
 
     // 4) Normalize itinerary into days array
     const rawItinerary = ai?.dailyItinerary ?? [];
-    console.log("[UserPlanScreen] Processing rawItinerary:", JSON.stringify(rawItinerary, null, 2));
-    
+    console.log(
+      "[UserPlanScreen] Processing rawItinerary:",
+      JSON.stringify(rawItinerary, null, 2)
+    );
+
     let days = [];
     if (Array.isArray(rawItinerary) && rawItinerary.length > 0) {
       days = rawItinerary.map((dayObj, idx) => {
         const activities = [];
         const schedule = dayObj.schedule || {};
-        
+
         // Process morning, afternoon, evening segments
-        ['morning', 'afternoon', 'evening'].forEach(period => {
+        ["morning", "afternoon", "evening"].forEach((period) => {
           const segment = schedule[period];
           if (segment) {
             activities.push({
-              time: segment.time || 'N/A',
-              name: segment.activity || 'No activity specified',
+              time: segment.time || "N/A",
+              name: segment.activity || "No activity specified",
               estimatedCosts: segment.estimatedCost,
               transportationOptions: segment.transportationOptions,
               mealRecommendations: segment.mealRecommendations,
-              accommodationSuggestions: segment.accommodationSuggestions
+              accommodationSuggestions: segment.accommodationSuggestions,
             });
           }
         });
@@ -452,12 +455,15 @@ export function UserPlanScreen() {
         return {
           day: idx + 1,
           activities: activities,
-          title: dayObj.title || `Day ${idx + 1}`
+          title: dayObj.title || `Day ${idx + 1}`,
         };
       });
     }
 
-    console.log("[UserPlanScreen] Transformed days:", JSON.stringify(days, null, 2));
+    console.log(
+      "[UserPlanScreen] Transformed days:",
+      JSON.stringify(days, null, 2)
+    );
 
     // 5) Other AI sections simplified (using direct keys from parsed 'ai' object)
     const currencyInfo = ai?.currencyInfo ?? null; // Prefer primary key
@@ -608,8 +614,8 @@ export function UserPlanScreen() {
   }
 
   // Add this temporary code at the beginning of the render function
-  console.log('PLAN STRUCTURE:', JSON.stringify(plan, null, 2));
-  console.log('DAYS STRUCTURE:', JSON.stringify(plan.days, null, 2));
+  console.log("PLAN STRUCTURE:", JSON.stringify(plan, null, 2));
+  console.log("DAYS STRUCTURE:", JSON.stringify(plan.days, null, 2));
 
   // --- Main Render ---
   // Uses the 'plan' object derived directly from route.params via useMemo
@@ -620,7 +626,7 @@ export function UserPlanScreen() {
         {/* Header Left Buttons */}
         <View style={styles.headerButtons}>
           <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />
@@ -638,7 +644,7 @@ export function UserPlanScreen() {
         <View style={styles.headerButtons}>
           <TouchableOpacity
             onPress={handleShare}
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
             accessibilityRole="button"
             accessibilityLabel={t("accessibility.shareButton", "Share Plan")}
           >
@@ -704,9 +710,7 @@ export function UserPlanScreen() {
         {/* Itinerary Days */}
         {plan.days.map((day, index) => (
           <View key={`day-${index}`} style={styles.dayContainer}>
-            <Text style={styles.dayLabel}>
-              {day.title}
-            </Text>
+            <Text style={styles.dayLabel}>{day.title}</Text>
             {day.activities && day.activities.length > 0 ? (
               <View style={styles.activitiesContainer}>
                 {day.activities.map((activity, idx) => (
@@ -740,7 +744,9 @@ export function UserPlanScreen() {
                       )}
                       {activity.accommodationSuggestions && (
                         <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Accommodation: </Text>
+                          <Text style={styles.detailLabel}>
+                            Accommodation:{" "}
+                          </Text>
                           {activity.accommodationSuggestions}
                         </Text>
                       )}
@@ -942,33 +948,33 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   }, // text-white text-center text-base font-semibold
   activityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
   },
   activityTime: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginRight: 12,
     minWidth: 100,
   },
   activityName: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     flex: 1,
   },
   activityDetails: {
     padding: 12,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   detailText: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginBottom: 8,
   },
   detailLabel: {
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
   },
 });
 

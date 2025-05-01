@@ -16,9 +16,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { ArrowLeft, User, Check, Camera } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { useTheme } from "../../../ThemeProvider";
+import { useThemeAwareStyles } from "../../components/ThemeAwareComponent";
 
 export default function EditProfileScreen() {
   const navigation = useNavigation();
+  const { isDarkMode, colors } = useTheme();
   const [form, setForm] = useState({ name: "", avatarUrl: "" });
   const [initial, setInitial] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -105,14 +108,27 @@ export default function EditProfileScreen() {
 
   if (loading)
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View
+        className={`flex-1 justify-center items-center ${
+          isDarkMode
+            ? "bg-gray-900 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f9fafb" }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+    <SafeAreaView
+      className={`flex-1 pt-5 ${
+        isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+      }`}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
+      />
       {/* Header */}
       <View
         style={{
@@ -120,13 +136,19 @@ export default function EditProfileScreen() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: 12,
-          backgroundColor: "#fff",
+          backgroundColor: isDarkMode
+            ? "bg-gray-900 border-gray-700"
+            : "bg-white border-gray-200",
         }}
       >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color="#374151" />
+          <ArrowLeft size={24} color={isDarkMode ? "#e5e7eb" : "#374151"} />
         </TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: "bold", color: "#374151" }}>
+        <Text
+          className={`text-lg font-bold ${
+            isDarkMode ? "text-white" : "text-gray-800"
+          } ml-2`}
+        >
           Edit Profile
         </Text>
         <TouchableOpacity
@@ -194,24 +216,33 @@ export default function EditProfileScreen() {
         {/* Name input */}
         <View
           style={{
-            backgroundColor: "#fff",
             borderRadius: 12,
             padding: 16,
             marginBottom: 16,
           }}
+          className={`${
+            isDarkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-gray-100 border-gray-200"
+          }`}
         >
-          <Text style={{ fontSize: 14, color: "#6b7280", marginBottom: 6 }}>
+          <Text
+            className={`text-lg font-bold ${
+              isDarkMode ? "text-white" : "text-gray-800"
+            } ml-2`}
+          >
             Name
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <User size={20} color="#6b7280" style={{ marginRight: 8 }} />
+            <User
+              size={20}
+              color={isDarkMode ? "#fff" : "#111"}
+              style={{ marginRight: 8 }}
+            />
             <TextInput
-              style={{
-                flex: 1,
-                fontSize: 16,
-                color: "#111",
-                paddingVertical: 4,
-              }}
+              className={`text-lg font-bold ${
+                isDarkMode ? "text-gray-100" : "text-gray-800"
+              } ml-2`}
               value={form.name}
               onChangeText={(name) => setForm({ ...form, name })}
               placeholder="Your Name"

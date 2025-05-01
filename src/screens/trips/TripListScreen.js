@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import { useTheme } from "../../../ThemeProvider";
 import { Filter, AlertCircle } from "lucide-react-native";
 import { useColorScheme } from "react-native";
 import SearchBar from "../../components/common/SearchBar";
@@ -166,13 +167,22 @@ function TripListScreen({ navigation }) {
     />
   );
 
+  const { isDarkMode, colors } = useTheme();
+
   // --- Render logic remains largely the same ---
   // Use `WorkspaceTripsData` in the retry button
   return (
-    <SafeAreaView className="flex-1 bg-gray-50 dark:bg-gray-900 pt-5">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDarkMode
+          ? "bg-gray-900 border-gray-700"
+          : "bg-gray-50 border-gray-200"
+      }`}
+    >
       {/* StatusBar */}
       <StatusBar
-        barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
       {/* Header - Containts search bar and filters */}
@@ -187,12 +197,18 @@ function TripListScreen({ navigation }) {
         />
 
         {/* Filter and Sort Options - Positioned above the list */}
-        <View className="bg-white dark:bg-gray-800 rounded-3xl shadow py-2 px-4">
+        <View
+          className={`${
+            isDarkMode
+              ? "bg-gray-800 border-gray-700"
+              : "bg-gray-50 border-gray-200"
+          } rounded-3xl shadow py-2 px-4 gap-2`}
+        >
           {/* Title and Sort Button */}
-          <View className="flex-row justify-between items-center">
+          <View className="flex-row justify-between items-center ">
             <Text
               className={`text-xl font-bold ${
-                colorScheme === "dark" ? "text-white" : "text-black"
+                isDarkMode ? "text-gray-200" : "text-gray-800"
               }`}
               accessibilityRole="header"
             >
@@ -228,7 +244,7 @@ function TripListScreen({ navigation }) {
                 className={`px-4 py-2 rounded-full mx-1 ${
                   selectedFilter === option.id
                     ? "bg-blue-500"
-                    : "bg-gray-200 dark:bg-gray-700"
+                    : "bg-gray-200 dark:bg-gray-800"
                 }`}
               >
                 <Text
@@ -303,7 +319,7 @@ function TripListScreen({ navigation }) {
 
       {/* Create Button - Outside FlatList, Positioned relative to SafeAreaView */}
       <TouchableOpacity
-        className="bg-blue-500 absolute bottom-32 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow mx-4" // Adjust margins
+        className="bg-blue-500 absolute bottom-36 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow mx-4" // Adjust margins
         onPress={() => navigation.navigate("CreateTrip")}
       >
         <Text className="text-white text-lg font-bold">

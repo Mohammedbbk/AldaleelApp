@@ -9,6 +9,7 @@ import {
   StatusBar,
   ActivityIndicator, // Added ActivityIndicator import
 } from "react-native";
+import { useTheme } from "../../../ThemeProvider";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
 // Assuming these helpers are correctly defined in tripService.js
@@ -23,12 +24,17 @@ import {
 
 const InfoBaseScreen = () => {
   const navigation = useNavigation();
+  const { isDarkMode, colors } = useTheme();
   const route = useRoute();
   // Default to empty object if route.params is undefined
   const { contentKey, nationality, destination } = route.params || {};
 
   // Debug log parameters
-  console.log("InfoBaseScreen params:", { contentKey, nationality, destination });
+  console.log("InfoBaseScreen params:", {
+    contentKey,
+    nationality,
+    destination,
+  });
 
   // State for dynamic content fetching
   const [isLoading, setIsLoading] = React.useState(false);
@@ -60,8 +66,13 @@ const InfoBaseScreen = () => {
         const missingFields = [];
         if (!nationality) missingFields.push("nationality");
         if (!destination) missingFields.push("destination");
-        
-        if (!cancelled) setError(`Please provide your ${missingFields.join(" and ")} to view this information.`);
+
+        if (!cancelled)
+          setError(
+            `Please provide your ${missingFields.join(
+              " and "
+            )} to view this information.`
+          );
         if (!cancelled) setIsLoading(false);
         return;
       }
@@ -98,7 +109,10 @@ const InfoBaseScreen = () => {
             content = await WorkspaceHealthInfo(nationality, destination);
             break;
           case "transportation":
-            content = await WorkspaceTransportationInfo(nationality, destination);
+            content = await WorkspaceTransportationInfo(
+              nationality,
+              destination
+            );
             break;
           case "language":
             content = await WorkspaceLanguageInfo(nationality, destination);
@@ -109,14 +123,15 @@ const InfoBaseScreen = () => {
 
         // Cache the response
         if (!cancelled) {
-          setCachedResponses(prev => ({
+          setCachedResponses((prev) => ({
             ...prev,
-            [cacheKey]: content
+            [cacheKey]: content,
           }));
           setDynamicContent(content);
         }
       } catch (e) {
-        if (!cancelled) setError(e.message || `Failed to fetch ${contentKey} information.`);
+        if (!cancelled)
+          setError(e.message || `Failed to fetch ${contentKey} information.`);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -155,7 +170,7 @@ const InfoBaseScreen = () => {
     if (!dynamicContent) return null;
 
     // If it's a string, render directly
-    if (typeof dynamicContent === 'string') {
+    if (typeof dynamicContent === "string") {
       return (
         <Text className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
           {dynamicContent}
@@ -165,7 +180,7 @@ const InfoBaseScreen = () => {
 
     // Handle structured content based on contentKey
     switch (contentKey) {
-      case 'currency':
+      case "currency":
         return (
           <View>
             {dynamicContent.currency && (
@@ -211,7 +226,7 @@ const InfoBaseScreen = () => {
           </View>
         );
 
-      case 'health':
+      case "health":
         return (
           <View>
             {dynamicContent.vaccinations && (
@@ -234,34 +249,43 @@ const InfoBaseScreen = () => {
                 </Text>
               </View>
             )}
-            {dynamicContent.safetyTips && Array.isArray(dynamicContent.safetyTips) && (
-              <View className="mb-4">
-                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Safety Tips
-                </Text>
-                {dynamicContent.safetyTips.map((tip, index) => (
-                  <Text key={index} className="text-base text-gray-700 dark:text-gray-300 mb-2">
-                    • {tip}
+            {dynamicContent.safetyTips &&
+              Array.isArray(dynamicContent.safetyTips) && (
+                <View className="mb-4">
+                  <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Safety Tips
                   </Text>
-                ))}
-              </View>
-            )}
+                  {dynamicContent.safetyTips.map((tip, index) => (
+                    <Text
+                      key={index}
+                      className="text-base text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      • {tip}
+                    </Text>
+                  ))}
+                </View>
+              )}
             {dynamicContent.emergencyContacts && (
               <View className="mb-4">
                 <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Emergency Contacts
                 </Text>
-                {Object.entries(dynamicContent.emergencyContacts).map(([key, value]) => (
-                  <Text key={key} className="text-base text-gray-700 dark:text-gray-300 mb-1">
-                    <Text className="font-medium">{key}:</Text> {value}
-                  </Text>
-                ))}
+                {Object.entries(dynamicContent.emergencyContacts).map(
+                  ([key, value]) => (
+                    <Text
+                      key={key}
+                      className="text-base text-gray-700 dark:text-gray-300 mb-1"
+                    >
+                      <Text className="font-medium">{key}:</Text> {value}
+                    </Text>
+                  )
+                )}
               </View>
             )}
           </View>
         );
 
-      case 'transportation':
+      case "transportation":
         return (
           <View>
             {dynamicContent.gettingAround && (
@@ -274,18 +298,22 @@ const InfoBaseScreen = () => {
                 </Text>
               </View>
             )}
-            {dynamicContent.options && Array.isArray(dynamicContent.options) && (
-              <View className="mb-4">
-                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Transportation Options
-                </Text>
-                {dynamicContent.options.map((option, index) => (
-                  <Text key={index} className="text-base text-gray-700 dark:text-gray-300 mb-2">
-                    • {option}
+            {dynamicContent.options &&
+              Array.isArray(dynamicContent.options) && (
+                <View className="mb-4">
+                  <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Transportation Options
                   </Text>
-                ))}
-              </View>
-            )}
+                  {dynamicContent.options.map((option, index) => (
+                    <Text
+                      key={index}
+                      className="text-base text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      • {option}
+                    </Text>
+                  ))}
+                </View>
+              )}
             {dynamicContent.publicTransport && (
               <View className="mb-4">
                 <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -309,7 +337,7 @@ const InfoBaseScreen = () => {
           </View>
         );
 
-      case 'language':
+      case "language":
         return (
           <View>
             {dynamicContent.officialLanguage && (
@@ -322,18 +350,22 @@ const InfoBaseScreen = () => {
                 </Text>
               </View>
             )}
-            {dynamicContent.phrases && Array.isArray(dynamicContent.phrases) && (
-              <View className="mb-4">
-                <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Common Phrases
-                </Text>
-                {dynamicContent.phrases.map((phrase, index) => (
-                  <Text key={index} className="text-base text-gray-700 dark:text-gray-300 mb-2">
-                    • {phrase}
+            {dynamicContent.phrases &&
+              Array.isArray(dynamicContent.phrases) && (
+                <View className="mb-4">
+                  <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Common Phrases
                   </Text>
-                ))}
-              </View>
-            )}
+                  {dynamicContent.phrases.map((phrase, index) => (
+                    <Text
+                      key={index}
+                      className="text-base text-gray-700 dark:text-gray-300 mb-2"
+                    >
+                      • {phrase}
+                    </Text>
+                  ))}
+                </View>
+              )}
             {dynamicContent.communicationTips && (
               <View className="mb-4">
                 <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -382,7 +414,10 @@ const InfoBaseScreen = () => {
                   Tips:
                 </Text>
                 {dynamicContent.tips.map((tip, index) => (
-                  <Text key={index} className="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-2">
+                  <Text
+                    key={index}
+                    className="text-base leading-relaxed text-gray-700 dark:text-gray-300 mb-2"
+                  >
                     • {tip}
                   </Text>
                 ))}
@@ -396,8 +431,11 @@ const InfoBaseScreen = () => {
   return (
     // Use SafeAreaView for notches/status bars
     <SafeAreaView className="flex-1 bg-white pt-10">
-      {/* // Use device status bar setting
-      <StatusBar barStyle="dark-content" /> */}
+      {/* Status Bar */}
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
+      />
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Add padding for Close button */}
         {/* Title */}
@@ -422,7 +460,9 @@ const InfoBaseScreen = () => {
               {isLoading ? (
                 <View className="items-center justify-center py-10">
                   <ActivityIndicator size="large" color="#0EA5E9" />
-                  <Text className="text-base text-sky-600 mt-3">Loading...</Text>
+                  <Text className="text-base text-sky-600 mt-3">
+                    Loading...
+                  </Text>
                 </View>
               ) : dynamicContent ? (
                 renderContent()
@@ -437,7 +477,9 @@ const InfoBaseScreen = () => {
           {/* Display common error message */}
           {error && (
             <View className="items-center justify-center py-10 px-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-              <Text className="text-base text-red-600 dark:text-red-400 text-center">{error}</Text>
+              <Text className="text-base text-red-600 dark:text-red-400 text-center">
+                {error}
+              </Text>
             </View>
           )}
         </View>

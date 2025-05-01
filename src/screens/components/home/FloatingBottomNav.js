@@ -27,7 +27,7 @@ export default function FloatingBottomNav({ activeRouteName }) {
     // Absolute positioning to float above content
     <View className="absolute bottom-6 left-6 right-6 z-50">
       {/* Container with shadow and rounded corners */}
-      <View className="bg-white rounded-3xl shadow-xl py-4 px-6">
+      <View className="bg-b rounded-3xl shadow-xl py-4 px-6">
         <View className="flex-row justify-between items-center">
           {/* Home Tab */}
           <TouchableOpacity

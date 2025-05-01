@@ -12,12 +12,14 @@ import {
   Alert,
   StyleSheet,
 } from "react-native";
+import { useTheme } from "../../../ThemeProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { ArrowLeft, Mail, Plane, Star } from "lucide-react-native";
 
 export default function ProfileInfoScreen() {
   const navigation = useNavigation();
+  const { isDarkMode, colors } = useTheme();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +49,13 @@ export default function ProfileInfoScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.center}>
+      <SafeAreaView
+        className={`flex-1 justify-center items-center ${
+          isDarkMode
+            ? "bg-gray-900 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <ActivityIndicator size="large" color="#3b82f6" />
       </SafeAreaView>
     );
@@ -68,23 +76,59 @@ export default function ProfileInfoScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
+    <SafeAreaView
+      className={`flex-1 ${
+        isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+      } pt-5`}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
+      />
 
       {/* Top Bar */}
-      <View style={styles.topBar}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: 12,
+          backgroundColor: isDarkMode
+            ? "bg-gray-900 border-gray-700"
+            : "bg-white border-gray-200",
+        }}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color="#374151" />
+          <ArrowLeft size={24} color={isDarkMode ? "#fff" : "#111"} />
         </TouchableOpacity>
-        <Text style={styles.title}>Profile Info</Text>
+        <Text
+          className={`text-lg font-bold ${
+            isDarkMode ? "text-white" : "text-gray-800"
+          } ml-2`}
+        >
+          Profile Info
+        </Text>
         {/* empty placeholder to balance layout */}
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView style={styles.scroll}>
-        <View style={styles.card}>
+        <View
+          className={` rounded-xl overflow-hidden ${
+            isDarkMode
+              ? "bg-gray-800 border-gray-600"
+              : "bg-white border-gray-200"
+          }`}
+        >
           {/* Avatar + Name + Joined */}
-          <View style={styles.header}>
+          <View
+            style={styles.header}
+            className={`${
+              isDarkMode
+                ? "bg-gray-800 border-gray-600"
+                : "bg-gray-50 border-gray-200"
+            }`}
+          >
             <Image
               source={
                 userData.avatarUrl
@@ -94,33 +138,99 @@ export default function ProfileInfoScreen() {
               style={styles.avatar}
             />
             <View style={styles.nameBlock}>
-              <Text style={styles.name}>{userData.name}</Text>
-              <Text style={styles.joined}>Joined {joinedStr}</Text>
+              <Text
+                className={`text-xl font-bold ${
+                  isDarkMode ? "text-white" : "text-gray-800"
+                }`}
+              >
+                {userData.name}
+              </Text>
+              <Text
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                Joined {joinedStr}
+              </Text>
             </View>
           </View>
 
           {/* Basic Information */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Basic Information</Text>
+          <View
+            style={styles.section}
+            className={`${
+              isDarkMode
+                ? "bg-gray-800 border-gray-600"
+                : "bg-gray-50 border-gray-200"
+            }`}
+          >
+            <Text
+              style={styles.sectionTitle}
+              className={`${isDarkMode ? "text-white" : "text-gray-800"}`}
+            >
+              Basic Information
+            </Text>
             <View style={styles.row}>
-              <Mail size={18} color="#6b7280" />
-              <Text style={styles.infoText}>{userData.email}</Text>
+              <Mail size={18} color={isDarkMode ? "#fff" : "#111"} />
+              <Text
+                className={`text-base ml-2 ${
+                  isDarkMode ? "text-white" : "text-gray-800"
+                }`}
+              >
+                {userData.email}
+              </Text>
             </View>
           </View>
 
           {/* Travel Statistics */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Travel Statistics</Text>
+          <View
+            style={styles.section}
+            className={`${
+              isDarkMode
+                ? "bg-gray-800 border-gray-600"
+                : "bg-gray-50 border-gray-200"
+            }`}
+          >
+            <Text
+              style={styles.sectionTitle}
+              className={`${isDarkMode ? "text-white" : "text-gray-800"}`}
+            >
+              Travel Statistics
+            </Text>
             <View style={styles.statsRow}>
               <View style={styles.stat}>
-                <Plane size={18} color="#3b82f6" />
-                <Text style={styles.statLabel}>Completed Trips</Text>
-                <Text style={styles.statValue}>{userData.completedTrips}</Text>
+                <Plane size={18} color={isDarkMode ? "#fff" : "#111"} />
+                <Text
+                  className={` text-sm ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  Completed Trips
+                </Text>
+                <Text
+                  className={` text-base ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  {userData.completedTrips}
+                </Text>
               </View>
               <View style={styles.stat}>
-                <Star size={18} color="#3b82f6" />
-                <Text style={styles.statLabel}>Reviews</Text>
-                <Text style={styles.statValue}>{userData.reviews}</Text>
+                <Star size={18} color={isDarkMode ? "#fff" : "#111"} />
+                <Text
+                  className={` text-sm ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  Reviews
+                </Text>
+                <Text
+                  className={` text-base ${
+                    isDarkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
+                  {userData.reviews}
+                </Text>
               </View>
             </View>
           </View>
@@ -139,8 +249,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
     padding: 16,
-    borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
   },
   title: { fontSize: 18, fontWeight: "bold", color: "#374151" },
 
@@ -151,7 +259,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
   },
   avatar: {
     width: 80,
@@ -164,12 +271,11 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: "bold", color: "#1f2937" },
   joined: { fontSize: 14, color: "#6b7280", marginTop: 4 },
 
-  section: { padding: 16, borderBottomWidth: 1, borderColor: "#e5e7eb" },
+  section: { padding: 16, borderBottomWidth: 1 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
-    color: "#374151",
   },
   row: { flexDirection: "row", alignItems: "center" },
   infoText: { marginLeft: 8, fontSize: 14, color: "#374151" },

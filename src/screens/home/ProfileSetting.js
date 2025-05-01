@@ -23,8 +23,9 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react-native";
-import FloatingBottomNav from "../components/home/FloatingBottomNav";
+import FloatingBottomNav from "../../components/navigation/FloatingBottomNav";
 import { AuthContext } from "../../../AuthProvider"; // auth provider page in the root folder
+import { useTheme } from "../../../ThemeProvider";
 
 const profileOptions = [
   { id: "edit", label: "Edit Profile", icon: Edit3, screen: "EditProfile" },
@@ -47,6 +48,7 @@ const profileOptions = [
 
 export default function ProfileSetting() {
   const navigation = useNavigation();
+  const { isDarkMode, colors } = useTheme();
   const currentRouteName = "Profile";
   const { logout } = useContext(AuthContext);
 
@@ -84,7 +86,13 @@ export default function ProfileSetting() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+      <SafeAreaView
+        className={`flex-1 justify-center items-center ${
+          isDarkMode
+            ? "bg-gray-900 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <ActivityIndicator size="large" color="#3b82f6" />
         <Text className="mt-4 text-gray-500">Loading profile...</Text>
       </SafeAreaView>
@@ -93,20 +101,39 @@ export default function ProfileSetting() {
 
   if (!userData) {
     return (
-      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+      <SafeAreaView
+        className={`flex-1 justify-center items-center ${
+          isDarkMode
+            ? "bg-gray-900 border-gray-700"
+            : "bg-white border-gray-200"
+        }`}
+      >
         <Text className="text-gray-500">Failed to load profile.</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <StatusBar barStyle="dark-content" backgroundColor="rgb(249 250 251)" />
+    <SafeAreaView
+      className={`flex-1 pt-5 ${
+        isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+      }`}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#111827" : "#fff"}
+      />
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="p-6 pb-8">
+        <View className="p-6 pb-8 ">
           {/* --- Top Profile Info Section --- */}
-          <View className="flex-row items-center justify-between bg-white p-5 rounded-2xl shadow-sm mb-8">
+          <View
+            className={`shadow-xl flex-row items-center justify-between ${
+              isDarkMode
+                ? "bg-gray-800 border-gray-600"
+                : "bg-gray-50 border-gray-200"
+            } p-5 rounded-2xl shadow-sm mb-8`}
+          >
             {/* Left Side: Avatar, Name, Email */}
             <View className="flex-row items-center flex-shrink mr-4">
               <Image
@@ -114,12 +141,20 @@ export default function ProfileSetting() {
                 className="w-16 h-16 rounded-full mr-4 border-2 border-blue-100"
               />
               <View className="flex-shrink">
-                <Text className="text-lg font-bold text-gray-800">
+                <Text
+                  className={`text-lg font-bold ${
+                    isDarkMode ? "text-white" : "text-gray-800"
+                  }`}
+                >
                   {userData.name}
                 </Text>
                 <View className="flex-row items-center mt-1">
-                  <Mail size={14} color="#6b7280" />
-                  <Text className="text-sm text-gray-500 ml-1.5">
+                  <Mail size={14} color={isDarkMode ? "#fff" : "#111"} />
+                  <Text
+                    className={`text-sm font-bold ${
+                      isDarkMode ? "text-white" : "text-gray-800"
+                    } ml-1 `}
+                  >
                     {userData.email}
                   </Text>
                 </View>
@@ -129,13 +164,25 @@ export default function ProfileSetting() {
             {/* Right Side: Stats */}
             <View className="items-end space-y-2">
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Completed Trips</Text>
+                <Text
+                  className={`text-xs font-bold ${
+                    isDarkMode ? "text-white" : "text-gray-800"
+                  }  `}
+                >
+                  Completed Trips
+                </Text>
                 <Text className="text-xl font-bold text-blue-500">
                   {userData.completedTrips ?? 0}
                 </Text>
               </View>
               <View className="items-center">
-                <Text className="text-xs text-gray-500">Reviews</Text>
+                <Text
+                  className={`text-xs font-bold ${
+                    isDarkMode ? "text-white" : "text-gray-800"
+                  } ml-1 `}
+                >
+                  Reviews
+                </Text>
                 <Text className="text-xl font-bold text-blue-500">
                   {userData.reviews ?? 0}
                 </Text>
@@ -144,35 +191,57 @@ export default function ProfileSetting() {
           </View>
 
           {/* --- Profile Options + Logout --- */}
-          <View className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <View
+            className={`${
+              isDarkMode
+                ? "bg-gray-800 border-gray-600"
+                : "bg-gray-50 border-gray-200"
+            } rounded-2xl overflow-hidden shadow-xl`}
+          >
             {profileOptions.map((item, index) => (
               <TouchableOpacity
                 key={item.id}
                 className={`flex-row items-center justify-between p-4 ${
                   index < profileOptions.length - 1
-                    ? "border-b border-gray-100"
+                    ? isDarkMode
+                      ? "border-b border-gray-600"
+                      : "border-b border-gray-200"
                     : ""
                 }`}
                 onPress={() => navigation.navigate(item.screen)}
               >
                 <View className="flex-row items-center">
-                  <item.icon size={20} color="#4b5563" />
-                  <Text className="text-base text-gray-700 ml-4">
+                  <item.icon size={20} color={isDarkMode ? "#fff" : "#111"} />
+                  <Text
+                    className={`text-base ml-4 ${
+                      isDarkMode ? "text-white" : "text-gray-800"
+                    }`}
+                  >
                     {item.label}
                   </Text>
                 </View>
-                <ChevronRight size={18} color="#9ca3af" />
+                <ChevronRight size={18} color={isDarkMode ? "#fff" : "#111"} />
               </TouchableOpacity>
             ))}
 
             {/* --- Logout Button --- */}
             <TouchableOpacity
               onPress={logout}
-              className="flex-row items-center justify-between p-4 border-t border-gray-100 bg-red-50"
+              className={`flex-row items-center justify-between p-4 border-t ${
+                isDarkMode
+                  ? "border-gray-800 bg-red-500"
+                  : "border-gray-100 bg-red-500"
+              }`}
             >
               <View className="flex-row items-center">
-                <LogOut size={20} color="#ef4444" />
-                <Text className="text-base text-red-500 ml-4">Logout</Text>
+                <LogOut size={20} color={isDarkMode ? "#fff" : "#fff"} />
+                <Text
+                  className={`text-base ml-4 ${
+                    isDarkMode ? "text-white" : "text-white"
+                  }`}
+                >
+                  Logout
+                </Text>
               </View>
               <ChevronRight size={18} color="#ef4444" />
             </TouchableOpacity>
@@ -182,7 +251,7 @@ export default function ProfileSetting() {
         <View className="h-24" />
       </ScrollView>
 
-      <FloatingBottomNav activeRouteName={currentRouteName} />
+      <FloatingBottomNav activeRouteName="ProfileSetting" />
     </SafeAreaView>
   );
 }
