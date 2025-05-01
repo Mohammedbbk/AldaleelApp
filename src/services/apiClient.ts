@@ -18,11 +18,10 @@ import { ENDPOINTS } from '../config/constants';
 
 const DEFAULT_CONFIG: ApiClientConfig = {
   baseUrl: 'https://aldaleelapp-mcp.onrender.com',
-  timeout: 10000,
+  timeout: 60000, 
   retryAttempts: 3,
   retryDelay: 1000
 };
-
 export class ApiClient {
   private config: ApiClientConfig;
 

@@ -5,7 +5,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  // Image, // Image seems unused now
+  StatusBar,
   ActivityIndicator, // Keep for potential future loading states
   // Animated, // Animated seems unused now
   Platform, // Keep for Platform checks
@@ -29,6 +29,7 @@ import { NearbyEvents } from "../../components/trips/NearbyEvents";
 import { DetailItem } from "../../components/shared/DetailItem";
 import { ActivityItem } from "../../components/shared/ActivityItem";
 import { Accordion } from "../../components/shared/Accordion";
+import { TravelRecommendations } from "../../components/trips/TravelRecommendations";
 
 // --- Static Content / Maps ---
 const detailEmojis = {
@@ -50,7 +51,6 @@ const sectionIcons = {
 };
 
 // --- Helper Function for PDF Generation ---
-// (generatePdfContent remains the same as you provided, including defensive checks)
 function generatePdfContent(plan) {
   // Ensure plan and plan.details exist
   const details = plan?.details || [];
@@ -317,805 +317,405 @@ function generatePdfContent(plan) {
 
 // --- Component ---
 export function UserPlanScreen() {
-  const { t } = useTranslation(); // Hook called at top level - OK
-  const navigation = useNavigation(); // Hook called at top level - OK
-  const route = useRoute(); // Hook called at top level - OK
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const route = useRoute();
 
-  // State for features potentially loaded separately
-  // You might fetch these using useQuery if they aren't part of tripData
-  const [isLoadingCulture, setIsLoadingCulture] = useState(false);
-  const [cultureError, setCultureError] = useState(null);
-  const [isLoadingVisa, setIsLoadingVisa] = useState(false); // Added for consistency
-  const [visaError, setVisaError] = useState(null); // Added for consistency
+  // State for features potentially loaded separately (if needed in future)
+  // const [isLoadingCulture, setIsLoadingCulture] = useState(false);
+  // const [cultureError, setCultureError] = useState(null);
+  // const [isLoadingVisa, setIsLoadingVisa] = useState(false);
+  // const [visaError, setVisaError] = useState(null);
 
-  // --- Process route params directly using useMemo ---
-  // This replaces useQuery and usePlanData for transforming route params
+  // --- Process route params using useMemo for efficiency ---
   const plan = useMemo(() => {
-    // Hook called at top level - OK
     const tripData = route.params?.tripData;
 
     // Handle case where tripData is missing entirely
     if (!tripData) {
       console.warn("UserPlanScreen: No tripData found in route params.");
-      // Return a default structure or potentially the last known AI_RESPONSE as fallback
-      return (
-        AI_RESPONSE.UserPlan || {
-          details: [],
-          days: [],
-          visaRequirements: null,
-          nearbyEvents: [],
-          recommendations: {},
-        }
-      );
+      // Return a default empty structure
+      return {
+        details: [],
+        days: [],
+        visaRequirements: null,
+        cultureInsights: null,
+        currencyInfo: null,
+        healthAndSafety: null,
+        transportation: null,
+        languageBasics: null,
+        weatherInfo: null,
+        nearbyEvents: [],
+      };
     }
 
     console.log("UserPlanScreen received tripData:", tripData);
 
-    // 1) Try to parse the AI JSON (string inside additionalInfo)
+    // --- Prioritize pre-processed data if available ---
+    if (tripData.dataProcessed) {
+      console.log("[UserPlanScreen] Using pre-processed data from TripDetailsScreen");
+      
+      const details = [
+        { name: "Destination", value: tripData.destination || "N/A" },
+        { name: "Duration", value: tripData.duration ? `${tripData.duration} days` : "N/A" },
+        { name: "Expenses", value: tripData.budgetLevel || tripData.budget || "N/A" },
+      ];
+      
+      return {
+        // Basic trip info
+        tripId: tripData.tripId,
+        destination: tripData.destination,
+        nationality: tripData.nationality, // Needed for subsequent API calls like visa
+        details: details,
+        
+        // Directly use the processed data passed in props
+        days: tripData.days || [], // Ensure it's an array
+        visaRequirements: tripData.visaRequirements,
+        cultureInsights: tripData.cultureInsights,
+        currencyInfo: tripData.currencyInfo,
+        healthAndSafety: tripData.healthAndSafety,
+        transportation: tripData.transportation,
+        languageBasics: tripData.languageBasics,
+        weatherInfo: tripData.weatherInfo,
+        nearbyEvents: tripData.nearbyEvents || [], // Ensure it's an array
+      };
+    }
+    
+    // --- Fallback: Process data if not pre-processed (less ideal) ---
+    console.warn("[UserPlanScreen] Data not pre-processed, attempting fallback parsing.");
+    
+    // 1) Parse AI recommendations if they exist
     let ai = null;
-    const raw = tripData.aiRecommendations?.additionalInfo;
-    if (raw && typeof raw === "string") {
+    const rawAiInfo = tripData.aiRecommendations?.additionalInfo;
+    if (rawAiInfo && typeof rawAiInfo === 'string') {
       try {
-        ai = JSON.parse(raw);
-        console.log(
-          "[UserPlanScreen] Successfully PARSED ai object:",
-          JSON.stringify(ai, null, 2)
-        );
-        console.log(
-          "[UserPlanScreen] Parsed dailyItinerary:",
-          JSON.stringify(ai.dailyItinerary, null, 2)
-        );
-        console.log(
-          "[UserPlanScreen] Parsed currencyInfo:",
-          JSON.stringify(ai.currencyInfo ?? ai.currency ?? null, null, 2)
-        );
+        ai = JSON.parse(rawAiInfo);
+        console.log("[UserPlanScreen] Fallback: Successfully PARSED ai object:", JSON.stringify(ai, null, 2));
       } catch (err) {
-        console.warn(
-          "[UserPlanScreen] FAILED to parse AI recommendations JSON:",
-          err
-        );
-        console.error("[UserPlanScreen] Raw additionalInfo JSON:", raw);
+        console.error("[UserPlanScreen] Fallback: FAILED to parse AI recommendations JSON:", err);
+        console.error("[UserPlanScreen] Raw additionalInfo JSON:", rawAiInfo);
       }
     } else if (tripData.aiRecommendations?.additionalInfo) {
       ai = tripData.aiRecommendations.additionalInfo;
-      console.log(
-        "[UserPlanScreen] aiRecommendations.additionalInfo is already an object:",
-        JSON.stringify(ai, null, 2)
-      );
+      console.log("[UserPlanScreen] Fallback: aiRecommendations.additionalInfo is already an object:", JSON.stringify(ai, null, 2));
     }
-    if (!ai) {
-      console.error("[UserPlanScreen] FAILED to parse or find AI data.");
-    }
-    if (ai) {
-      console.log("[UserPlanScreen] AI object keys:", Object.keys(ai));
-    } else {
-      console.error(
-        "[UserPlanScreen] AI object is null or undefined after parsing."
-      );
-    }
-
+    
     // 2) Build base details
     const details = [
-      {
-        name: "Destination",
-        value: tripData.destinationCity || tripData.destination || "N/A",
-      },
-      {
-        name: "Duration",
-        value: tripData.duration ? `${tripData.duration} days` : "N/A",
-      },
-      {
-        name: "Expenses",
-        value: tripData.budgetLevel || tripData.budget || "N/A",
-      },
+      { name: "Destination", value: tripData.destination || "N/A" },
+      { name: "Duration", value: tripData.duration ? `${tripData.duration} days` : "N/A" },
+      { name: "Expenses", value: tripData.budgetLevel || tripData.budget || "N/A" },
     ];
-
-    // 3) AI-provided Visa and Culture Insights
-    const visaRequirements =
-      ai?.visaRequirements ?? tripData.visaRequirements ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed visaRequirements:",
-      JSON.stringify(visaRequirements, null, 2)
-    );
-    const cultureInsights =
-      ai?.cultureInsights ?? tripData.cultureInsights ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed cultureInsights:",
-      JSON.stringify(cultureInsights, null, 2)
-    );
-
-    // 4) Normalize itinerary into days array
-    const rawItinerary = ai?.dailyItinerary ?? [];
-    console.log("[UserPlanScreen] Processing rawItinerary:", JSON.stringify(rawItinerary, null, 2));
     
+    // 3) Extract itinerary (minimal transformation)
     let days = [];
-    if (Array.isArray(rawItinerary) && rawItinerary.length > 0) {
-      days = rawItinerary.map((dayObj, idx) => {
-        // Create a default day object
-        const dayNumber = idx + 1;
-        const dayTitle = dayObj?.title || `Day ${dayNumber}`;
-        
-        // Initialize an empty activities array
-        const activities = [];
-        
-        // Handle different possible schedule formats
-        const schedule = dayObj?.schedule || {};
-        
-        // Process each time segment (morning, afternoon, evening)
-        // Using nullish coalescing and optional chaining for robustness
-        const timeSegments = ['morning', 'afternoon', 'evening'];
-        
-        timeSegments.forEach(period => {
-          const segment = schedule[period];
-          if (segment) {
-            // Create an activity with defensive processing for all properties
-            activities.push({
-              time: segment.time || `${period.charAt(0).toUpperCase() + period.slice(1)}`,
-              name: segment.activity || segment.name || segment.title || `${period.charAt(0).toUpperCase() + period.slice(1)} Activity`,
-              estimatedCosts: segment.estimatedCost || segment.cost || segment.estimation || 'Not specified',
-              transportationOptions: segment.transportation || segment.transportationOptions || 'Not specified',
-              mealRecommendations: segment.meal || segment.mealRecommendations || segment.food || 'Not specified',
-              accommodationSuggestions: segment.accommodation || segment.accommodationSuggestions || period === 'evening' ? schedule.accommodation || 'Not specified' : null
-            });
-          }
-        });
-        
-        // If no schedule segments were found, try alternative formats
-        if (activities.length === 0 && Array.isArray(dayObj.activities)) {
-          // Handle the case where activities might be directly in an array
-          dayObj.activities.forEach(act => {
-            if (act) {
-              activities.push({
-                time: act.time || act.startTime || 'Flexible',
-                name: act.activity || act.name || act.title || act.description || 'Activity',
-                estimatedCosts: act.estimatedCost || act.cost || 'Not specified',
-                transportationOptions: act.transportation || act.transportationOptions || 'Not specified',
-                mealRecommendations: act.meal || act.mealRecommendations || act.food || 'Not specified',
-                accommodationSuggestions: act.accommodation || act.accommodationSuggestions || null
-              });
-            }
-          });
-        }
-        
-        // If still no activities, create a placeholder
-        if (activities.length === 0) {
-          activities.push({
-            time: 'All Day',
-            name: dayObj.summary || dayObj.description || `Explore ${tripData?.destinationCity || tripData?.destination || 'your destination'}`,
-            estimatedCosts: 'Not specified',
-            transportationOptions: 'Not specified',
-            mealRecommendations: 'Not specified',
-            accommodationSuggestions: 'Not specified'
-          });
-        }
-        
-        // Create the final day object with all information
-        return {
-          day: dayNumber,
-          title: dayTitle,
-          activities: activities,
-          summary: dayObj.summary || dayObj.description || '',
-          accommodation: dayObj.accommodation || schedule?.accommodation || null
-        };
-      });
-    } else if (plan?.days && Array.isArray(plan.days) && plan.days.length > 0) {
-      // If rawItinerary is not available, try to use existing days if they exist
-      console.log('[UserPlanScreen] Using existing days from plan:', JSON.stringify(plan.days, null, 2));
-      days = plan.days;
+    if (ai?.dailyItinerary && Array.isArray(ai.dailyItinerary)) {
+      days = ai.dailyItinerary.map((daySource, index) => ({ 
+        ...daySource, // Keep original structure
+        day: daySource.day || (index + 1), // Ensure day number exists
+        title: `Day ${daySource.day || (index + 1)}` // Add title for consistency
+      }));
+    } else if (tripData.itinerary && Array.isArray(tripData.itinerary)) {
+      // Use itinerary array directly if dailyItinerary isn't found
+      days = tripData.itinerary;
     } else {
-      // Create a fallback day if no itinerary data is available
-      const destination = tripData?.destinationCity || tripData?.destination || 'your destination';
-      console.log('[UserPlanScreen] No itinerary data found, creating fallback day');
-      days = [
-        {
-          day: 1,
-          title: `Day 1: Explore ${destination}`,
-          activities: [
-            {
-              time: 'All Day',
-              name: `Explore ${destination}`,
-              estimatedCosts: 'Not available - AI generation failed',
-              transportationOptions: 'Not available',
-              mealRecommendations: 'Not available',
-              accommodationSuggestions: 'Not available'
-            }
-          ],
-          summary: 'AI recommendation generation failed. This is a placeholder itinerary.'
-        }
-      ];
+       // Create placeholder if no itinerary data
+      const duration = tripData.duration || 1;
+      for (let i = 1; i <= duration; i++) {
+        days.push({ day: i, title: `Day ${i}`, activities: [], morning: null, afternoon: null, evening: null });
+      }
     }
+    console.log("[UserPlanScreen] Fallback: Processed days:", JSON.stringify(days, null, 2));
 
-    console.log("[UserPlanScreen] Transformed days:", JSON.stringify(days, null, 2));
-
-    // 5) Other AI sections simplified (using direct keys from parsed 'ai' object)
-    const currencyInfo = ai?.currencyInfo ?? null; // Prefer primary key
-    console.log(
-      "[UserPlanScreen] Parsed currencyInfo:",
-      JSON.stringify(currencyInfo, null, 2)
-    );
-    const healthAndSafety = ai?.healthAndSafety ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed healthAndSafety:",
-      JSON.stringify(healthAndSafety, null, 2)
-    );
-    const transportation = ai?.transportation ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed transportation:",
-      JSON.stringify(transportation, null, 2)
-    );
-    const languageBasics = ai?.languageBasics ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed languageBasics:",
-      JSON.stringify(languageBasics, null, 2)
-    );
-    const weatherInfo = ai?.weatherInfo ?? null;
-    console.log(
-      "[UserPlanScreen] Parsed weatherInfo:",
-      JSON.stringify(weatherInfo, null, 2)
-    );
-
-    // 6) Nearby events (from tripData)
-    const nearbyEvents = Array.isArray(tripData.nearbyEvents)
-      ? tripData.nearbyEvents
-      : [];
-    console.log(
-      "[UserPlanScreen] Parsed nearbyEvents:",
-      JSON.stringify(nearbyEvents, null, 2)
-    );
-
-    // Build final plan object
-    const finalPlan = {
-      details,
-      visaRequirements,
-      cultureInsights,
-      days,
-      currencyInfo,
-      healthAndSafety,
-      transportation,
-      languageBasics,
-      weatherInfo,
-      nearbyEvents,
+    // 4) Extract other sections
+    return {
+      tripId: tripData.tripId,
+      destination: tripData.destination,
+      nationality: tripData.nationality,
+      details: details,
+      days: days,
+      visaRequirements: ai?.visaRequirements || tripData.visaRequirements || null,
+      cultureInsights: ai?.localCustoms || ai?.cultureInsights || tripData.cultureInsights || null,
+      currencyInfo: ai?.currencyInfo || tripData.currencyInfo || null,
+      healthAndSafety: ai?.healthAndSafety || tripData.healthAndSafety || null,
+      transportation: ai?.transportation || tripData.transportation || null,
+      languageBasics: ai?.languageBasics || tripData.languageBasics || null,
+      weatherInfo: ai?.weatherInfo || tripData.weatherInfo || null,
+      nearbyEvents: ai?.nearbyEvents || tripData.nearbyEvents || [],
     };
-    console.log(
-      "[UserPlanScreen] FINAL plan object being returned:",
-      JSON.stringify(finalPlan, null, 2)
-    );
-    return finalPlan;
-  }, [route.params?.tripData]); // Depend on tripData object
+
+  }, [route.params?.tripData]); // Dependency array ensures recalculation only when tripData changes
+  
+  console.log("PLAN STRUCTURE:", JSON.stringify(plan, null, 2));
+  console.log("DAYS STRUCTURE:", JSON.stringify(plan.days, null, 2));
 
   // --- Event Handlers ---
-  // (Keep the same handlers: handleBack, handleHome, handleEditPlan, handleNext, handleShare)
-  const handleBack = useCallback(() => {
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate("Home"); // Use actual home route name from App.js
-  }, [navigation]);
-
-  const handleBackToHome = useCallback(
-    () => navigation.navigate("Home"),
-    [navigation]
-  ); // Use actual home route name
-  const handleEditPlan = useCallback(
-    () => navigation.navigate("AssistantScreen"),
-    [navigation]
-  ); // Ensure route exists
-  const handleNext = useCallback(() => {
+  const handleShare = async () => {
     try {
-      const tripData = route.params?.tripData;
-      console.log("[UserPlanScreen] handleNext called with tripData:", JSON.stringify(tripData, null, 2));
-      
-      // Get destination either from tripData or from plan details
-      const destination = tripData?.destination || 
-        plan?.details?.find(d => d.name === "Destination")?.value;
-      
-      // Get nationality from tripData
-      const nationality = tripData?.nationality || tripData?.userCountry;
-      
-      console.log(`[UserPlanScreen] Navigating to InformationScreen with:
-        - nationality: ${nationality}
-        - destination: ${destination}`);
-      
-      // Check if parameters are available
-      if (!nationality || !destination) {
-        console.warn(`[UserPlanScreen] Missing parameters: ${!nationality ? 'nationality ' : ''}${!destination ? 'destination' : ''}`);
-        
-        // Show an alert with options
-        Alert.alert(
-          "Missing Information",
-          "Some information is missing to show the travel information. Would you like to provide it?",
-          [
-            {
-              text: "Go to Trip Creation",
-              onPress: () => navigation.navigate("CreateTrip"),
-            },
-            {
-              text: "Use Default Values",
-              onPress: () => {
-                const defaultNationality = "International";
-                const defaultDestination = destination || "Unknown Destination";
-                console.log(`[UserPlanScreen] Using default values: nationality=${defaultNationality}, destination=${defaultDestination}`);
-                
-                navigation.navigate("InformationScreen", {
-                  nationality: defaultNationality,
-                  destination: defaultDestination,
-                });
-              }
-            },
-            {
-              text: "Cancel",
-              style: "cancel"
-            }
-          ]
-        );
-        return;
-      }
-      
-      // Navigate to the InformationScreen with the required parameters
-      navigation.navigate("InformationScreen", {
-        nationality: nationality,
-        destination: destination,
-      });
-    } catch (error) {
-      console.error("[UserPlanScreen] Navigation error in handleNext:", error);
-      Alert.alert(
-        "Navigation Error",
-        "Unable to navigate to the information screen. Please try again.",
-        [{ text: "OK" }]
-      );
-    }
-  }, [navigation, route.params?.tripData, plan?.details]);
-
-  const handleShare = useCallback(async () => {
-    if (!plan) {
-      Alert.alert("Error", "Plan data is not available to share.");
-      return;
-    }
-
-    const htmlContent = generatePdfContent(plan);
-    try {
+      const htmlContent = generatePdfContent(plan);
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
-
-      const details = plan?.details || [];
-      const destinationName =
-        details.find((d) => d.name === "Destination")?.value || "TravelPlan";
-      const safeFilename = destinationName.replace(/[^a-zA-Z0-9]/g, "_");
-      const newPath = `${FileSystem.documentDirectory}AlDaleel_${safeFilename}.pdf`;
-
-      // Ensure directory exists (optional, usually handled by FileSystem)
-      // await FileSystem.makeDirectoryAsync(FileSystem.documentDirectory, { intermediates: true });
-
-      await FileSystem.moveAsync({ from: uri, to: newPath });
-
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert(
-          "Sharing Error",
-          "Sharing isn't available on this platform."
-        );
-        return;
-      }
-
-      await Sharing.shareAsync(newPath, {
-        mimeType: "application/pdf",
-        dialogTitle: "Share your Travel Plan",
-        UTI: "com.adobe.pdf", // UTI for better iOS compatibility
+      const pdfName = `${uri.slice(0, uri.lastIndexOf('/') + 1)}TripPlan_${plan?.details?.find(d => d.name === 'Destination')?.value || 'Details'}.pdf`;
+      
+      await FileSystem.moveAsync({
+        from: uri,
+        to: pdfName,
       });
+      
+      await Sharing.shareAsync(pdfName, { mimeType: 'application/pdf', dialogTitle: 'Share your Trip Plan' });
     } catch (error) {
       console.error("Error sharing PDF:", error);
-      Alert.alert(
-        "Sharing Failed",
-        "Failed to generate or share PDF. Please try again."
-      ); // User-friendly error
+      Alert.alert("Error", "Could not generate or share the PDF plan.");
     }
-  }, [plan]); // Dependency: re-create if plan changes
+  };
 
-  // --- Render Logic ---
-
-  // Removed the top-level isLoading/error check related to useQuery
-
-  // Check if plan data (derived from route.params) is available.
-  // This check happens after useMemo runs.
-  if (!plan) {
-    // This case might be hit if route.params.tripData was initially undefined
-    // and the fallback in useMemo was also nullish.
+  const handleNext = () => {
+    // Navigate to the InformationScreen, passing necessary IDs
+    console.log("[UserPlanScreen] Next button pressed - Attempting to navigate to InformationScreen");
+    if (!plan || !plan.destination) {
+      Alert.alert("Missing Data", "Cannot proceed without trip destination.");
+      return;
+    }
+    console.log("[UserPlanScreen] handleNext called with tripData:", plan);
+    console.log("[UserPlanScreen] Navigating to InformationScreen with:", 
+                { nationality: plan.nationality, destination: plan.destination });
+    navigation.navigate("InformationScreen", {
+      nationality: plan.nationality, 
+      destination: plan.destination,
+      // Pass the whole plan data so InformationScreen can use pre-fetched info
+      tripData: plan 
+    });
+  };
+  
+  // --- Render Functions ---
+  // Helper to render detail items safely
+  const renderDetailItem = (item, index) => {
+    if (!item || !item.name || !item.value) return null;
     return (
-      <SafeAreaView style={styles.centeredScreen}>
-        <Text style={styles.errorText}>Trip plan data is not available.</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>
-            {t("common.goBack", "Go Back")}
-          </Text>
-        </TouchableOpacity>
+      <DetailItem
+        key={index}
+        iconName={detailEmojis[item.name] || "information-circle-outline"}
+        label={t(`userPlan.details.${item.name.toLowerCase()}`, item.name)}
+        value={item.value}
+      />
+    );
+  };
+  
+  // Helper to render accordion sections safely
+  const renderAccordionSection = (titleKey, iconName, data, renderContent) => {
+    if (!data) return null; // Don't render if data is null/undefined
+    // Check if data object is empty (considering nested objects/arrays)
+    if (typeof data === 'object' && Object.keys(data).length === 0) return null;
+    if (Array.isArray(data) && data.length === 0) return null;
+    
+    return (
+      <Accordion
+        title={
+          <View style={styles.accordionHeader}>
+            <Ionicons name={iconName} size={22} color="#4B5563" style={styles.accordionIcon} />
+            <Text style={styles.accordionTitle}>{t(titleKey)}</Text>
+          </View>
+        }
+      >
+        {renderContent(data)}
+      </Accordion>
+    );
+  };
+
+  // --- Main Render ---
+  if (!plan) {
+    // Handle the case where plan is still loading or failed to load
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0EA5E9" />
+          <Text style={styles.loadingText}>Loading Trip Plan...</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
-  // Add this temporary code at the beginning of the render function
-  console.log('PLAN STRUCTURE:', JSON.stringify(plan, null, 2));
-  console.log('DAYS STRUCTURE:', JSON.stringify(plan.days, null, 2));
-
-  // --- Main Render ---
-  // Uses the 'plan' object derived directly from route.params via useMemo
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" />
+
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
-        {/* Header Left Buttons */}
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="chevron-back" size={28} color="#000" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Header Title (Centered) */}
-        <View className="flex-1 items-center">
-          <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-            {t("plan.title", "Your Plan")}
-          </Text>
-        </View>
-
-        {/* Header Right Buttons */}
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={handleShare}
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
-            accessibilityRole="button"
-            accessibilityLabel={t("accessibility.shareButton", "Share Plan")}
-          >
-            <Ionicons name="share-outline" size={28} style={styles.iconColor} />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={28} color="#374151" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('userPlan.title')}</Text>
+        <TouchableOpacity onPress={handleShare} style={styles.shareButton}>
+          <Ionicons name="share-outline" size={24} color="#374151" />
+        </TouchableOpacity>
       </View>
 
-      {/* Body */}
-      <ScrollView
+      <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Plan Details */}
-        <View style={styles.detailsContainer}>
-          <View style={styles.detailsColumn}>
-            {plan.details.map((detail, index) => (
-              <DetailItem
-                key={`${index}-label`}
-                label={detail.name}
-                value={null}
-              />
-            ))}
-          </View>
-          <View style={styles.detailsEmojiColumn}>
-            {plan.details.map((detail, index) => (
-              <View key={`${index}-emoji`} style={styles.emojiWrapper}>
-                <Text style={styles.emojiText}>
-                  {detailEmojis[detail.name] || ""}
-                </Text>
-              </View>
-            ))}
-          </View>
-          <View style={styles.detailsColumn}>
-            {plan.details.map((detail, index) => (
-              <DetailItem
-                key={`${index}-value`}
-                label={null}
-                value={detail.value}
-              />
-            ))}
-          </View>
+        {/* Basic Trip Details */}
+        <View style={styles.detailsCard}>
+          {plan.details.map(renderDetailItem)}
         </View>
 
-        {/* --- Dynamic Sections --- */}
-        {/* Only render sections if data exists */}
-
-        {/* Render NearbyEvents if data is available */}
-        {console.log(
-          "[UserPlanScreen] Rendering NearbyEvents with data:",
-          plan.nearbyEvents
+        {/* Travel Recommendations Component */}
+        {/* Pass individual sections directly */}
+        <TravelRecommendations
+          itinerary={plan.days || []} // Pass the processed days array
+          currencyInfo={plan.currencyInfo}
+          healthAndSafety={plan.healthAndSafety}
+          transportation={plan.transportation}
+          languageBasics={plan.languageBasics}
+          weatherInfo={plan.weatherInfo}
+        />
+        
+        {/* Other Sections (Visa, Culture, Events) - Can be separate components or Accordions */}
+        
+        {/* Visa Requirements Section - Render directly or use a component */}
+        {renderAccordionSection(
+          'userPlan.sections.visa', 
+          sectionIcons.visaRequirements || 'document-text-outline',
+          plan.visaRequirements, 
+          (data) => <VisaRequirements data={data} /> // Pass data to VisaRequirements component
         )}
-        {plan.nearbyEvents?.length > 0 && (
-          <NearbyEvents
-            eventsData={plan.nearbyEvents}
-            // Assuming events data loading is part of the main plan data now
-            isLoading={false}
-            error={null}
-          />
+
+        {/* Culture Insights Section - Render directly or use a component */}
+        {renderAccordionSection(
+          'userPlan.sections.culture', 
+          sectionIcons.localCustoms || 'earth-outline',
+          plan.cultureInsights, 
+          (data) => <CultureInsights data={data} /> // Pass data to CultureInsights component
         )}
 
-        {/* Itinerary Days */}
-        {plan.days.map((day, index) => (
-          <View key={`day-${index}`} style={styles.dayContainer}>
-            <Text style={styles.dayLabel}>
-              {day.title}
+        {/* Nearby Events Section */}
+        {renderAccordionSection(
+          'userPlan.sections.events', 
+          sectionIcons.nearbyEvents || 'calendar-outline',
+          plan.nearbyEvents, 
+          (data) => <NearbyEvents events={data} /> // Pass data to NearbyEvents component
+        )}
+
+        {/* Optional: Raw AI Response (for debugging) */}
+        {/* 
+        {__DEV__ && plan.apiResponse && (
+          <Accordion title="Raw API Response (Debug)">
+            <Text style={{ fontFamily: 'monospace', fontSize: 10 }}>
+              {JSON.stringify(plan.apiResponse, null, 2)}
             </Text>
-            {day.activities && day.activities.length > 0 ? (
-              <View style={styles.activitiesContainer}>
-                {day.activities.map((activity, idx) => (
-                  <Accordion
-                    key={`activity-${idx}`}
-                    title={
-                      <View style={styles.activityHeader}>
-                        <Text style={styles.activityTime}>{activity.time}</Text>
-                        <Text style={styles.activityName}>{activity.name}</Text>
-                      </View>
-                    }
-                  >
-                    <View style={styles.activityDetails}>
-                      {activity.estimatedCosts && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Cost: </Text>
-                          {activity.estimatedCosts}
-                        </Text>
-                      )}
-                      {activity.transportationOptions && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Transport: </Text>
-                          {activity.transportationOptions}
-                        </Text>
-                      )}
-                      {activity.mealRecommendations && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Meals: </Text>
-                          {activity.mealRecommendations}
-                        </Text>
-                      )}
-                      {activity.accommodationSuggestions && (
-                        <Text style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Accommodation: </Text>
-                          {activity.accommodationSuggestions}
-                        </Text>
-                      )}
-                    </View>
-                  </Accordion>
-                ))}
-              </View>
-            ) : (
-              <Text style={styles.noActivityText}>
-                No activities scheduled for this day.
-              </Text>
-            )}
-          </View>
-        ))}
+          </Accordion>
+        )}
+        */}
+        
       </ScrollView>
-
-      {/* Bottom Navigation Bar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white dark:bg-gray-800 px-5 pt-3 pb-8 border-t border-gray-100 dark:border-gray-700 shadow-lg">
-        <View className="flex-row justify-between gap-2 items-center h-[50px]">
-          {/* Home Button */}
-          <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-700 justify-center items-center shadow shadow-black/5" // Adjusted size/shadow
-            onPress={() => {
-              console.log("[UserPlanScreen] Home button pressed");
-              handleBackToHome();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Go to home screen"
-          >
-            <FontAwesome name="home" size={26} color="#444" />
-          </TouchableOpacity>
-
-          {/* Edit Button */}
-          <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-700 justify-center items-center shadow shadow-black/5"
-            onPress={() => {
-              console.log("[UserPlanScreen] Edit button pressed");
-              handleEditPlan();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t("accessibility.editButton", "Edit Plan")}
-          >
-            <Ionicons name="pencil-outline" size={26} color="#444" />
-          </TouchableOpacity>
-
-          {/* Next Button */}
-          <TouchableOpacity
-            className="flex-row flex-1 items-center justify-center rounded-full px-6 py-3.5 shadow-md shadow-blue-500/20 bg-blue-500 dark:bg-blue-600"
-            onPress={() => {
-              console.log("[UserPlanScreen] Next button pressed - Attempting to navigate to InformationScreen");
-              // Verify that navigation is available
-              if (!navigation) {
-                console.error("[UserPlanScreen] Navigation object is undefined!");
-                Alert.alert("Navigation Error", "Cannot navigate to the next screen. Please try again.");
-                return;
-              }
-              
-              // Call the navigation function
-              handleNext();
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={t("accessibility.nextButton", "Next Step")}
-          >
-            <Text className="text-white text-lg font-semibold mr-1.5">
-              View Travel Info
-            </Text>
-            <Ionicons name="information-circle-outline" size={22} color="#FFF" />
-          </TouchableOpacity>
-        </View>
+      
+      {/* Footer Button */}
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>{t('userPlan.buttons.next')}</Text>
+          <Ionicons name="arrow-forward" size={20} color="#FFF" />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-// --- Styles --- (Using StyleSheet for better organization)
+// --- Styles --- (Keep existing styles, ensure keys match used styles)
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F4F4F5" }, // bg-neutral-100
-  centeredScreen: {
+  container: {
     flex: 1,
-    backgroundColor: "#F4F4F5",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
+    backgroundColor: '#F9FAFB', // Light gray background
   },
-  errorText: { color: "#EF4444", marginBottom: 16, textAlign: "center" }, // text-red-500 mb-4 text-center
-  backButton: {
-    backgroundColor: "#3B82F6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-  }, // bg-blue-500 px-4 py-2 rounded-lg
-  backButtonText: { color: "#FFFFFF" }, // text-white
-  header: {
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-  }, // bg-white flex-row items-center justify-between py-2 px-4 border-b border-neutral-200
-  headerButtons: { flexDirection: "row", alignItems: "center", gap: 16 }, // flex-row items-center gap-4
-  iconColor: { color: "#2563EB" }, // text-blue-600 (Applied via style prop)
-  headerTitleContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: "none",
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: "600", color: "#000000" }, // text-lg font-semibold text-black
-  hitSlop: { top: 10, bottom: 10, left: 10, right: 10 },
-  scrollView: { flex: 1 },
-  scrollViewContent: { padding: 16, paddingBottom: 96 }, // p-4 pb-32 (Adjust paddingBottom as needed)
-  detailsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    padding: 12,
-    marginVertical: 12,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  }, // flex-row justify-center bg-white p-3 my-3 rounded-lg shadow-md
-  detailsColumn: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  detailsEmojiColumn: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 12,
-  },
-  emojiWrapper: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    height: 44,
-  }, // p-2.5 items-center justify-center h-[44px] (Approximation)
-  emojiText: { fontSize: 16 }, // text-base
-  dayContainer: { marginBottom: 20 }, // mb-5
-  dayLabel: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#3F3F46",
-    marginBottom: 6,
-    marginLeft: 4,
-  }, // text-sm font-normal text-neutral-700 mb-1.5 ml-1
-  activitiesContainer: {
-    backgroundColor: "#06B6D4",
-    borderRadius: 8,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  }, // bg-cyan-500 rounded-lg overflow-hidden shadow-md
-  planItem: {
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5E5",
-  }, // flex-row gap-2 justify-between p-3 border-b border-neutral-200
-  planTime: {
-    color: "#71717A",
-    width: 64,
-    paddingRight: 8,
-    borderRightWidth: 1,
-    borderRightColor: "#D4D4D8",
-  }, // text-neutral-500 w-16 pr-2 border-r border-neutral-300
-  planEvent: { flex: 1, color: "#27272A" }, // flex-1 text-neutral-800
-  noPlanText: { padding: 12, color: "#71717A", fontStyle: "italic" },
-  noActivityText: {
-    padding: 12,
-    color: "#71717A",
-    fontStyle: "italic",
-    textAlign: "center",
-  },
-  nextButtonContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: 32,
-    backgroundColor: "transparent",
-    pointerEvents: "box-none",
-  }, // absolute bottom-0 left-0 right-0 p-5 pb-8 bg-transparent pointer-events-box
-  // Styles for Accordion Content
-  accordionContent: { padding: 12, backgroundColor: "#FFFFFF" }, // bg-white for contrast inside accordion
-  detailText: { color: "#3F3F46", marginBottom: 4 }, // text-neutral-700
-  detailLabel: { fontWeight: "600" }, // font-semibold
-  nextButton: {
-    backgroundColor: "#0EA5E9",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-  }, // bg-sky-500 py-4 px-5 rounded-lg shadow
-  nextButtonText: {
-    color: "#FFFFFF",
-    textAlign: "center",
+  loadingText: {
+    marginTop: 10,
     fontSize: 16,
-    fontWeight: "600",
-  }, // text-white text-center text-base font-semibold
-  activityHeader: {
+    color: '#6B7280',
+  },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  activityTime: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 12,
-    minWidth: 100,
+  backButton: {
+    padding: 8,
   },
-  activityName: {
-    fontSize: 16,
-    color: '#333',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  shareButton: {
+    padding: 8,
+  },
+  scrollView: {
     flex: 1,
   },
-  activityDetails: {
-    padding: 12,
-    backgroundColor: '#f5f5f5',
+  scrollViewContent: {
+    padding: 16, 
+    paddingBottom: 80, // Ensure space for footer button
   },
-  detailText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 8,
+  detailsCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  detailLabel: {
+  accordionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8, // Add padding for better spacing
+  },
+  accordionIcon: {
+    marginRight: 10,
+  },
+  accordionTitle: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: '#1F2937',
+    flex: 1, // Allow title to take remaining space
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 16, // Adjust padding for iOS bottom safe area
+    backgroundColor: '#FFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  nextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0EA5E9', // Blue color
+    paddingVertical: 14,
+    borderRadius: 999, // Fully rounded
+    height: 50,
+  },
+  nextButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
   },
 });
 
-// Default export for the screen
+// Default export IS needed for React Navigation if it's registered this way
 export default UserPlanScreen;
