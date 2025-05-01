@@ -240,7 +240,8 @@ export function CreateTripScreen({ navigation, route }) {
             onPress={() => handleSelectPlace(item)}
           >
             <Text className="text-base text-gray-800">
-              {item.name}{item.state ? <Text>, {item.state}</Text> : <Text></Text>}
+              {item.name}
+              {item.state ? <Text>, {item.state}</Text> : <Text></Text>}
               <Text>, {item.country}</Text>
             </Text>
           </TouchableOpacity>
@@ -252,10 +253,8 @@ export function CreateTripScreen({ navigation, route }) {
   return (
     <SafeAreaView
       className={`flex-1 ${
-        isDarkMode
-          ? "bg-gray-900 border-gray-700"
-          : "bg-gray-200 border-gray-200"
-      } pt-5`}
+        isDarkMode ? "bg-gray-900 border-gray-700" : "bg-white border-gray-200"
+      }`}
     >
       <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
@@ -267,10 +266,16 @@ export function CreateTripScreen({ navigation, route }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0} // Adjust offset if needed
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
+        <View
+          className={`flex-row items-center justify-between px-5 pt-2.5 pb-3 ${
+            isDarkMode
+              ? "bg-gray-800 border-gray-600"
+              : "bg-white border-gray-200"
+          }`}
+        >
           {/* Back Button */}
           <TouchableOpacity
-            className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
+            className="w-[50] h-[50] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />
@@ -503,7 +508,8 @@ export function CreateTripScreen({ navigation, route }) {
             </Text>
             <View className="w-8">
               <Text> </Text>
-            </View> {/* Spacer with empty Text component */}
+            </View>{" "}
+            {/* Spacer with empty Text component */}
           </View>
 
           {/* Search Input Area */}
@@ -601,7 +607,7 @@ export function CreateTripScreen({ navigation, route }) {
           >
             <FontAwesome name="home" size={26} color="#444" />
           </TouchableOpacity>
-          <View style={{flex: 0.05}}>
+          <View style={{ flex: 0.05 }}>
             <Text> </Text>
           </View>
           {/* Next Button */}

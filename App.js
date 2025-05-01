@@ -3,7 +3,7 @@ import React from "react";
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./global.css";
 
 // Import screens - Onboarding
@@ -26,7 +26,7 @@ import AssistantScreen from "./src/screens/assistant/AssistantScreen";
 import UserPlanScreen from "./src/screens/trips/UserPlanScreen";
 import CreateTripScreen from "./src/screens/trips/CreateTripScreen";
 import TripStyleScreen from "./src/screens/trips/TripStyleScreen";
-import { TripDetailsScreen } from "./src/screens/trips/TripDetailsScreen"; 
+import { TripDetailsScreen } from "./src/screens/trips/TripDetailsScreen";
 import TripListScreen from "./src/screens/trips/TripListScreen";
 import ProfileSetting from "./src/screens/home/ProfileSetting";
 import EditProfileScreen from "./src/screens/profile/EditProfileScreen";
@@ -66,9 +66,12 @@ function AppStack() {
       <Stack.Screen name="ProfileSetting" component={ProfileSetting} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="ProfileInfo" component={ProfileInfoScreen} />
-      <Stack.Screen name="NotificationSettings" component={NotificationSettings}/>
-      <Stack.Screen name="TravelPreferences" component={TravelPreferences}/>
-            <Stack.Screen name="ThemeSettings" component={ThemeSettings}/>
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettings}
+      />
+      <Stack.Screen name="TravelPreferences" component={TravelPreferences} />
+      <Stack.Screen name="ThemeSettings" component={ThemeSettings} />
       <Stack.Screen name="UserPlanScreen" component={UserPlanScreen} />
       <Stack.Screen name="AssistantScreen" component={AssistantScreen} />
       <Stack.Screen name="InformationScreen" component={InformationScreen} />
@@ -76,7 +79,7 @@ function AppStack() {
       <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
       <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
       <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
-      
+
       {/* Information screens with content keys */}
       <Stack.Screen
         name="VisaScreen"
@@ -119,8 +122,12 @@ function RootNavigator() {
       {({ userToken, isLoading }) => {
         if (isLoading) {
           return (
-            <View 
-              style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
               accessibilityLabel="Loading"
               accessibilityRole="progressbar"
             >
@@ -141,7 +148,7 @@ function NavigationErrorBoundary({ children }) {
     <View style={{ flex: 1 }}>
       <NavigationContainer
         fallback={
-          <View 
+          <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
             accessibilityLabel="Navigation loading"
             accessibilityRole="progressbar"

@@ -301,7 +301,7 @@ class ChatScreen extends React.Component {
         className={`flex-1 ${
           isDarkMode
             ? "bg-gray-900 border-gray-700"
-            : "bg-gray-50 border-gray-200"
+            : "bg-white border-gray-200"
         }`}
       >
         {/* Header */}

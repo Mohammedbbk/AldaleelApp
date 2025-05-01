@@ -359,62 +359,21 @@ export function UserPlanScreen() {
 
     if (!tripData) {
       console.warn("UserPlanScreen: No tripData found.");
-      return null; // Return null if no data, handled by loading state
-    }
-    // console.log("UserPlanScreen received tripData:", tripData); // Keep for debugging if needed
-
-    // Prioritize pre-processed data
-    if (tripData.dataProcessed) {
-      // console.log("[UserPlanScreen] Using pre-processed data.");
-      const details = [
-        { name: "Destination", value: tripData.destination || "N/A" },
-        {
-          name: "Duration",
-          value: tripData.duration ? `${tripData.duration} days` : "N/A",
-        },
-        {
-          name: "Expenses",
-          value: tripData.budgetLevel || tripData.budget || "N/A",
-        },
-      ];
-      return {
-        tripId: tripData.tripId,
-        destination: tripData.destination,
-        nationality: tripData.nationality,
-        details: details,
-        days: Array.isArray(tripData.days) ? tripData.days : [],
-        visaRequirements: tripData.visaRequirements,
-        cultureInsights: tripData.cultureInsights,
-        currencyInfo: tripData.currencyInfo,
-        healthAndSafety: tripData.healthAndSafety,
-        transportation: tripData.transportation,
-        languageBasics: tripData.languageBasics,
-        weatherInfo: tripData.weatherInfo,
-        nearbyEvents: Array.isArray(tripData.nearbyEvents)
-          ? tripData.nearbyEvents
-          : [],
-      };
+      return null;
     }
 
-    // Fallback: Process data if not pre-processed
-    console.warn(
-      "[UserPlanScreen] Data not pre-processed, attempting fallback parsing."
-    );
-    let ai = null;
-    const rawAiInfo = tripData.aiRecommendations?.additionalInfo;
-    if (rawAiInfo && typeof rawAiInfo === "string") {
+    // Parse the additionalInfo if it exists
+    let parsedInfo = null;
+    if (tripData.itinerary?.additionalInfo) {
       try {
-        ai = JSON.parse(rawAiInfo);
+        parsedInfo = JSON.parse(tripData.itinerary.additionalInfo);
+        console.log("Successfully parsed additionalInfo");
       } catch (err) {
-        console.error(
-          "[UserPlanScreen] Fallback: FAILED to parse AI recommendations JSON:",
-          err
-        );
+        console.error("Failed to parse additionalInfo:", err);
       }
-    } else if (tripData.aiRecommendations?.additionalInfo) {
-      ai = tripData.aiRecommendations.additionalInfo;
     }
 
+    // Create details array
     const details = [
       { name: "Destination", value: tripData.destination || "N/A" },
       {
@@ -427,26 +386,38 @@ export function UserPlanScreen() {
       },
     ];
 
+    // Process days from the parsed info
     let days = [];
-    if (ai?.dailyItinerary && Array.isArray(ai.dailyItinerary)) {
-      days = ai.dailyItinerary.map((daySource, index) => ({
-        day: daySource.day || index + 1,
-        title: daySource.title || `Day ${daySource.day || index + 1}`, // Use provided title or generate one
-        plan: daySource.plan || [], // Ensure plan is an array
-        // Keep other potential fields like activities if they exist
-        ...(daySource.activities && { activities: daySource.activities }),
-        ...(daySource.morning && { morning: daySource.morning }),
-        ...(daySource.afternoon && { afternoon: daySource.afternoon }),
-        ...(daySource.evening && { evening: daySource.evening }),
-      }));
-    } else if (tripData.itinerary && Array.isArray(tripData.itinerary)) {
-      days = tripData.itinerary; // Assuming this has the correct structure
-    } else {
-      const duration = parseInt(tripData.duration, 10) || 1;
-      days = Array.from({ length: duration }, (_, i) => ({
-        day: i + 1,
-        title: `Day ${i + 1}`,
-        plan: [],
+    if (parsedInfo?.dailyItinerary) {
+      days = parsedInfo.dailyItinerary.map((dayData, index) => ({
+        day: dayData.day || index + 1,
+        title: `Day ${dayData.day || index + 1}`,
+        plan: [
+          ...(dayData.morning
+            ? [
+                {
+                  time: dayData.morning.timing,
+                  event: dayData.morning.activities,
+                },
+              ]
+            : []),
+          ...(dayData.afternoon
+            ? [
+                {
+                  time: dayData.afternoon.timing,
+                  event: dayData.afternoon.activities,
+                },
+              ]
+            : []),
+          ...(dayData.evening
+            ? [
+                {
+                  time: dayData.evening.timing,
+                  event: dayData.evening.activities,
+                },
+              ]
+            : []),
+        ],
       }));
     }
 
@@ -456,19 +427,14 @@ export function UserPlanScreen() {
       nationality: tripData.nationality,
       details: details,
       days: days,
-      visaRequirements:
-        ai?.visaRequirements || tripData.visaRequirements || null,
-      cultureInsights:
-        ai?.localCustoms ||
-        ai?.cultureInsights ||
-        tripData.cultureInsights ||
-        null,
-      currencyInfo: ai?.currencyInfo || tripData.currencyInfo || null,
-      healthAndSafety: ai?.healthAndSafety || tripData.healthAndSafety || null,
-      transportation: ai?.transportation || tripData.transportation || null,
-      languageBasics: ai?.languageBasics || tripData.languageBasics || null,
-      weatherInfo: ai?.weatherInfo || tripData.weatherInfo || null,
-      nearbyEvents: ai?.nearbyEvents || tripData.nearbyEvents || [],
+      visaRequirements: parsedInfo?.visaRequirements || null,
+      cultureInsights: parsedInfo?.localCustoms || null,
+      currencyInfo: parsedInfo?.currencyInfo || null,
+      healthAndSafety: parsedInfo?.healthAndSafety || null,
+      transportation: parsedInfo?.transportation || null,
+      languageBasics: parsedInfo?.languageBasics || null,
+      weatherInfo: parsedInfo?.weatherInfo || null,
+      nearbyEvents: [],
     };
   }, [route.params?.tripData]);
 

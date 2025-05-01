@@ -50,7 +50,7 @@ export function TripStyleScreen({ navigation, route }) {
   const { isDarkMode, colors } = useTheme();
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900 pt-5">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={isDarkMode ? "#1f2937" : "#fff"}
@@ -59,7 +59,7 @@ export function TripStyleScreen({ navigation, route }) {
       {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
         <TouchableOpacity
-          className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
+          className="w-[50] h-[50] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
           accessibilityLabel="Go back"
