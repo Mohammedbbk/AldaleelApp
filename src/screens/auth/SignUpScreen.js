@@ -98,7 +98,7 @@ class SignUpScreen extends React.Component {
         {
           text: "OK",
           onPress: () => {
-            this.props.navigation.replace("Verification");
+            this.props.navigation.replace("VerificationScreen");
           },
         },
       ]);
