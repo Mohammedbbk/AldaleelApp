@@ -148,3 +148,48 @@ For all other screens that haven't been updated yet, apply the following pattern
 2. Try each theme option (System, Light, Dark)
 3. Verify all screens properly respond to theme changes
 4. Check accessibility features still work with dark mode
+
+## Application Structure and Flow 🔄
+
+### Core Files and Purpose
+
+| File | Purpose |
+|------|---------|
+| **package.json** | Manages dependencies including React Native/Expo, React Navigation, Supabase, React Query, NativeWind, and i18n |
+| **App.js** | Main entry point that sets up navigation structure, authentication flow, and providers |
+| **AuthProvider.js** | Manages user authentication state with AsyncStorage token persistence |
+| **ThemeProvider.js** | Handles theme settings (light/dark/system mode and color themes) |
+| **tailwind.config.js** | Configuration for TailwindCSS/NativeWind styling |
+| **global.css** | Global CSS styles |
+
+### Application Flow
+
+1. **Authentication Flow**
+   - App starts with **SplashScreen**
+   - First-time users see **OnboardScreen** for app introduction
+   - Users can login, sign up, verify account or reset password
+   - **AuthProvider** maintains authentication state using AsyncStorage tokens
+
+2. **Main Application Flow**
+   - After authentication, users land on the **HomeScreen** dashboard
+   - Users access travel information through specialized screens:
+     - Visa information
+     - Local customs
+     - Currency
+     - Health
+     - Transportation
+     - Language
+
+3. **Key Features**
+   - **Trip Planning**: Create trips, set preferences, view trip details
+   - **AI Assistant**: Get intelligent travel assistance
+   - **Profile Management**: Edit profile, set notifications, customize preferences
+   - **Theme System**: Support for light/dark mode and multiple color themes
+   - **Internationalization**: Multiple languages with RTL support for Arabic
+
+### Technical Implementation
+- **Navigation**: Stack-based navigation with React Navigation
+- **State Management**: Context API for app-wide state and React Query for API data
+- **Styling**: NativeWind (Tailwind CSS for React Native)
+- **Backend Integration**: Supabase services
+- **Device Storage**: AsyncStorage for persistent data

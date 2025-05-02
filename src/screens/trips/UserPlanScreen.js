@@ -18,25 +18,19 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useNavigation, useRoute } from "@react-navigation/native";
-
-// Import components
+import { useTheme } from "../../../ThemeProvider";
 import { VisaRequirements } from "../../components/trips/VisaRequirements";
 import { CultureInsights } from "../../components/trips/CultureInsights";
 import { NearbyEvents } from "../../components/trips/NearbyEvents";
 import { DetailItem } from "../../components/shared/DetailItem";
 import { Accordion } from "../../components/shared/Accordion";
-// Removed ActivityItem as it wasn't directly used here
-// Removed TravelRecommendations as its content is now in accordions
 
-// --- Static Content / Maps ---
-// Restore detailEmojis as it's used in renderDetailItem
 const detailEmojis = {
   Destination: "✈️",
   Duration: "⏳",
   Expenses: "💵",
 };
 
-// Updated icons map for consistency
 const sectionIcons = {
   dailyItinerary: "map-outline",
   currencyInfo: "cash-outline",
@@ -49,7 +43,6 @@ const sectionIcons = {
   nearbyEvents: "calendar-outline",
 };
 
-// --- Helper Function for PDF Generation (Accepts t function for i18n) ---
 function generatePdfContent(plan, t) {
   const details = plan?.details || [];
   const destination =
@@ -58,7 +51,6 @@ function generatePdfContent(plan, t) {
   const expenses = details.find((d) => d.name === "Expenses")?.value || "N/A";
   const days = Array.isArray(plan?.days) ? plan.days : [];
 
-  // Use t function for titles and static text
   const pdfMainTitle = t("userPlan.pdf.mainTitle", { destination });
   const pdfSubtitle = t("userPlan.pdf.subtitle", { destination });
   const detailDestinationLabel = t("userPlan.details.destination");
@@ -352,6 +344,7 @@ export function UserPlanScreen() {
   const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
+  const { isDarkMode, colors } = useTheme();
 
   // Process route params using useMemo for efficiency
   const plan = useMemo(() => {
@@ -361,70 +354,135 @@ export function UserPlanScreen() {
       console.warn("UserPlanScreen: No tripData found.");
       return null;
     }
+    
+    // Log the entire received object
+    console.log("UserPlanScreen received tripData:", JSON.stringify(tripData, null, 2)); // Stringify for detailed view
+
+    // Destructure for clarity
+    const {
+      destination,
+      displayDestination,
+      duration,
+      budgetLevel,
+      budget,
+      nationality,
+      tripId,
+      itinerary
+    } = tripData;
 
     // Parse the additionalInfo if it exists
     let parsedInfo = null;
-    if (tripData.itinerary?.additionalInfo) {
-      try {
-        parsedInfo = JSON.parse(tripData.itinerary.additionalInfo);
-        console.log("Successfully parsed additionalInfo");
-      } catch (err) {
-        console.error("Failed to parse additionalInfo:", err);
+    let parsingError = null; // Variable to hold parsing error
+
+    if (itinerary?.additionalInfo) {
+      const infoSource = itinerary.additionalInfo;
+      console.log("--- Debugging additionalInfo ---");
+      console.log("Type:", typeof infoSource);
+      // Log first/last characters to check for potential truncation or extra quotes
+      if (typeof infoSource === 'string') {
+        console.log("Raw String Snippet (start):", infoSource.substring(0, 100));
+        console.log("Raw String Snippet (end):", infoSource.substring(infoSource.length - 100));
+      } else {
+        console.log("Raw Value (not string):", infoSource);
       }
+
+      try {
+        if (typeof infoSource === 'object') {
+          console.log("additionalInfo is already an object.");
+          parsedInfo = infoSource;
+        } else if (typeof infoSource === 'string') {
+          console.log("Attempting JSON.parse...");
+          parsedInfo = JSON.parse(infoSource);
+          console.log("JSON.parse successful!");
+        } else {
+          console.warn("additionalInfo is not a string or object, cannot parse.");
+        }
+      } catch (err) {
+        console.error("!!! JSON.parse FAILED !!!");
+        console.error("Error:", err.message);
+        console.error("Raw String that failed:", infoSource); // Log the exact string that failed
+        parsingError = err; // Store the error
+      }
+
+      // Log the result AFTER attempting parse
+      console.log("Parsed Info Object:", JSON.stringify(parsedInfo, null, 2)); // Stringify for detailed view
+      if (parsedInfo) {
+        console.log("Keys in parsedInfo:", Object.keys(parsedInfo));
+        // Specifically log the fields we need
+        console.log("parsedInfo.visaRequirements exists?", parsedInfo.hasOwnProperty('visaRequirements'));
+        console.log("parsedInfo.localCustoms exists?", parsedInfo.hasOwnProperty('localCustoms'));
+        console.log("Value of visaRequirements:", JSON.stringify(parsedInfo.visaRequirements, null, 2));
+        console.log("Value of localCustoms:", JSON.stringify(parsedInfo.localCustoms, null, 2));
+      }
+      console.log("--- End Debugging additionalInfo ---");
+    } else {
+      console.warn("No itinerary or additionalInfo found in tripData.");
     }
 
     // Create details array
     const details = [
-      { name: "Destination", value: tripData.destination || "N/A" },
+      { 
+        name: "Destination", 
+        value: displayDestination || destination || "N/A" 
+      },
       {
         name: "Duration",
-        value: tripData.duration ? `${tripData.duration} days` : "N/A",
+        value: duration ? `${duration} ${t('common.days', 'days')}` : "N/A",
       },
       {
         name: "Expenses",
-        value: tripData.budgetLevel || tripData.budget || "N/A",
+        value: budgetLevel || budget || "N/A",
       },
     ];
 
     // Process days from the parsed info
     let days = [];
-    if (parsedInfo?.dailyItinerary) {
-      days = parsedInfo.dailyItinerary.map((dayData, index) => ({
-        day: dayData.day || index + 1,
-        title: `Day ${dayData.day || index + 1}`,
-        plan: [
-          ...(dayData.morning
-            ? [
-                {
-                  time: dayData.morning.timing,
-                  event: dayData.morning.activities,
-                },
-              ]
-            : []),
-          ...(dayData.afternoon
-            ? [
-                {
-                  time: dayData.afternoon.timing,
-                  event: dayData.afternoon.activities,
-                },
-              ]
-            : []),
-          ...(dayData.evening
-            ? [
-                {
-                  time: dayData.evening.timing,
-                  event: dayData.evening.activities,
-                },
-              ]
-            : []),
-        ],
-      }));
+    if (parsedInfo && Array.isArray(parsedInfo.dailyItinerary)) {
+      days = parsedInfo.dailyItinerary.map((dayData, index) => {
+        // Flatten activities for simpler display structure
+        const planItems = [];
+        if (dayData.morning?.activities) {
+          planItems.push({ 
+            time: dayData.morning.timing || t('common.morning', 'Morning'), 
+            event: Array.isArray(dayData.morning.activities) ? 
+              dayData.morning.activities.join(', ') : 
+              dayData.morning.activities 
+          });
+        }
+        if (dayData.afternoon?.activities) {
+          planItems.push({ 
+            time: dayData.afternoon.timing || t('common.afternoon', 'Afternoon'), 
+            event: Array.isArray(dayData.afternoon.activities) ? 
+              dayData.afternoon.activities.join(', ') : 
+              dayData.afternoon.activities 
+          });
+        }
+        if (dayData.evening?.activities) {
+          planItems.push({ 
+            time: dayData.evening.timing || t('common.evening', 'Evening'), 
+            event: Array.isArray(dayData.evening.activities) ? 
+              dayData.evening.activities.join(', ') : 
+              dayData.evening.activities 
+          });
+        }
+
+        return {
+          day: dayData.day || index + 1,
+          title: t('userPlan.itinerary.dayTitle', 'Day {{dayNumber}}', 
+            { dayNumber: dayData.day || index + 1 }),
+          plan: planItems,
+          rawData: dayData
+        };
+      });
+    } else {
+      console.warn("dailyItinerary not found or not an array in parsedInfo.");
     }
 
+    // Return the structured plan object with potential parsing error
     return {
-      tripId: tripData.tripId,
-      destination: tripData.destination,
-      nationality: tripData.nationality,
+      tripId: tripId,
+      destination: displayDestination || destination,
+      nationality: nationality,
       details: details,
       days: days,
       visaRequirements: parsedInfo?.visaRequirements || null,
@@ -435,8 +493,10 @@ export function UserPlanScreen() {
       languageBasics: parsedInfo?.languageBasics || null,
       weatherInfo: parsedInfo?.weatherInfo || null,
       nearbyEvents: [],
+      // Add the parsing error to the plan
+      parsingError: parsingError ? parsingError.message : null,
     };
-  }, [route.params?.tripData]);
+  }, [route.params?.tripData, t]); // Add t to dependency array
 
   // --- Event Handlers ---
   const handleShare = async () => {
@@ -704,17 +764,19 @@ export function UserPlanScreen() {
   // --- Main Render ---
   if (!plan) {
     return (
-      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0EA5E9" />
-          <Text style={styles.loadingText}>{t("userPlan.loading")}</Text>
-        </View>
-
+      <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? colors.background : "#fff"} />
+        
         {/* Header Title (Centered) */}
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
             {t("plan.title", "Your Plan")}
           </Text>
+        </View>
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#0EA5E9" />
+          <Text style={styles.loadingText}>{t("userPlan.loading")}</Text>
         </View>
 
         {/* Header Right Buttons */}
@@ -733,20 +795,20 @@ export function UserPlanScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, isDarkMode && { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <Ionicons name="chevron-back" size={28} color="#374151" />
+          <Ionicons name="chevron-back" size={28} color={isDarkMode ? colors.text : "#374151"} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t("userPlan.title")}</Text>
+        <Text style={[styles.headerTitle, { color: isDarkMode ? colors.text : "#1F2937" }]}>{t("userPlan.title")}</Text>
         <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
-          <Ionicons name="share-outline" size={24} color="#374151" />
+          <Ionicons name="share-outline" size={24} color={isDarkMode ? colors.text : "#374151"} />
         </TouchableOpacity>
       </View>
 
@@ -756,9 +818,19 @@ export function UserPlanScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Basic Trip Details */}
-        <View style={[styles.card, styles.detailsContainer]}>
+        <View style={[styles.card, styles.detailsContainer, isDarkMode && { backgroundColor: colors.card }]}>
           {plan.details.map(renderDetailItem)}
         </View>
+        
+        {/* Conditionally render a message if parsing failed */}
+        {plan.parsingError && (
+          <View style={[styles.errorCard, isDarkMode && { backgroundColor: colors.notification, borderLeftColor: '#F59E0B' }]}>
+            <Ionicons name="warning-outline" size={20} color={isDarkMode ? "#FFD700" : "#D97706"} />
+            <Text style={[styles.errorText, isDarkMode && { color: colors.text }]}>
+              {t('userPlan.errors.parsingFailed', 'Could not load all generated details (Visa, Culture, etc.). Basic info shown.')}
+            </Text>
+          </View>
+        )}
 
         {/* Itinerary Section */}
         {renderAccordionSection(
@@ -814,7 +886,7 @@ export function UserPlanScreen() {
           sectionIcons.visaRequirements,
           plan.visaRequirements,
           (data) => (
-            <VisaRequirements data={data} />
+            <VisaRequirements visaData={data} />
           )
         )}
 
@@ -824,7 +896,7 @@ export function UserPlanScreen() {
           sectionIcons.cultureInsights,
           plan.cultureInsights,
           (data) => (
-            <CultureInsights data={data} />
+            <CultureInsights cultureData={data} />
           )
         )}
 
@@ -840,8 +912,8 @@ export function UserPlanScreen() {
       </ScrollView>
 
       {/* Footer Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+      <View style={[styles.footer, isDarkMode && { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <TouchableOpacity style={[styles.nextButton, isDarkMode && { backgroundColor: colors.primary }]} onPress={handleNext}>
           <Text style={styles.nextButtonText}>Home</Text>
         </TouchableOpacity>
       </View>
@@ -1036,10 +1108,23 @@ const styles = StyleSheet.create({
     height: 50,
   },
   nextButtonText: {
-    color: "#FFF", // White text
+    color: "#FFF", 
     fontSize: 16,
     fontWeight: "600",
     marginRight: 8,
+  },
+  errorCard: {
+    padding: 12,
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+    borderLeftWidth: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: {
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#D97706',
   },
 });
 

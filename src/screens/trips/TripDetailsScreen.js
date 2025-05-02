@@ -164,10 +164,6 @@ export function TripDetailsScreen({ route, navigation }) {
   const [additionalRequirement, setAdditionalRequirement] = useState("");
   const [selectedTransport, setSelectedTransport] = useState([]);
 
-  // --- TEST FETCH ---
-
-  // --- END TEST FETCH ---
-
   // Use useCallback for functions passed to TouchableOpacity to prevent unnecessary re-renders
   const toggleRequirement = useCallback((value) => {
     setSelectedRequirements((prev) =>
@@ -185,9 +181,26 @@ export function TripDetailsScreen({ route, navigation }) {
     );
   }, []);
 
+  const navigateToPlan = (apiResultData) => {
+    // **MERGE DATA HERE**
+    const finalTripDataForDisplay = {
+      ...fullTripData, // Original data (destination, duration, budgetLevel, nationality etc.)
+      ...apiResultData, // API response data (tripId, itinerary with additionalInfo)
+      // Ensure API response doesn't accidentally overwrite crucial original fields if names clash
+      // In this case, itinerary and tripId are added.
+    };
+    console.log(
+      "Navigating to UserPlanScreen with merged data:",
+      finalTripDataForDisplay
+    );
+    navigation.navigate("UserPlanScreen", { tripData: finalTripDataForDisplay });
+  };
+
   const handleCreateAdventure = async () => {
     setError("");
-    const tripData = {
+    setLoading(true); // Start loading indicator immediately
+
+    const tripDetailsPayload = {
       ...fullTripData,
       specialRequirements: selectedRequirements,
       additionalRequirement: additionalRequirement.trim(),
@@ -195,75 +208,51 @@ export function TripDetailsScreen({ route, navigation }) {
     };
 
     try {
-      const tripResult = await createTrip(tripData, {
-        onLoadingChange: setLoading,
+      const tripResult = await createTrip(tripDetailsPayload, {
+        onLoadingChange: setLoading, // Service can still control this if needed
         onLoadingMessageChange: setLoadingMessage,
         onError: (err) => {
-          console.error("Error reported by createTrip service:", err);
-          setError(err?.message || t("tripDetails.alerts.error.message"));
-          setLoading(false);
+          // This onError in callback might be less useful if using await/try/catch
+          console.error("Error reported by createTrip service callback:", err);
+          // Prefer handling errors in the main catch block
         },
-        onSuccess: (data) => {
-          console.log("Trip created successfully:", data);
-          setLoading(false);
-
-          if (data && data.aiGenerationFailed) {
-            navigation.navigate("UserPlanScreen", { tripData: data });
-          } else {
-            navigation.navigate("UserPlanScreen", { tripData: data });
-          }
-        },
+        // onSuccess is less useful with await, handle success after the await
       });
 
-      // Handle case where tripResult is returned directly
+      // Handle successful trip creation (direct return from await)
       if (tripResult) {
-        console.log("Trip creation completed with direct return:", tripResult);
+        console.log("Trip creation completed:", tripResult);
+        setLoading(false); // Stop loading on success
 
-        // Check if this is a partial success (trip created but AI generation failed)
         if (tripResult.aiGenerationFailed) {
           Alert.alert(
-            "Trip Created with Limited Features",
-            "Your trip was created successfully, but we couldn't generate AI recommendations. You can still view and edit your trip details.",
+            t("tripDetails.alerts.partialSuccess.title", "Trip Created with Limited Features"),
+            t("tripDetails.alerts.partialSuccess.message", "Your trip was created, but AI recommendations failed. You can view basic details."),
             [
               {
-                text: "View Trip",
-                onPress: () =>
-                  navigation.navigate("UserPlanScreen", {
-                    tripData: tripResult,
-                  }),
+                text: t("tripDetails.alerts.partialSuccess.viewButton", "View Trip"),
+                onPress: () => navigateToPlan(tripResult), // Pass result even if partial
               },
             ]
           );
+        } else {
+          // Full success
+          navigateToPlan(tripResult);
         }
+      } else {
+        // Handle cases where createTrip might resolve without a result unexpectedly
+        console.warn("createTrip resolved without a result.");
+        setError(t("tripDetails.alerts.error.message", "An unexpected error occurred."));
+        setLoading(false);
       }
     } catch (err) {
-      console.error("Error during trip creation:", err);
-      setLoading(false);
+      console.error("Error during handleCreateAdventure:", err);
+      setLoading(false); // Ensure loading stops on error
+      const errorMessage = err.message || t("tripDetails.alerts.error.message");
+      setError(errorMessage); // Display the error
 
-      if (retryCount < 2) {
-        setRetryCount((prev) => prev + 1);
-        Alert.alert(
-          t("tripDetails.alerts.serverStarting.title"),
-          t("tripDetails.alerts.serverStarting.message"),
-          [
-            {
-              text: t("tripDetails.alerts.serverStarting.cancel"),
-              style: "cancel",
-              onPress: () => setLoading(false),
-            },
-            {
-              text: t("tripDetails.alerts.serverStarting.retry"),
-              onPress: handleCreateAdventure,
-            },
-          ]
-        );
-      } else {
-        setError(err.message || t("tripDetails.alerts.error.message"));
-        Alert.alert(
-          t("tripDetails.alerts.error.title"),
-          err.message || t("tripDetails.alerts.error.message")
-        );
-      }
+      // Show final error alert if no retry or retry failed
+      Alert.alert(t("tripDetails.alerts.error.title"), errorMessage);
     }
   };
 
@@ -478,18 +467,7 @@ export function TripDetailsScreen({ route, navigation }) {
                 {t("tripDetails.buttons.startFresh")}
               </Text>
             </TouchableOpacity>
-
-            {/* Centered Home Button (Removed absolute positioning for robustness) */}
-            {/* If you need it positioned specifically, consider adjusting layout */}
-            {/* <TouchableOpacity
-                            style={styles.homeButton} // Consider revising positioning
-                            onPress={() => navigation.navigate('Home')} // Ensure 'Home' is the correct route name
-                         >
-                            <FontAwesome name="home" size={24} color="#333" />
-                        </TouchableOpacity> */}
           </View>
-          {/* Add Spacer at the bottom if needed for KeyboardAvoidingView */}
-          {/* <View style={{ height: 50 }} /> */}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
