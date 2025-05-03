@@ -262,7 +262,15 @@ export default function HomeScreen() {
                   : "bg-[#f0f8ff] border-[#e0f0ff]"
               }`}
             >
-              <UserIcon size={20} color={colors.primary} />
+              {userData?.avatarUrl ? (
+                <Image
+                  source={{ uri: userData.avatarUrl }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              ) : (
+                <UserIcon size={20} color={colors.primary} />
+              )}
             </View>
             <View className="ml-3">
               <Text
