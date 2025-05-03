@@ -193,12 +193,15 @@ export function TripDetailsScreen({ route, navigation }) {
       "Navigating to UserPlanScreen with merged data:",
       finalTripDataForDisplay
     );
-    navigation.navigate("UserPlanScreen", { tripData: finalTripDataForDisplay });
+    navigation.navigate("UserPlanScreen", {
+      tripData: finalTripDataForDisplay,
+    });
   };
 
   const handleCreateAdventure = async () => {
     setError("");
-    setLoading(true); // Start loading indicator immediately
+    setLoading(true);
+    setLoadingMessage("Creating your adventure...");
 
     const tripDetailsPayload = {
       ...fullTripData,
@@ -208,51 +211,64 @@ export function TripDetailsScreen({ route, navigation }) {
     };
 
     try {
+      console.log(
+        "[TripDetailsScreen] Sending trip details:",
+        tripDetailsPayload
+      );
+
       const tripResult = await createTrip(tripDetailsPayload, {
-        onLoadingChange: setLoading, // Service can still control this if needed
+        onLoadingChange: (isLoading) => {
+          setLoading(isLoading);
+          if (!isLoading) {
+            setLoadingMessage("");
+          }
+        },
         onLoadingMessageChange: setLoadingMessage,
         onError: (err) => {
-          // This onError in callback might be less useful if using await/try/catch
-          console.error("Error reported by createTrip service callback:", err);
-          // Prefer handling errors in the main catch block
+          console.error(
+            "[TripDetailsScreen] Error in createTrip callback:",
+            err
+          );
+          setError(err.message || t("tripDetails.alerts.error.message"));
         },
-        // onSuccess is less useful with await, handle success after the await
       });
 
-      // Handle successful trip creation (direct return from await)
-      if (tripResult) {
-        console.log("Trip creation completed:", tripResult);
-        setLoading(false); // Stop loading on success
+      if (!tripResult) {
+        throw new Error("Failed to create trip. No response received.");
+      }
 
-        if (tripResult.aiGenerationFailed) {
-          Alert.alert(
-            t("tripDetails.alerts.partialSuccess.title", "Trip Created with Limited Features"),
-            t("tripDetails.alerts.partialSuccess.message", "Your trip was created, but AI recommendations failed. You can view basic details."),
-            [
-              {
-                text: t("tripDetails.alerts.partialSuccess.viewButton", "View Trip"),
-                onPress: () => navigateToPlan(tripResult), // Pass result even if partial
-              },
-            ]
-          );
-        } else {
-          // Full success
-          navigateToPlan(tripResult);
-        }
+      console.log("[TripDetailsScreen] Trip creation successful:", tripResult);
+
+      if (tripResult.aiGenerationFailed) {
+        Alert.alert(
+          t("tripDetails.alerts.partialSuccess.title"),
+          t("tripDetails.alerts.partialSuccess.message"),
+          [
+            {
+              text: t("tripDetails.alerts.partialSuccess.viewButton"),
+              onPress: () => navigateToPlan(tripResult),
+            },
+          ]
+        );
       } else {
-        // Handle cases where createTrip might resolve without a result unexpectedly
-        console.warn("createTrip resolved without a result.");
-        setError(t("tripDetails.alerts.error.message", "An unexpected error occurred."));
-        setLoading(false);
+        navigateToPlan(tripResult);
       }
     } catch (err) {
-      console.error("Error during handleCreateAdventure:", err);
-      setLoading(false); // Ensure loading stops on error
-      const errorMessage = err.message || t("tripDetails.alerts.error.message");
-      setError(errorMessage); // Display the error
-
-      // Show final error alert if no retry or retry failed
-      Alert.alert(t("tripDetails.alerts.error.title"), errorMessage);
+      console.error("[TripDetailsScreen] Error during trip creation:", err);
+      setError(t("tripDetails.alerts.error.createFailed"));
+      Alert.alert(
+        t("tripDetails.alerts.error.title"),
+        t("tripDetails.alerts.error.createFailed"),
+        [
+          {
+            text: t("common.buttons.ok"),
+            onPress: () => setError(""),
+          },
+        ]
+      );
+    } finally {
+      setLoading(false);
+      setLoadingMessage("");
     }
   };
 

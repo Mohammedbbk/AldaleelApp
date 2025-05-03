@@ -34,33 +34,33 @@ function TripListScreen({ navigation }) {
   const [trips, setTrips] = useState([]);
   const [error, setError] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("date"); // 'date' or 'destination'
-  // Add state for pagination if you implement infinite scroll/load more
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [paginationInfo, setPaginationInfo] = useState(null);
-
+  const [sortBy, setSortBy] = useState("date");
   const colorScheme = useColorScheme();
 
   // --- Updated fetchTrips using getTrips service ---
   const fetchTripsData = useCallback(
     async (options = {}) => {
       const {
-        page = 1, // Default to page 1
-        limit = 10, // Default limit
+        page = 1,
+        limit = 10,
         filter = selectedFilter,
         sort = sortBy,
         search = searchText,
-        append = false, // Flag to append results for load more
+        append = false,
       } = options;
 
-      setIsLoading(true);
+      if (!append) {
+        setIsLoading(true);
+      }
       setError("");
-      try {
-        const result = await getTrips({ page, limit, filter, sort, search });
 
-        if (result && result.data) {
+      try {
+        console.log("[TripListScreen] Fetching trips with options:", options);
+        const result = await getTrips({ page, limit, filter, sort, search });
+        console.log("[TripListScreen] API response:", result);
+
+        if (result && Array.isArray(result.data)) {
           if (append) {
-            // Logic for appending data (Load More) - ensure no duplicates
             setTrips((prevTrips) => {
               const existingIds = new Set(prevTrips.map((t) => t.id));
               const newTrips = result.data.filter(
@@ -69,28 +69,27 @@ function TripListScreen({ navigation }) {
               return [...prevTrips, ...newTrips];
             });
           } else {
-            setTrips(result.data); // Replace data for initial load/filter/sort/search
+            setTrips(result.data);
           }
-          // setPaginationInfo(result.pagination); // Store pagination info
-          // setCurrentPage(page);
         } else {
-          // Handle case where API returns success but no data
-          if (!append) setTrips([]);
-          // setPaginationInfo(null);
+          console.error(
+            "[TripListScreen] Invalid data format received:",
+            result
+          );
+          throw new Error("Invalid data format received from server");
         }
       } catch (err) {
-        console.error("Error fetching trips in screen:", err);
+        console.error("[TripListScreen] Error fetching trips:", err);
         setError(err.message || t("trips.list.errors.fetchFailed"));
-        if (!append) setTrips([]);
+        if (!append) {
+          setTrips([]);
+        }
+      } finally {
+        setIsLoading(false);
       }
     },
     [selectedFilter, sortBy, searchText, t]
   );
-
-  // Initial fetch on mount
-  useEffect(() => {
-    fetchTripsData({ page: 1 }); // Fetch initial data
-  }, []); // Run only once on mount
 
   // --- Handlers for Search, Filter, Sort ---
 

@@ -19,8 +19,6 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTheme } from "../../../ThemeProvider";
-import { VisaRequirements } from "../../components/trips/VisaRequirements";
-import { CultureInsights } from "../../components/trips/CultureInsights";
 import { NearbyEvents } from "../../components/trips/NearbyEvents";
 import { DetailItem } from "../../components/shared/DetailItem";
 import { Accordion } from "../../components/shared/Accordion";
@@ -339,6 +337,37 @@ function generatePdfContent(plan, t) {
   return htmlContent;
 }
 
+const calculateTotalExpenses = (estimatedCosts) => {
+  if (!estimatedCosts) return null;
+
+  const costs = {
+    food: parseFloat(
+      estimatedCosts?.["Food"]?.["Per day"]?.split(" ")[0]?.split("-")[1] || 0
+    ),
+    accommodation: parseFloat(
+      estimatedCosts?.["Accommodation"]?.["Per Night"]
+        ?.split(" ")[0]
+        ?.split("-")[1] || 0
+    ),
+    transportation: parseFloat(
+      estimatedCosts?.["Local Transportation"]?.["Per Day"]
+        ?.split(" ")[0]
+        ?.split("-")[1] || 0
+    ),
+    miscellaneous: parseFloat(
+      estimatedCosts?.["Miscellaneous Expenses"]?.["Per day"]
+        ?.split(" ")[0]
+        ?.split("-")[1] || 0
+    ),
+  };
+
+  const total = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
+  const currency =
+    estimatedCosts?.["Food"]?.["Per day"]?.split(" ")[1] || "AED";
+
+  return total ? `${total} ${currency}` : null;
+};
+
 // --- Component ---
 export function UserPlanScreen() {
   const { t, i18n } = useTranslation();
@@ -349,154 +378,110 @@ export function UserPlanScreen() {
   // Process route params using useMemo for efficiency
   const plan = useMemo(() => {
     const tripData = route.params?.tripData;
+    console.log("UserPlanScreen received tripData:", tripData);
 
     if (!tripData) {
       console.warn("UserPlanScreen: No tripData found.");
       return null;
     }
-    
-    // Log the entire received object
-    console.log("UserPlanScreen received tripData:", JSON.stringify(tripData, null, 2)); // Stringify for detailed view
 
-    // Destructure for clarity
-    const {
-      destination,
-      displayDestination,
-      duration,
-      budgetLevel,
-      budget,
-      nationality,
-      tripId,
-      itinerary
-    } = tripData;
-
-    // Parse the additionalInfo if it exists
-    let parsedInfo = null;
-    let parsingError = null; // Variable to hold parsing error
-
-    if (itinerary?.additionalInfo) {
-      const infoSource = itinerary.additionalInfo;
-      console.log("--- Debugging additionalInfo ---");
-      console.log("Type:", typeof infoSource);
-      // Log first/last characters to check for potential truncation or extra quotes
-      if (typeof infoSource === 'string') {
-        console.log("Raw String Snippet (start):", infoSource.substring(0, 100));
-        console.log("Raw String Snippet (end):", infoSource.substring(infoSource.length - 100));
-      } else {
-        console.log("Raw Value (not string):", infoSource);
+    // Parse the itinerary content
+    let parsedItinerary = null;
+    try {
+      const content = tripData.itinerary?.data?.content;
+      if (content) {
+        parsedItinerary = JSON.parse(content);
+        console.log("Parsed itinerary:", parsedItinerary);
       }
-
-      try {
-        if (typeof infoSource === 'object') {
-          console.log("additionalInfo is already an object.");
-          parsedInfo = infoSource;
-        } else if (typeof infoSource === 'string') {
-          console.log("Attempting JSON.parse...");
-          parsedInfo = JSON.parse(infoSource);
-          console.log("JSON.parse successful!");
-        } else {
-          console.warn("additionalInfo is not a string or object, cannot parse.");
-        }
-      } catch (err) {
-        console.error("!!! JSON.parse FAILED !!!");
-        console.error("Error:", err.message);
-        console.error("Raw String that failed:", infoSource); // Log the exact string that failed
-        parsingError = err; // Store the error
-      }
-
-      // Log the result AFTER attempting parse
-      console.log("Parsed Info Object:", JSON.stringify(parsedInfo, null, 2)); // Stringify for detailed view
-      if (parsedInfo) {
-        console.log("Keys in parsedInfo:", Object.keys(parsedInfo));
-        // Specifically log the fields we need
-        console.log("parsedInfo.visaRequirements exists?", parsedInfo.hasOwnProperty('visaRequirements'));
-        console.log("parsedInfo.localCustoms exists?", parsedInfo.hasOwnProperty('localCustoms'));
-        console.log("Value of visaRequirements:", JSON.stringify(parsedInfo.visaRequirements, null, 2));
-        console.log("Value of localCustoms:", JSON.stringify(parsedInfo.localCustoms, null, 2));
-      }
-      console.log("--- End Debugging additionalInfo ---");
-    } else {
-      console.warn("No itinerary or additionalInfo found in tripData.");
+    } catch (error) {
+      console.error("Error parsing itinerary:", error);
     }
 
     // Create details array
     const details = [
-      { 
-        name: "Destination", 
-        value: displayDestination || destination || "N/A" 
+      {
+        name: "Destination",
+        value: tripData.displayDestination || tripData.destination || "N/A",
       },
       {
         name: "Duration",
-        value: duration ? `${duration} ${t('common.days', 'days')}` : "N/A",
+        value: tripData.duration
+          ? `${tripData.duration} ${t("common.days")}`
+          : "N/A",
       },
       {
         name: "Expenses",
-        value: budgetLevel || budget || "N/A",
+        value:
+          calculateTotalExpenses(parsedItinerary?.["Estimated Costs"]) ||
+          tripData.budgetLevel ||
+          "N/A",
       },
     ];
 
-    // Process days from the parsed info
-    let days = [];
-    if (parsedInfo && Array.isArray(parsedInfo.dailyItinerary)) {
-      days = parsedInfo.dailyItinerary.map((dayData, index) => {
-        // Flatten activities for simpler display structure
-        const planItems = [];
-        if (dayData.morning?.activities) {
-          planItems.push({ 
-            time: dayData.morning.timing || t('common.morning', 'Morning'), 
-            event: Array.isArray(dayData.morning.activities) ? 
-              dayData.morning.activities.join(', ') : 
-              dayData.morning.activities 
-          });
-        }
-        if (dayData.afternoon?.activities) {
-          planItems.push({ 
-            time: dayData.afternoon.timing || t('common.afternoon', 'Afternoon'), 
-            event: Array.isArray(dayData.afternoon.activities) ? 
-              dayData.afternoon.activities.join(', ') : 
-              dayData.afternoon.activities 
-          });
-        }
-        if (dayData.evening?.activities) {
-          planItems.push({ 
-            time: dayData.evening.timing || t('common.evening', 'Evening'), 
-            event: Array.isArray(dayData.evening.activities) ? 
-              dayData.evening.activities.join(', ') : 
-              dayData.evening.activities 
-          });
-        }
-
-        return {
-          day: dayData.day || index + 1,
-          title: t('userPlan.itinerary.dayTitle', 'Day {{dayNumber}}', 
-            { dayNumber: dayData.day || index + 1 }),
-          plan: planItems,
-          rawData: dayData
-        };
-      });
-    } else {
-      console.warn("dailyItinerary not found or not an array in parsedInfo.");
-    }
-
-    // Return the structured plan object with potential parsing error
     return {
-      tripId: tripId,
-      destination: displayDestination || destination,
-      nationality: nationality,
+      tripId: tripData.id,
+      destination: tripData.displayDestination || tripData.destination,
+      nationality: tripData.nationality,
       details: details,
-      days: days,
-      visaRequirements: parsedInfo?.visaRequirements || null,
-      cultureInsights: parsedInfo?.localCustoms || null,
-      currencyInfo: parsedInfo?.currencyInfo || null,
-      healthAndSafety: parsedInfo?.healthAndSafety || null,
-      transportation: parsedInfo?.transportation || null,
-      languageBasics: parsedInfo?.languageBasics || null,
-      weatherInfo: parsedInfo?.weatherInfo || null,
-      nearbyEvents: [],
-      // Add the parsing error to the plan
-      parsingError: parsingError ? parsingError.message : null,
+      days: Object.entries(parsedItinerary || {})
+        .filter(([key]) => key.startsWith("Day "))
+        .map(([dayKey, dayData]) => ({
+          day: parseInt(dayKey.split(" ")[1]),
+          title: `Day ${parseInt(dayKey.split(" ")[1])}`, // Direct title instead of translation key
+          plan: Object.entries(dayData.Itinerary[0]).map(
+            ([time, activity]) => ({
+              time,
+              event: `${activity.Activity} - ${activity.Details}`,
+            })
+          ),
+        })),
+      visaRequirements: {
+        required: false,
+        details: parsedItinerary?.["Visa Requirements"],
+      },
+      cultureInsights: {
+        customs: parsedItinerary?.["Cultural Considerations"],
+      },
+      weatherInfo: {
+        climate: parsedItinerary?.["Weather Info"],
+        packingTips: parsedItinerary?.["Weather Info"],
+      },
+      transportation: {
+        gettingAround:
+          parsedItinerary?.["Transport Recommendations"]?.[
+            "City Transportation"
+          ],
+        options: Object.values(
+          parsedItinerary?.["Transport Recommendations"] || {}
+        ).filter(Boolean),
+      },
+      currencyInfo: {
+        costs: {
+          food: parsedItinerary?.["Estimated Costs"]?.["Food"]?.["Per day"],
+          accommodation:
+            parsedItinerary?.["Estimated Costs"]?.["Accommodation"]?.[
+              "Per Night"
+            ],
+          transportation:
+            parsedItinerary?.["Estimated Costs"]?.["Local Transportation"]?.[
+              "Per Day"
+            ],
+          miscellaneous:
+            parsedItinerary?.["Estimated Costs"]?.["Miscellaneous Expenses"]?.[
+              "Per day"
+            ],
+        },
+        currency: Object.values(parsedItinerary?.["Estimated Costs"] || {})
+          .find((cost) => cost?.["Per day"])
+          ?.["Per day"]?.split(" ")?.[1],
+        paymentMethods:
+          parsedItinerary?.["Payment Methods"] ||
+          parsedItinerary?.["Transport Recommendations"]?.["Payment Methods"] ||
+          parsedItinerary?.["Transport Recommendations"]?.["payment_methods"] ||
+          parsedItinerary?.["payment_methods"],
+      },
     };
-  }, [route.params?.tripData, t]); // Add t to dependency array
+  }, [route.params?.tripData, t]);
 
   // --- Event Handlers ---
   const handleShare = async () => {
@@ -588,42 +573,103 @@ export function UserPlanScreen() {
         <Text style={styles.emptyText}>{t("userPlan.itinerary.empty")}</Text>
       );
     }
-    return days.map((day, index) => (
-      <View key={`day-${day.day || index}`} style={styles.dayContainer}>
-        <Text style={styles.dayTitle}>{day.title || `Day ${day.day}`}</Text>
-        {Array.isArray(day.plan) && day.plan.length > 0 ? (
-          day.plan.map((item, itemIndex) => (
-            <View key={itemIndex} style={styles.planItem}>
-              {item.time && <Text style={styles.planTime}>{item.time}</Text>}
-              <Text style={styles.planEvent}>
-                {item.event || t("userPlan.itinerary.noDetails")}
+
+    // Filter out empty days and add debug logging
+    const validDays = days.filter((day) => {
+      console.log("Day data:", day);
+      return day && Array.isArray(day.plan) && day.plan.length > 0;
+    });
+
+    console.log("Valid days count:", validDays.length);
+
+    return (
+      <View style={styles.daysContainer}>
+        {validDays.map((day, index) => (
+          <View
+            key={`day-${day.day || index}`}
+            style={[
+              styles.dayContainer,
+              index < validDays.length - 1 && { marginBottom: 16 },
+            ]}
+          >
+            <View style={styles.dayTitleContainer}>
+              <Text style={styles.dayTitle}>
+                {day.title || `Day ${day.day}`}
               </Text>
             </View>
-          ))
-        ) : (
-          <Text style={styles.planEvent}>
-            {t("userPlan.itinerary.noActivities")}
-          </Text>
-        )}
+            <View>
+              {day.plan.map((item, itemIndex) => (
+                <View
+                  key={itemIndex}
+                  style={[
+                    styles.planItem,
+                    itemIndex < day.plan.length - 1 && {
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#F1F5F9",
+                    },
+                  ]}
+                >
+                  {item.time && (
+                    <View style={styles.timeContainer}>
+                      <Text style={styles.planTime}>{item.time}</Text>
+                    </View>
+                  )}
+                  <View style={styles.eventContainer}>
+                    <Text style={styles.planEvent}>
+                      {item.event || t("userPlan.itinerary.noDetails")}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
       </View>
-    ));
+    );
   };
 
   const renderKeyValueContent = (data) => {
     if (!data || typeof data !== "object") return null;
-    return Object.entries(data).map(([key, value]) => {
-      if (!value) return null; // Don't render if value is null/empty
-      // Simple formatting for key names (e.g., officialLanguage -> Official Language)
-      const formattedKey = key
-        .replace(/([A-Z])/g, " $1")
-        .replace(/^./, (str) => str.toUpperCase());
-      return (
-        <View key={key} style={styles.keyValueItem}>
-          <Text style={styles.keyText}>{formattedKey}:</Text>
-          <Text style={styles.valueText}>{value.toString()}</Text>
-        </View>
-      );
-    });
+
+    const costLabels = {
+      food: t("userPlan.currency.food", "Food"),
+      accommodation: t("userPlan.currency.accommodation", "Accommodation"),
+      transportation: t("userPlan.currency.transportation", "Transportation"),
+      miscellaneous: t("userPlan.currency.miscellaneous", "Miscellaneous"),
+    };
+
+    return (
+      <View>
+        {data.currency && (
+          <View style={styles.keyValueItem}>
+            <Text style={styles.keyText}>
+              {t("userPlan.currency.currencyLabel", "Currency")}:
+            </Text>
+            <Text style={styles.valueText}>{data.currency}</Text>
+          </View>
+        )}
+        {data.costs &&
+          Object.entries(data.costs).map(([key, value]) => {
+            if (!value) return null;
+            // Add console.log to debug values
+            console.log(`Rendering cost for ${key}:`, value);
+            return (
+              <View key={key} style={styles.keyValueItem}>
+                <Text style={styles.keyText}>{costLabels[key] || key}:</Text>
+                <Text style={styles.valueText}>{value}</Text>
+              </View>
+            );
+          })}
+        {data.paymentMethods && (
+          <View style={styles.keyValueItem}>
+            <Text style={styles.keyText}>
+              {t("userPlan.currency.paymentMethodsLabel", "Payment Methods")}:
+            </Text>
+            <Text style={styles.valueText}>{data.paymentMethods}</Text>
+          </View>
+        )}
+      </View>
+    );
   };
 
   const renderHealthSafetyContent = (data) => {
@@ -764,9 +810,18 @@ export function UserPlanScreen() {
   // --- Main Render ---
   if (!plan) {
     return (
-      <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
-        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={isDarkMode ? colors.background : "#fff"} />
-        
+      <SafeAreaView
+        style={[
+          styles.container,
+          isDarkMode && { backgroundColor: colors.background },
+        ]}
+        edges={["top", "left", "right"]}
+      >
+        <StatusBar
+          barStyle={isDarkMode ? "light-content" : "dark-content"}
+          backgroundColor={isDarkMode ? colors.background : "#fff"}
+        />
+
         {/* Header Title (Centered) */}
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -795,39 +850,93 @@ export function UserPlanScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, isDarkMode && { backgroundColor: colors.background }]} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        isDarkMode && { backgroundColor: colors.background },
+      ]}
+      edges={["top", "left", "right"]}
+    >
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
       {/* Header */}
-      <View style={[styles.header, isDarkMode && { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+      <View
+        style={[
+          styles.header,
+          isDarkMode && {
+            backgroundColor: colors.card,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <Ionicons name="chevron-back" size={28} color={isDarkMode ? colors.text : "#374151"} />
+          <Ionicons
+            name="chevron-back"
+            size={28}
+            color={isDarkMode ? colors.text : "#374151"}
+          />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: isDarkMode ? colors.text : "#1F2937" }]}>{t("userPlan.title")}</Text>
+        <Text
+          style={[
+            styles.headerTitle,
+            { color: isDarkMode ? colors.text : "#1F2937" },
+          ]}
+        >
+          {t("userPlan.title")}
+        </Text>
         <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
-          <Ionicons name="share-outline" size={24} color={isDarkMode ? colors.text : "#374151"} />
+          <Ionicons
+            name="share-outline"
+            size={24}
+            color={isDarkMode ? colors.text : "#374151"}
+          />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
+        bounces={true}
+        overScrollMode="always"
       >
         {/* Basic Trip Details */}
-        <View style={[styles.card, styles.detailsContainer, isDarkMode && { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.card,
+            styles.detailsContainer,
+            isDarkMode && { backgroundColor: colors.card },
+          ]}
+        >
           {plan.details.map(renderDetailItem)}
         </View>
-        
+
         {/* Conditionally render a message if parsing failed */}
         {plan.parsingError && (
-          <View style={[styles.errorCard, isDarkMode && { backgroundColor: colors.notification, borderLeftColor: '#F59E0B' }]}>
-            <Ionicons name="warning-outline" size={20} color={isDarkMode ? "#FFD700" : "#D97706"} />
-            <Text style={[styles.errorText, isDarkMode && { color: colors.text }]}>
-              {t('userPlan.errors.parsingFailed', 'Could not load all generated details (Visa, Culture, etc.). Basic info shown.')}
+          <View
+            style={[
+              styles.errorCard,
+              isDarkMode && {
+                backgroundColor: colors.notification,
+                borderLeftColor: "#F59E0B",
+              },
+            ]}
+          >
+            <Ionicons
+              name="warning-outline"
+              size={20}
+              color={isDarkMode ? "#FFD700" : "#D97706"}
+            />
+            <Text
+              style={[styles.errorText, isDarkMode && { color: colors.text }]}
+            >
+              {t(
+                "userPlan.errors.parsingFailed",
+                "Could not load all generated details (Visa, Culture, etc.). Basic info shown."
+              )}
             </Text>
           </View>
         )}
@@ -884,9 +993,11 @@ export function UserPlanScreen() {
         {renderAccordionSection(
           "userPlan.sections.visa",
           sectionIcons.visaRequirements,
-          plan.visaRequirements,
+          plan.visaRequirements?.details
+            ? { details: plan.visaRequirements.details }
+            : null,
           (data) => (
-            <VisaRequirements visaData={data} />
+            <Text style={styles.paragraphText}>{data.details}</Text>
           )
         )}
 
@@ -894,9 +1005,11 @@ export function UserPlanScreen() {
         {renderAccordionSection(
           "userPlan.sections.culture",
           sectionIcons.cultureInsights,
-          plan.cultureInsights,
+          plan.cultureInsights?.customs
+            ? { customs: plan.cultureInsights.customs }
+            : null,
           (data) => (
-            <CultureInsights cultureData={data} />
+            <Text style={styles.paragraphText}>{data.customs}</Text>
           )
         )}
 
@@ -912,8 +1025,22 @@ export function UserPlanScreen() {
       </ScrollView>
 
       {/* Footer Button */}
-      <View style={[styles.footer, isDarkMode && { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-        <TouchableOpacity style={[styles.nextButton, isDarkMode && { backgroundColor: colors.primary }]} onPress={handleNext}>
+      <View
+        style={[
+          styles.footer,
+          isDarkMode && {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            isDarkMode && { backgroundColor: colors.primary },
+          ]}
+          onPress={handleNext}
+        >
           <Text style={styles.nextButtonText}>Home</Text>
         </TouchableOpacity>
       </View>
@@ -923,208 +1050,300 @@ export function UserPlanScreen() {
 
 // --- Styles ---
 const styles = StyleSheet.create({
+  // Existing base styles with improvements
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB", // Light Gray
+    backgroundColor: "#F8FAFC", // Lighter, more modern background
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F9FAFB",
-  },
-  loadingText: {
-    marginTop: 15,
-    fontSize: 16,
-    color: "#6B7280", // Medium Gray
-  },
+
+  // Enhanced header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12, // Reduced horizontal padding slightly
-    paddingVertical: 10,
-    backgroundColor: "#FFF", // White
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#FFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB", // Light Gray border
+    borderBottomColor: "#E2E8F0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
-  iconButton: {
-    padding: 8, // Hit area for icons
-  },
+
   headerTitle: {
-    fontSize: 18, // Slightly smaller title
-    fontWeight: "600",
-    color: "#1F2937", // Dark Gray
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1E293B",
     textAlign: "center",
-    flex: 1, // Allow title to take space but center
-    marginHorizontal: 10, // Add margin around title
-  },
-  scrollView: {
     flex: 1,
+    marginHorizontal: 12,
   },
-  scrollViewContent: {
-    padding: 16,
-    paddingBottom: 90, // Increased padding for footer button clearance
-  },
+
+  // Enhanced cards
   card: {
     backgroundColor: "#FFF",
-    borderRadius: 12,
+    borderRadius: 16,
+    marginHorizontal: 16,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 3,
-    overflow: "hidden", // Ensures accordion content stays within card bounds
+    elevation: 2,
+    overflow: "hidden", // Ensure content stays within borders
   },
+
+  // Enhanced Details Card
   detailsContainer: {
-    paddingVertical: 8, // Adjust padding inside details card
-    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    margin: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  accordionHeader: {
+
+  detailItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
-    paddingHorizontal: 16, // Consistent padding
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
   },
-  accordionIcon: {
+
+  detailIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0F9FF",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
+
+  // Enhanced accordion styling
+  accordionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#FAFAFA",
+  },
+
+  accordionIcon: {
+    marginRight: 14,
+    opacity: 0.8,
+  },
+
   accordionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1F2937", // Dark Gray
+    color: "#0F172A",
     flex: 1,
+    letterSpacing: 0.3,
   },
+
   accordionContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 8, // Add a bit of space above content
-    borderTopWidth: 1,
-    borderTopColor: "#F3F4F6", // Very light separator line
+    padding: 16,
+    backgroundColor: "#FFF",
   },
-  // Styles for Itinerary content
+
+  // Enhanced Daily Itinerary
+  daysContainer: {
+    width: "100%", // Ensure container takes full width
+  },
+
   dayContainer: {
-    marginBottom: 15,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
-    "&:last-child": {
-      // Target last child if possible (might need specific logic in RN)
-      borderBottomWidth: 0,
-      marginBottom: 0,
-      paddingBottom: 0,
-    },
+    backgroundColor: "#FFF",
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
+
+  dayTitleContainer: {
+    backgroundColor: "#0EA5E9",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+
   dayTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827", // Slightly darker heading
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFF",
+    letterSpacing: 0.5,
   },
+
+  timeContainer: {
+    backgroundColor: "#F0F9FF",
+    padding: 8,
+    borderRadius: 8,
+    minWidth: 100,
+  },
+
+  planTime: {
+    fontSize: 14,
+    color: "#0EA5E9",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  eventContainer: {
+    flex: 1,
+    paddingLeft: 12,
+  },
+
   planItem: {
     flexDirection: "row",
-    marginBottom: 5,
     alignItems: "flex-start",
+    padding: 16,
   },
-  planTime: {
-    width: 70, // Fixed width for time alignment
-    fontSize: 14,
-    color: "#0EA5E9", // Blue accent
-    fontWeight: "500",
-    marginRight: 10,
-  },
+
   planEvent: {
-    flex: 1,
     fontSize: 14,
-    color: "#4B5563", // Medium Gray
-    lineHeight: 20, // Improved readability
+    color: "#334155",
+    lineHeight: 20,
+    flex: 1,
+    flexWrap: "wrap",
   },
-  // Styles for Key-Value pairs
+
+  // Enhanced key-value pairs
   keyValueItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 6,
-    alignItems: "flex-start",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
+
   keyText: {
     fontSize: 14,
-    color: "#374151", // Darker Gray
+    color: "#64748B",
     fontWeight: "500",
-    marginRight: 8,
+    marginRight: 12,
   },
+
   valueText: {
     fontSize: 14,
-    color: "#4B5563", // Medium Gray
+    color: "#334155",
     textAlign: "right",
-    flexShrink: 1, // Allow text to wrap if needed
+    flex: 1,
+    flexWrap: "wrap",
+    paddingLeft: 8,
   },
-  // Styles for Lists and Paragraphs within accordions
+
+  // Enhanced section styling
   sectionBlock: {
-    marginTop: 10,
+    marginTop: 8,
+    marginBottom: 8,
+    backgroundColor: "#F8FAFC",
+    padding: 12,
+    borderRadius: 8,
   },
+
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
-    color: "#111827",
-    marginBottom: 5,
+    color: "#0F172A",
+    marginBottom: 8,
+    letterSpacing: 0.3,
   },
+
+  // Enhanced list items
   listItem: {
     fontSize: 14,
-    color: "#4B5563",
-    marginBottom: 4,
+    color: "#334155",
+    marginBottom: 6,
     lineHeight: 20,
+    paddingLeft: 8,
   },
+
+  // Enhanced paragraph text
   paragraphText: {
     fontSize: 14,
-    color: "#4B5563",
+    color: "#334155",
     lineHeight: 20,
     marginBottom: 8,
+    flexWrap: "wrap",
   },
-  emptyText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-    paddingVertical: 10,
-  },
+
+  // Enhanced footer
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     padding: 16,
-    paddingBottom: Platform.OS === "ios" ? 34 : 20, // Adjusted bottom padding
-    backgroundColor: "#FFF", // White background
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
+    backgroundColor: "#FFF",
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB", // Light Gray border
+    borderTopColor: "#E2E8F0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 8,
   },
+
+  // Enhanced button
   nextButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0EA5E9", // Primary Blue
-    paddingVertical: 12,
-    borderRadius: 8, // Slightly less rounded corners
-    height: 50,
+    backgroundColor: "#0EA5E9",
+    paddingVertical: 14,
+    borderRadius: 12,
+    height: 54,
+    shadowColor: "#0EA5E9",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
+
   nextButtonText: {
-    color: "#FFF", 
+    color: "#FFF",
     fontSize: 16,
-    fontWeight: "600",
-    marginRight: 8,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
+
+  // Enhanced error card
   errorCard: {
-    padding: 12,
-    borderWidth: 2,
-    borderColor: '#F59E0B',
-    borderLeftWidth: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FEF3C7",
+    backgroundColor: "#FFFBEB",
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
   },
+
   errorText: {
-    marginLeft: 10,
+    marginLeft: 12,
     fontSize: 14,
-    color: '#D97706',
+    color: "#D97706",
+    flex: 1,
+    lineHeight: 20,
+  },
+
+  scrollView: {
+    flex: 1,
+    marginBottom: 70, // Add space for footer
+  },
+
+  scrollViewContent: {
+    paddingBottom: 90,
+    paddingHorizontal: 16,
   },
 });
 
