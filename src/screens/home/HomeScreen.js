@@ -10,6 +10,8 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -102,6 +104,7 @@ const searchData = [
 ];
 
 export default function HomeScreen() {
+  const [userData, setUserData] = useState(null);
   const navigation = useNavigation();
   const { isDarkMode, colors } = useTheme();
   const { styles, colors: themeColors } = useThemeAwareStyles();
@@ -116,10 +119,25 @@ export default function HomeScreen() {
 
   // Single useEffect for data fetching
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const fetchData = async () => {
       try {
-        // Simulate API calls to fetch data
-        setUserName("Nawaf");
+        // Fetch user data
+        const token = await AsyncStorage.getItem("userToken");
+        if (!token) {
+          console.warn("No token found!");
+          return;
+        }
+
+        const userResponse = await axios.get(
+          "http://10.0.2.2:5000/api/users/profile",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setUserData(userResponse.data);
         setRecommendedTrips(tripData);
         setPopularDestinations(destinationData);
         setRecentSearches(searchData);
@@ -129,9 +147,9 @@ export default function HomeScreen() {
         setError("Failed to load home data. Please try again.");
         setIsLoading(false);
       }
-    }, 1500); // 1.5 second delay to simulate network request
+    };
 
-    return () => clearTimeout(timer); // Cleanup on unmount
+    fetchData();
   }, []);
 
   // Loading state
@@ -182,9 +200,23 @@ export default function HomeScreen() {
             setIsLoading(true);
             setError(null);
             // Retry loading data
-            setTimeout(() => {
+            const retryFetch = async () => {
               try {
-                setUserName("Nawaf");
+                const token = await AsyncStorage.getItem("userToken");
+                if (!token) {
+                  throw new Error("No token found");
+                }
+
+                const userResponse = await axios.get(
+                  "http://10.0.2.2:5000/api/users/profile",
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
+                );
+
+                setUserData(userResponse.data);
                 setRecommendedTrips(tripData);
                 setPopularDestinations(destinationData);
                 setRecentSearches(searchData);
@@ -193,7 +225,9 @@ export default function HomeScreen() {
                 setError("Failed to load home data. Please try again.");
                 setIsLoading(false);
               }
-            }, 1500);
+            };
+
+            retryFetch();
           }}
         >
           <Text className="text-white font-medium">Retry</Text>
@@ -243,7 +277,7 @@ export default function HomeScreen() {
                   isDarkMode ? "text-white" : "text-[#1b1e28]"
                 }`}
               >
-                {userName}
+                {userData?.name || "Guest"}
               </Text>
             </View>
           </TouchableOpacity>
