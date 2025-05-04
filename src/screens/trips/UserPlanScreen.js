@@ -17,7 +17,6 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
-import { useNavigation, useRoute } from "@react-navigation/native";
 import { useTheme } from "../../../ThemeProvider";
 import { NearbyEvents } from "../../components/trips/NearbyEvents";
 import { DetailItem } from "../../components/shared/DetailItem";
@@ -26,6 +25,7 @@ import { Accordion } from "../../components/shared/Accordion";
 const detailEmojis = {
   Destination: "✈️",
   Duration: "⏳",
+  Style: "🎨",
   Expenses: "💵",
 };
 
@@ -337,150 +337,107 @@ function generatePdfContent(plan, t) {
   return htmlContent;
 }
 
-const calculateTotalExpenses = (estimatedCosts) => {
-  if (!estimatedCosts) return null;
-
-  const costs = {
-    food: parseFloat(
-      estimatedCosts?.["Food"]?.["Per day"]?.split(" ")[0]?.split("-")[1] || 0
-    ),
-    accommodation: parseFloat(
-      estimatedCosts?.["Accommodation"]?.["Per Night"]
-        ?.split(" ")[0]
-        ?.split("-")[1] || 0
-    ),
-    transportation: parseFloat(
-      estimatedCosts?.["Local Transportation"]?.["Per Day"]
-        ?.split(" ")[0]
-        ?.split("-")[1] || 0
-    ),
-    miscellaneous: parseFloat(
-      estimatedCosts?.["Miscellaneous Expenses"]?.["Per day"]
-        ?.split(" ")[0]
-        ?.split("-")[1] || 0
-    ),
-  };
-
-  const total = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
-  const currency =
-    estimatedCosts?.["Food"]?.["Per day"]?.split(" ")[1] || "AED";
-
-  return total ? `${total} ${currency}` : null;
-};
-
 // --- Component ---
-export function UserPlanScreen() {
+export function UserPlanScreen({ route, navigation }) {
   const { t, i18n } = useTranslation();
-  const navigation = useNavigation();
-  const route = useRoute();
   const { isDarkMode, colors } = useTheme();
 
-  // Process route params using useMemo for efficiency
   const plan = useMemo(() => {
     const tripData = route.params?.tripData;
-    console.log("UserPlanScreen received tripData:", tripData);
+    if (!tripData?.itinerary?.data?.content) return null;
 
-    if (!tripData) {
-      console.warn("UserPlanScreen: No tripData found.");
+    try {
+      const travelPlan =
+        typeof tripData.itinerary.data.content === "string"
+          ? JSON.parse(tripData.itinerary.data.content)
+          : tripData.itinerary.data.content;
+
+      const tripInfo = travelPlan.TripInfo || {};
+      const daysData = travelPlan.Days || [];
+      const localInfo = travelPlan.LocalInfo || {};
+
+      // Filter out empty details
+      const details = [
+        { name: "Destination", value: tripInfo.Destination },
+        { name: "Duration", value: tripInfo.Duration },
+        { name: "Style", value: tripInfo.Style },
+        { name: "Budget", value: tripInfo.TotalCost },
+      ].filter((item) => item.value); // Remove items with empty values
+
+      return {
+        tripId: tripData.id,
+        destination: tripInfo.Destination,
+        details,
+        days: daysData.map((day) => ({
+          day: day.DayNumber,
+          title: day.DayNumber ? `Day ${day.DayNumber}` : null,
+          plan: [
+            day.Activities?.Morning && {
+              time: "Morning",
+              event:
+                day.Activities.Morning.Activity &&
+                day.Activities.Morning.Description
+                  ? `${day.Activities.Morning.Activity} - ${day.Activities.Morning.Description}`
+                  : null,
+              cost: day.Activities.Morning.Cost,
+            },
+            day.Activities?.Afternoon && {
+              time: "Afternoon",
+              event:
+                day.Activities.Afternoon.Activity &&
+                day.Activities.Afternoon.Description
+                  ? `${day.Activities.Afternoon.Activity} - ${day.Activities.Afternoon.Description}`
+                  : null,
+              cost: day.Activities.Afternoon.Cost,
+            },
+            day.Activities?.Evening && {
+              time: "Evening",
+              event:
+                day.Activities.Evening.Activity &&
+                day.Activities.Evening.Description
+                  ? `${day.Activities.Evening.Activity} - ${day.Activities.Evening.Description}`
+                  : null,
+              cost: day.Activities.Evening.Cost,
+            },
+          ].filter(Boolean), // Remove null items
+          activityCost: day.DailyCost,
+          transport: day.Transport,
+        })),
+        ...(localInfo.Visa && {
+          visaRequirements: {
+            required: true,
+            details: localInfo.Visa,
+          },
+        }),
+        ...(localInfo.Weather && {
+          weatherInfo: {
+            climate: localInfo.Weather,
+          },
+        }),
+        ...(localInfo.Transport && {
+          transportation: {
+            gettingAround: localInfo.Transport,
+          },
+        }),
+        ...(localInfo.Health && {
+          healthAndSafety: {
+            details: localInfo.Health,
+          },
+        }),
+        ...(localInfo.Customs && {
+          cultureInsights: {
+            customs: localInfo.Customs,
+          },
+        }),
+      };
+    } catch (error) {
+      console.error("Error parsing travel plan:", error);
+      Alert.alert(
+        t("userPlan.alerts.errorTitle"),
+        t("userPlan.alerts.parsingError")
+      );
       return null;
     }
-
-    // Parse the itinerary content
-    let parsedItinerary = null;
-    try {
-      const content = tripData.itinerary?.data?.content;
-      if (content) {
-        parsedItinerary = JSON.parse(content);
-        console.log("Parsed itinerary:", parsedItinerary);
-      }
-    } catch (error) {
-      console.error("Error parsing itinerary:", error);
-    }
-
-    // Create details array
-    const details = [
-      {
-        name: "Destination",
-        value: tripData.displayDestination || tripData.destination || "N/A",
-      },
-      {
-        name: "Duration",
-        value: tripData.duration
-          ? `${tripData.duration} ${t("common.days")}`
-          : "N/A",
-      },
-      {
-        name: "Expenses",
-        value:
-          calculateTotalExpenses(parsedItinerary?.["Estimated Costs"]) ||
-          tripData.budgetLevel ||
-          "N/A",
-      },
-    ];
-
-    return {
-      tripId: tripData.id,
-      destination: tripData.displayDestination || tripData.destination,
-      nationality: tripData.nationality,
-      details: details,
-      days: Object.entries(parsedItinerary || {})
-        .filter(([key]) => key.startsWith("Day "))
-        .map(([dayKey, dayData]) => ({
-          day: parseInt(dayKey.split(" ")[1]),
-          title: `Day ${parseInt(dayKey.split(" ")[1])}`, // Direct title instead of translation key
-          plan: Object.entries(dayData.Itinerary[0]).map(
-            ([time, activity]) => ({
-              time,
-              event: `${activity.Activity} - ${activity.Details}`,
-            })
-          ),
-        })),
-      visaRequirements: {
-        required: false,
-        details: parsedItinerary?.["Visa Requirements"],
-      },
-      cultureInsights: {
-        customs: parsedItinerary?.["Cultural Considerations"],
-      },
-      weatherInfo: {
-        climate: parsedItinerary?.["Weather Info"],
-        packingTips: parsedItinerary?.["Weather Info"],
-      },
-      transportation: {
-        gettingAround:
-          parsedItinerary?.["Transport Recommendations"]?.[
-            "City Transportation"
-          ],
-        options: Object.values(
-          parsedItinerary?.["Transport Recommendations"] || {}
-        ).filter(Boolean),
-      },
-      currencyInfo: {
-        costs: {
-          food: parsedItinerary?.["Estimated Costs"]?.["Food"]?.["Per day"],
-          accommodation:
-            parsedItinerary?.["Estimated Costs"]?.["Accommodation"]?.[
-              "Per Night"
-            ],
-          transportation:
-            parsedItinerary?.["Estimated Costs"]?.["Local Transportation"]?.[
-              "Per Day"
-            ],
-          miscellaneous:
-            parsedItinerary?.["Estimated Costs"]?.["Miscellaneous Expenses"]?.[
-              "Per day"
-            ],
-        },
-        currency: Object.values(parsedItinerary?.["Estimated Costs"] || {})
-          .find((cost) => cost?.["Per day"])
-          ?.["Per day"]?.split(" ")?.[1],
-        paymentMethods:
-          parsedItinerary?.["Payment Methods"] ||
-          parsedItinerary?.["Transport Recommendations"]?.["Payment Methods"] ||
-          parsedItinerary?.["Transport Recommendations"]?.["payment_methods"] ||
-          parsedItinerary?.["payment_methods"],
-      },
-    };
   }, [route.params?.tripData, t]);
 
   // --- Event Handlers ---
@@ -574,22 +531,14 @@ export function UserPlanScreen() {
       );
     }
 
-    // Filter out empty days and add debug logging
-    const validDays = days.filter((day) => {
-      console.log("Day data:", day);
-      return day && Array.isArray(day.plan) && day.plan.length > 0;
-    });
-
-    console.log("Valid days count:", validDays.length);
-
     return (
       <View style={styles.daysContainer}>
-        {validDays.map((day, index) => (
+        {days.map((day, index) => (
           <View
             key={`day-${day.day || index}`}
             style={[
               styles.dayContainer,
-              index < validDays.length - 1 && { marginBottom: 16 },
+              index === days.length - 1 && { marginBottom: 0 },
             ]}
           >
             <View style={styles.dayTitleContainer}>
@@ -609,18 +558,31 @@ export function UserPlanScreen() {
                     },
                   ]}
                 >
-                  {item.time && (
-                    <View style={styles.timeContainer}>
-                      <Text style={styles.planTime}>{item.time}</Text>
-                    </View>
-                  )}
+                  <View style={styles.timeContainer}>
+                    <Text style={styles.planTime}>{item.time}</Text>
+                  </View>
                   <View style={styles.eventContainer}>
-                    <Text style={styles.planEvent}>
-                      {item.event || t("userPlan.itinerary.noDetails")}
+                    <Text style={styles.planEvent} numberOfLines={0}>
+                      {item.event}
                     </Text>
+                    {item.cost && (
+                      <Text style={styles.costText}>💰 {item.cost}</Text>
+                    )}
                   </View>
                 </View>
               ))}
+              {(day.activityCost || day.transport) && (
+                <View style={styles.dayDetailsContainer}>
+                  {day.activityCost && (
+                    <Text style={styles.dayDetailText}>
+                      💰 {day.activityCost}
+                    </Text>
+                  )}
+                  {day.transport && (
+                    <Text style={styles.dayDetailText}>🚗 {day.transport}</Text>
+                  )}
+                </View>
+              )}
             </View>
           </View>
         ))}
@@ -631,96 +593,79 @@ export function UserPlanScreen() {
   const renderKeyValueContent = (data) => {
     if (!data || typeof data !== "object") return null;
 
-    const costLabels = {
-      food: t("userPlan.currency.food", "Food"),
-      accommodation: t("userPlan.currency.accommodation", "Accommodation"),
-      transportation: t("userPlan.currency.transportation", "Transportation"),
-      miscellaneous: t("userPlan.currency.miscellaneous", "Miscellaneous"),
-    };
-
     return (
       <View>
-        {data.currency && (
-          <View style={styles.keyValueItem}>
-            <Text style={styles.keyText}>
-              {t("userPlan.currency.currencyLabel", "Currency")}:
-            </Text>
-            <Text style={styles.valueText}>{data.currency}</Text>
-          </View>
-        )}
-        {data.costs &&
-          Object.entries(data.costs).map(([key, value]) => {
-            if (!value) return null;
-            // Add console.log to debug values
-            console.log(`Rendering cost for ${key}:`, value);
-            return (
-              <View key={key} style={styles.keyValueItem}>
-                <Text style={styles.keyText}>{costLabels[key] || key}:</Text>
-                <Text style={styles.valueText}>{value}</Text>
-              </View>
-            );
-          })}
-        {data.paymentMethods && (
-          <View style={styles.keyValueItem}>
-            <Text style={styles.keyText}>
-              {t("userPlan.currency.paymentMethodsLabel", "Payment Methods")}:
-            </Text>
-            <Text style={styles.valueText}>{data.paymentMethods}</Text>
-          </View>
-        )}
+        {Object.entries(data).map(([key, value]) => {
+          if (!value) return null;
+
+          return (
+            <View key={key} style={styles.keyValueItem}>
+              <Text style={styles.keyText}>
+                {t(`userPlan.costs.${key.toLowerCase()}`, key)}:
+              </Text>
+              <Text style={styles.valueText}>{value}</Text>
+            </View>
+          );
+        })}
       </View>
     );
   };
 
   const renderHealthSafetyContent = (data) => {
+    if (!data) return null;
+
     return (
       <View>
-        {data.vaccinations && (
-          <View style={styles.keyValueItem}>
-            <Text style={styles.keyText}>
-              {t("userPlan.health.vaccinationsLabel")}
-            </Text>
-            <Text style={styles.valueText}>{data.vaccinations}</Text>
-          </View>
+        {/* Handle string content */}
+        {typeof data.details === "string" && data.details && (
+          <Text style={styles.paragraphText}>{data.details}</Text>
         )}
-        {data.precautions && (
-          <View style={styles.keyValueItem}>
-            <Text style={styles.keyText}>
+
+        {/* Handle structured precautions */}
+        {Array.isArray(data.precautions) && data.precautions.length > 0 && (
+          <View style={styles.sectionBlock}>
+            <Text style={styles.sectionTitle}>
               {t("userPlan.health.precautionsLabel")}
             </Text>
-            <Text style={styles.valueText}>{data.precautions}</Text>
+            {data.precautions.map((precaution, index) => (
+              <Text key={`precaution-${index}`} style={styles.listItem}>
+                • {precaution}
+              </Text>
+            ))}
           </View>
         )}
+
+        {/* Handle structured safety tips */}
         {Array.isArray(data.safetyTips) && data.safetyTips.length > 0 && (
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionTitle}>
               {t("userPlan.health.safetyTipsLabel")}
             </Text>
             {data.safetyTips.map((tip, index) => (
-              <Text key={index} style={styles.listItem}>
+              <Text key={`tip-${index}`} style={styles.listItem}>
                 • {tip}
               </Text>
             ))}
           </View>
         )}
+
+        {/* Handle emergency contacts */}
         {data.emergencyContacts &&
-          typeof data.emergencyContacts === "object" &&
           Object.keys(data.emergencyContacts).length > 0 && (
             <View style={styles.sectionBlock}>
               <Text style={styles.sectionTitle}>
                 {t("userPlan.health.emergencyContactsLabel")}
               </Text>
-              {Object.entries(data.emergencyContacts).map(([key, value]) => (
-                <View key={key} style={styles.keyValueItem}>
-                  <Text style={styles.keyText}>
-                    {key
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase())}
-                    :
-                  </Text>
-                  <Text style={styles.valueText}>{value}</Text>
-                </View>
-              ))}
+              {Object.entries(data.emergencyContacts)
+                .filter(([_, value]) => value) // Only show contacts that have values
+                .map(([key, value]) => (
+                  <View key={`contact-${key}`} style={styles.keyValueItem}>
+                    <Text style={styles.keyText}>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}:
+                    </Text>
+                    <Text style={styles.valueText}>{value}</Text>
+                  </View>
+                ))}
             </View>
           )}
       </View>
@@ -805,6 +750,22 @@ export function UserPlanScreen() {
         )}
       </View>
     );
+  };
+
+  const renderCultureContent = (data) => {
+    if (!data) return null;
+
+    // Handle string content directly
+    if (typeof data === "string") {
+      return <Text style={styles.paragraphText}>{data}</Text>;
+    }
+
+    // Handle object with customs property
+    if (data.customs && typeof data.customs === "string") {
+      return <Text style={styles.paragraphText}>{data.customs}</Text>;
+    }
+
+    return null;
   };
 
   // --- Main Render ---
@@ -1005,12 +966,8 @@ export function UserPlanScreen() {
         {renderAccordionSection(
           "userPlan.sections.culture",
           sectionIcons.cultureInsights,
-          plan.cultureInsights?.customs
-            ? { customs: plan.cultureInsights.customs }
-            : null,
-          (data) => (
-            <Text style={styles.paragraphText}>{data.customs}</Text>
-          )
+          plan.cultureInsights,
+          renderCultureContent
         )}
 
         {/* Nearby Events Section */}
@@ -1157,7 +1114,8 @@ const styles = StyleSheet.create({
 
   // Enhanced Daily Itinerary
   daysContainer: {
-    width: "100%", // Ensure container takes full width
+    width: "100%",
+    paddingBottom: 0,
   },
 
   dayContainer: {
@@ -1166,6 +1124,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#E2E8F0",
+    marginBottom: 16,
   },
 
   dayTitleContainer: {
@@ -1198,20 +1157,78 @@ const styles = StyleSheet.create({
   eventContainer: {
     flex: 1,
     paddingLeft: 12,
+    paddingRight: 8,
+    justifyContent: "space-between",
   },
 
   planItem: {
     flexDirection: "row",
     alignItems: "flex-start",
     padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
 
   planEvent: {
     fontSize: 14,
     color: "#334155",
     lineHeight: 20,
-    flex: 1,
+    flexShrink: 1,
     flexWrap: "wrap",
+    textAlign: "left",
+  },
+
+  planCost: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 4,
+  },
+
+  costText: {
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: 4,
+    fontStyle: "italic",
+  },
+
+  activitiesContainer: {
+    padding: 16,
+    backgroundColor: "#F8FAFC",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+  },
+
+  activitiesTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#0F172A",
+    marginBottom: 8,
+  },
+
+  activityItem: {
+    fontSize: 14,
+    color: "#334155",
+    marginBottom: 4,
+    paddingLeft: 8,
+  },
+
+  dayDetailsContainer: {
+    padding: 12,
+    backgroundColor: "#F8FAFC",
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+  },
+
+  dayDetailText: {
+    fontSize: 14,
+    color: "#64748B",
+    marginBottom: 4,
   },
 
   // Enhanced key-value pairs
@@ -1271,8 +1288,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#334155",
     lineHeight: 20,
-    marginBottom: 8,
-    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 
   // Enhanced footer
@@ -1344,6 +1361,19 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     paddingBottom: 90,
     paddingHorizontal: 16,
+  },
+
+  customsContainer: {
+    paddingVertical: 8,
+  },
+  customItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  customText: {
+    fontSize: 14,
+    color: "#334155",
+    lineHeight: 20,
   },
 });
 
