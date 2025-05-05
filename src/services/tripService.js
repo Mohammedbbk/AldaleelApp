@@ -2,7 +2,7 @@ import { apiClient, getErrorMessage } from "./apiClient";
 import { AI_RESPONSE } from "../config/AiResponse";
 import { Platform } from "react-native";
 import { useContext } from 'react';
-import { AuthContext } from '../../../AuthProvider';
+import { AuthContext } from '../../AuthProvider';
 import { v4 as uuid } from 'uuid'; // If needed for guest IDs
 
 // --- Service Function: Get Trips ---
@@ -83,14 +83,6 @@ export const getLanguageInfo = async (destination) => {
 export const createTrip = async (tripData, callbacks = {}) => {
   const { onLoadingChange, onLoadingMessageChange, onError } = callbacks;
   const TIMEOUT = 130000; // 130 seconds
-  
-  // Create payload with proper user_id
-  const enrichedTripData = {
-    ...tripData,
-    user_id: tripData.user_id?.startsWith('guest-')
-      ? tripData.user_id // Use guest token as is
-      : tripData.user_id // For logged-in users, this is their UUID
-  };
 
   try {
     console.log("[tripService] Starting request...");
@@ -110,7 +102,7 @@ export const createTrip = async (tripData, callbacks = {}) => {
           Connection: "keep-alive",
           "Keep-Alive": "timeout=130",
         },
-        body: JSON.stringify(enrichedTripData),
+        body: JSON.stringify(tripData),
         signal: controller.signal,
         keepalive: true,
       }
