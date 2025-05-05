@@ -16,7 +16,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../../../ThemeProvider";
 import {
-  apiClient,
+  apiClient as chatApiClient,
   getErrorMessage,
   getRecoverySteps,
 } from "../../services/apiClient";
@@ -33,7 +33,7 @@ const initialMessages = [
     id: 1,
     role: "system",
     content:
-      "Welcome! Ready to adjust your travel plan? Let me know how I can help!",
+      "Welcome! I'm Al-Daleel AI, your travel discovery assistant. Tell me about the kind of trip you're dreaming of (e.g., relaxing beach, adventurous trek, cultural city break, budget, time of year), and I'll help you find the perfect destination!",
     timestamp: new Date().toISOString(),
     metadata: {
       type: "welcome",
@@ -143,10 +143,72 @@ class ChatScreen extends React.Component {
    */
   sendMessage = async (message, context) => {
     try {
-      const response = await apiClient.sendChatMessage(message, context);
+      // Defensive check to handle potential import/bundling issues
+      if (!chatApiClient || typeof chatApiClient.sendChatMessage !== 'function') {
+        console.error("[AssistantScreen] ERROR: chatApiClient or sendChatMessage method is not available", {
+          chatApiClient: typeof chatApiClient,
+          sendChatMessage: chatApiClient ? typeof chatApiClient.sendChatMessage : 'undefined',
+          hasApiClient: chatApiClient && 'apiClient' in chatApiClient
+        });
+        
+        // Fallback to direct fetch if apiClient is not working properly
+        const mcpUrl = Platform.select({
+          android: "http://10.0.2.2:8000",
+          ios: "http://localhost:8000",
+        });
+        
+        console.log(`[AssistantScreen] Attempting fallback direct fetch to ${mcpUrl}/api/chat`);
+        
+        const response = await fetch(`${mcpUrl}/api/chat`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: message }],
+            context: context
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Chat request failed with status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        return {
+          data: {
+            message: {
+              role: 'assistant',
+              content: data.choices[0].message.content,
+              timestamp: new Date().toISOString(),
+            },
+            conversation: {
+              id: Date.now().toString(),
+              context: data.context || context,
+              summary: `Travel preferences: ${data.context || context}`
+            }
+          }
+        };
+      }
+      
+      // Original path using apiClient
+      console.log("[AssistantScreen] chatApiClient object type:", Object.prototype.toString.call(chatApiClient));
+      console.log("[AssistantScreen] chatApiClient.sendChatMessage exists:", typeof chatApiClient.sendChatMessage === 'function');
+      console.log("[AssistantScreen] Calling chatApiClient.sendChatMessage with:", { 
+        message: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
+        context 
+      });
+      const response = await chatApiClient.sendChatMessage(message, context);
+      console.log("[AssistantScreen] Received response:", response);
       return response;
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("[AssistantScreen] Error in sendMessage:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       throw error;
     }
   };

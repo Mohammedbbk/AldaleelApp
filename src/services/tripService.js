@@ -113,7 +113,7 @@ export const createTrip = async (tripData, callbacks = {}) => {
           Connection: "keep-alive",
           "Keep-Alive": "timeout=130",
         },
-        body: JSON.stringify(enrichedTripData),
+        body: JSON.stringify(tripData),
         signal: controller.signal,
         keepalive: true,
       }

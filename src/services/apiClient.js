@@ -221,6 +221,65 @@ export class ApiClient {
       throw error;
     }
   }
+
+  async sendChatMessage(message, context = 'general') {
+    console.log("[ApiClient] Sending chat message:", { message: message.substring(0, 50) + '...', context });
+    
+    try {
+      const baseUrl = this.config.mcpUrl;
+      console.log(`[ApiClient] Using base URL: ${baseUrl}`);
+      
+      const response = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: message }],
+          context: context
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[ApiClient] HTTP error! status: ${response.status}`, errorText);
+        throw new Error(`Chat request failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("[ApiClient] Raw chat response:", data);
+      
+      // Check if response has the expected format
+      if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error("[ApiClient] Invalid response format:", data);
+        throw new Error("Invalid response format from chat service");
+      }
+      
+      // Extract updated context from response if available
+      const updatedContext = data.context || context;
+      console.log("[ApiClient] Updated context:", updatedContext);
+      
+      // Transform the response to match the expected ChatResponseData format
+      return {
+        data: {
+          message: {
+            role: 'assistant',
+            content: data.choices[0].message.content,
+            timestamp: new Date().toISOString(),
+          },
+          conversation: {
+            id: Date.now().toString(),
+            context: updatedContext,
+            summary: `Travel preferences: ${updatedContext}`
+          }
+        }
+      };
+    } catch (error) {
+      console.error("[ApiClient] Error sending chat message:", error);
+      throw error;
+    }
+  }
 }
 
 export const apiClient = new ApiClient();
