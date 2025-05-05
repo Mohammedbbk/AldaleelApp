@@ -302,20 +302,31 @@ function TripListScreen({ navigation }) {
             </Text>
             {error ? (
               <TouchableOpacity
-                className="mt-2 bg-blue-500 px-6 py-2.5 rounded-lg shadow"
+                className="mt-2 shadow-lg"
                 onPress={() => fetchTripsData({ page: 1 })}
+                activeOpacity={0.8}
               >
-                <Text className="text-white font-medium">
-                  {t("trips.list.retry")}
-                </Text>
+                <LinearGradient
+                  colors={
+                    isDarkMode ? ["#3B82F6", "#2563EB"] : ["#60A5FA", "#3B82F6"]
+                  }
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="px-8 py-3.5 rounded-full flex-row items-center"
+                >
+                  <Text className="text-white font-semibold text-base">
+                    {t("trips.list.retry")}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
-                className="mt-2 bg-blue-500 px-6 py-2.5 rounded-lg shadow"
+                className="mt-2 shadow-lg bg-blue-500 rounded-2xl w-24 h-12 items-center justify-center"
                 onPress={() => navigation.navigate("CreateTrip")}
+                activeOpacity={0.8}
               >
-                <Text className="text-white font-medium">
-                  {t("trips.list.createFirst")}
+                <Text className="text-white font-semibold text-base">
+                  {t("trips.list.retry")}
                 </Text>
               </TouchableOpacity>
             )}
@@ -332,15 +343,10 @@ function TripListScreen({ navigation }) {
       </View>
 
       <TouchableOpacity
-        className="absolute bottom-32 right-6 w-16 h-16 rounded-full items-center justify-center shadow-lg"
+        className="absolute bottom-36 right-6 bg-blue-500 w-16 h-16 rounded-full items-center justify-center shadow-lg"
         onPress={() => navigation.navigate("CreateTrip")}
       >
-        <LinearGradient
-          colors={["#3B82F6", "#2563EB"]}
-          className="w-full h-full rounded-full items-center justify-center"
-        >
-          <Plus size={26} color="#FFFFFF" />
-        </LinearGradient>
+        <Plus size={26} color="#FFFFFF" />
       </TouchableOpacity>
 
       <FloatingBottomNav activeRouteName="Trips" />
