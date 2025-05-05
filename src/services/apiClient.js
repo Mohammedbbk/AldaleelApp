@@ -166,6 +166,7 @@ export class ApiClient {
     filter = "all",
     sort = "date",
     search = "",
+    user_id,
   } = {}) {
     console.log("[ApiClient] Fetching trips with params:", {
       page,
@@ -173,6 +174,7 @@ export class ApiClient {
       filter,
       sort,
       search,
+      user_id,
     });
 
     const queryParams = new URLSearchParams({
@@ -181,6 +183,7 @@ export class ApiClient {
       filter,
       sort,
       search,
+      user_id: user_id || "",
     }).toString();
 
     try {
@@ -196,7 +199,8 @@ export class ApiClient {
         throw new Error("Invalid response format");
       }
 
-      const trips = response.data?.trips || [];
+      // Fixed: Backend returns trips directly in response.data, not in response.data.trips
+      const trips = response.data || [];
       console.log("[ApiClient] Received trips:", trips);
 
       return {

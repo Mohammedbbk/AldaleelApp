@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useContext } from "react";
 import {
   SafeAreaView,
   View,
@@ -11,13 +11,15 @@ import {
   Alert,
 } from "react-native";
 import { useTheme } from "../../../ThemeProvider";
-import { Filter, AlertCircle } from "lucide-react-native";
+import { Filter, AlertCircle, Plus } from "lucide-react-native";
 import { useColorScheme } from "react-native";
-import { useTranslation } from "react-i18next"; // Add this import
+import { useTranslation } from "react-i18next";
+import { AuthContext } from "../../../AuthProvider";
 import SearchBar from "../../components/common/SearchBar";
 import TripCard from "../../components/home/TripCard";
 import FloatingBottomNav from "../../components/navigation/FloatingBottomNav";
 import { getTrips } from "../../services/tripService";
+import { LinearGradient } from "expo-linear-gradient";
 
 // Define filter options
 const filterOptions = [
@@ -37,6 +39,9 @@ function TripListScreen({ navigation }) {
   const [sortBy, setSortBy] = useState("date");
   const colorScheme = useColorScheme();
 
+  // Get userToken and userId from AuthContext
+  const { userToken, userId } = useContext(AuthContext);
+
   // --- Updated fetchTrips using getTrips service ---
   const fetchTripsData = useCallback(
     async (options = {}) => {
@@ -55,9 +60,18 @@ function TripListScreen({ navigation }) {
       setError("");
 
       try {
-        console.log("[TripListScreen] Fetching trips with options:", options);
-        const result = await getTrips({ page, limit, filter, sort, search });
-        console.log("[TripListScreen] API response:", result);
+        console.log("[TripListScreen] Fetching trips with options:", {
+          ...options,
+          user_id: userId,
+        });
+        const result = await getTrips({
+          page,
+          limit,
+          filter,
+          sort,
+          search,
+          user_id: userId,
+        });
 
         if (result && Array.isArray(result.data)) {
           if (append) {
@@ -88,7 +102,7 @@ function TripListScreen({ navigation }) {
         setIsLoading(false);
       }
     },
-    [selectedFilter, sortBy, searchText, t]
+    [selectedFilter, sortBy, searchText, t, userId] // Add userId to dependencies
   );
 
   // --- Handlers for Search, Filter, Sort ---
@@ -120,12 +134,11 @@ function TripListScreen({ navigation }) {
     // fetchTripsData will be triggered by the useEffect above because sortBy changed
   };
 
-  // --- Other functions (handleTripAction, renderTripItem) remain the same ---
+  // --- Trip Action Handlers ---
   const handleTripAction = (actionType, tripId) => {
     switch (actionType) {
       case "view":
-        // Assuming UserPlanScreen displays details based on passed tripData?
-        // If you need to fetch details by ID, navigate differently
+        // Find the trip in the trips array
         const tripToView = trips.find((t) => t.id === tripId);
         if (tripToView) {
           navigation.navigate("UserPlanScreen", { tripData: tripToView });
@@ -142,18 +155,38 @@ function TripListScreen({ navigation }) {
         Alert.alert("Share", "Share functionality not yet implemented.");
         break;
       case "delete":
-        console.log("Delete trip:", tripId);
-        Alert.alert("Delete", "Delete functionality not yet implemented.");
+        Alert.alert(
+          t("trips.list.deleteConfirmTitle"),
+          t("trips.list.deleteConfirmMessage"),
+          [
+            {
+              text: t("trips.list.cancel"),
+              style: "cancel",
+            },
+            {
+              text: t("trips.list.delete"),
+              style: "destructive",
+              onPress: () => {
+                // In a real app, you would call an API to delete the trip
+                console.log("Delete trip:", tripId);
+                // Then update the UI by removing the trip from the list
+                setTrips((prevTrips) =>
+                  prevTrips.filter((trip) => trip.id !== tripId)
+                );
+              },
+            },
+          ]
+        );
         break;
       default:
         break;
     }
   };
 
-  const renderTripItem = ({ item }) => (
+  const renderTripItem = ({ item, index }) => (
     <TripCard
       item={item} // Pass the whole item
-      // Pass handlers
+      index={index} // Pass index for staggered animations
       onViewPress={() => handleTripAction("view", item.id)}
       onEditPress={() => handleTripAction("edit", item.id)}
       onSharePress={() => handleTripAction("share", item.id)}
@@ -163,8 +196,6 @@ function TripListScreen({ navigation }) {
 
   const { isDarkMode, colors } = useTheme();
 
-  // --- Render logic remains largely the same ---
-  // Use `WorkspaceTripsData` in the retry button
   return (
     <SafeAreaView
       className={`flex-1 ${
@@ -225,15 +256,19 @@ function TripListScreen({ navigation }) {
                 onPress={() => handleFilterChange(option.id)}
                 className={`px-4 py-2 rounded-full mx-1 ${
                   selectedFilter === option.id
-                    ? "bg-blue-500"
-                    : "bg-gray-200 dark:bg-gray-800"
+                    ? isDarkMode
+                      ? "bg-blue-600"
+                      : "bg-blue-500"
+                    : isDarkMode
+                    ? "bg-gray-700"
+                    : "bg-gray-200"
                 }`}
               >
                 <Text
                   className={`${
                     selectedFilter === option.id
-                      ? "text-white"
-                      : colorScheme === "dark"
+                      ? "text-white font-medium"
+                      : isDarkMode
                       ? "text-gray-300"
                       : "text-gray-700"
                   }`}
@@ -252,25 +287,35 @@ function TripListScreen({ navigation }) {
             <ActivityIndicator size="large" color="#3B82F6" />
           </View>
         ) : !isLoading && trips.length === 0 ? (
-          <View className="flex-1 justify-center items-center">
+          <View className="flex-1 justify-center items-center px-8">
             <AlertCircle
-              size={40}
-              color={colorScheme === "dark" ? "#9CA3AF" : "#6b7280"}
+              size={50}
+              color={isDarkMode ? "#9CA3AF" : "#6b7280"}
+              strokeWidth={1.5}
             />
             <Text
-              className={`text-lg mt-4 text-center ${
-                colorScheme === "dark" ? "text-gray-400" : "text-gray-500"
+              className={`text-lg mt-4 text-center mb-4 ${
+                isDarkMode ? "text-gray-400" : "text-gray-500"
               }`}
             >
               {error ? error : t("trips.list.noTripsFound")}
             </Text>
-            {error && (
+            {error ? (
               <TouchableOpacity
-                className="mt-6 bg-blue-500 px-5 py-2.5 rounded-lg shadow"
+                className="mt-2 bg-blue-500 px-6 py-2.5 rounded-lg shadow"
                 onPress={() => fetchTripsData({ page: 1 })}
               >
                 <Text className="text-white font-medium">
                   {t("trips.list.retry")}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                className="mt-2 bg-blue-500 px-6 py-2.5 rounded-lg shadow"
+                onPress={() => navigation.navigate("CreateTrip")}
+              >
+                <Text className="text-white font-medium">
+                  {t("trips.list.createFirst")}
                 </Text>
               </TouchableOpacity>
             )}
@@ -287,12 +332,15 @@ function TripListScreen({ navigation }) {
       </View>
 
       <TouchableOpacity
-        className="bg-blue-500 absolute bottom-36 w-auto right-4 left-4 py-3.5 rounded-full items-center shadow mx-4"
+        className="absolute bottom-32 right-6 w-16 h-16 rounded-full items-center justify-center shadow-lg"
         onPress={() => navigation.navigate("CreateTrip")}
       >
-        <Text className="text-white text-lg font-bold">
-          {t("trips.list.createNew")}
-        </Text>
+        <LinearGradient
+          colors={["#3B82F6", "#2563EB"]}
+          className="w-full h-full rounded-full items-center justify-center"
+        >
+          <Plus size={26} color="#FFFFFF" />
+        </LinearGradient>
       </TouchableOpacity>
 
       <FloatingBottomNav activeRouteName="Trips" />
