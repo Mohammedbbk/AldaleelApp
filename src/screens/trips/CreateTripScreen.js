@@ -508,7 +508,7 @@ export function CreateTripScreen({ navigation, route }) {
             </Text>
             <View className="w-8">
               <Text> </Text>
-            </View>{" "}
+            </View>
             {/* Spacer with empty Text component */}
           </View>
 

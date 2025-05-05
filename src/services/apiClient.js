@@ -1,11 +1,24 @@
 import { ENDPOINTS } from "../config/constants";
+import { Platform } from "react-native";
 
 const DEFAULT_CONFIG = {
-  baseUrl: "http://10.0.2.2:5000", // Backend URL
-  mcpUrl: "http://10.0.2.2:8000", // MCP URL
-  timeout: 30000,
+  baseUrl: Platform.select({
+    android: "http://10.0.2.2:5000",
+    ios: "http://localhost:5000",
+  }),
+  mcpUrl: Platform.select({
+    android: "http://10.0.2.2:8000",
+    ios: "http://localhost:8000",
+  }),
+  timeout: 130000, // 130 seconds
   retryAttempts: 3,
   retryDelay: 2000,
+  androidEmulatorConfig: {
+    keepAlive: true,
+    headers: {
+      Connection: "keep-alive",
+    },
+  },
 };
 
 export class ApiClient {

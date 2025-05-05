@@ -1,5 +1,6 @@
 import { apiClient, getErrorMessage } from "./apiClient";
 import { AI_RESPONSE } from "../config/AiResponse";
+import { Platform } from "react-native";
 
 // --- Service Function: Get Trips ---
 export const getTrips = async ({
@@ -78,36 +79,56 @@ export const getLanguageInfo = async (destination) => {
 // --- Service Function: Create Trip ---
 export const createTrip = async (tripData, callbacks = {}) => {
   const { onLoadingChange, onLoadingMessageChange, onError } = callbacks;
+  const TIMEOUT = 130000; // 130 seconds
 
   try {
-    console.log("[tripService] Creating trip with data:", tripData);
-    onLoadingChange?.(true);
+    console.log("[tripService] Starting request...");
+    const startTime = Date.now();
 
-    // First call MCP to generate AI content
-    onLoadingMessageChange?.("Generating your personalized itinerary...");
-    const mcpResponse = await apiClient.post("/mcp/api/trips/generate", {
-      body: tripData,
-    });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
-    if (!mcpResponse?.data) {
-      throw new Error("Failed to generate trip content");
+    const response = await fetch(
+      `${apiClient.config.mcpUrl}/api/trips/generate`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Connection: "keep-alive",
+          "Keep-Alive": "timeout=130",
+        },
+        body: JSON.stringify(tripData),
+        signal: controller.signal,
+        keepalive: true,
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Then save trip with generated content to backend
-    onLoadingMessageChange?.("Saving your trip...");
-    const response = await apiClient.post("/api/trips", {
-      body: {
-        ...tripData,
-        status: "planning",
-        itinerary: mcpResponse.data,
-      },
-    });
+    const data = await response.json();
+    console.log(
+      "[tripService] Response received after",
+      Date.now() - startTime,
+      "ms"
+    );
 
-    console.log("[tripService] Trip created:", response);
-    return response.data;
+    return data;
   } catch (error) {
     console.error("[tripService] Create trip error:", error);
-    onError?.(error);
+
+    // Map error messages
+    const errorMessage =
+      error.name === "AbortError"
+        ? "Request timed out after 130 seconds"
+        : error.message;
+
+    onError?.({ ...error, message: errorMessage });
     throw error;
   } finally {
     onLoadingChange?.(false);

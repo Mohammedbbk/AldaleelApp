@@ -182,90 +182,95 @@ export function TripDetailsScreen({ route, navigation }) {
   }, []);
 
   const navigateToPlan = (apiResultData) => {
-    // **MERGE DATA HERE**
-    const finalTripDataForDisplay = {
-      ...fullTripData, // Original data (destination, duration, budgetLevel, nationality etc.)
-      ...apiResultData, // API response data (tripId, itinerary with additionalInfo)
-      // Ensure API response doesn't accidentally overwrite crucial original fields if names clash
-      // In this case, itinerary and tripId are added.
-    };
     console.log(
-      "Navigating to UserPlanScreen with merged data:",
-      finalTripDataForDisplay
+      "[TripDetailsScreen] Raw API response:",
+      JSON.stringify(apiResultData)
     );
+
+    const finalTripDataForDisplay = {
+      id: Math.random().toString(),
+      itinerary: {
+        data: {
+          // Remove one level of "content" nesting
+          content: apiResultData.data.content.data.content,
+        },
+      },
+      destination: fullTripData.destination,
+      destinationCountry: fullTripData.destinationCountry,
+      displayDestination: fullTripData.displayDestination,
+      duration: fullTripData.duration,
+      interests: fullTripData.interests,
+      nationality: fullTripData.nationality,
+      travelerStyle: fullTripData.travelerStyle,
+      tripPace: fullTripData.tripPace,
+      budgetLevel: fullTripData.budgetLevel,
+      year: fullTripData.year,
+      month: fullTripData.month,
+    };
+
+    console.log(
+      "[TripDetailsScreen] Structured data for UserPlanScreen:",
+      JSON.stringify(finalTripDataForDisplay, null, 2)
+    );
+
     navigation.navigate("UserPlanScreen", {
       tripData: finalTripDataForDisplay,
     });
   };
 
   const handleCreateAdventure = async () => {
-    setError("");
-    setLoading(true);
-    setLoadingMessage("Creating your adventure...");
-
-    const tripDetailsPayload = {
-      ...fullTripData,
-      specialRequirements: selectedRequirements,
-      additionalRequirement: additionalRequirement.trim(),
-      transportationPreference: selectedTransport,
-    };
-
     try {
-      console.log(
-        "[TripDetailsScreen] Sending trip details:",
-        tripDetailsPayload
+      setLoading(true);
+      setLoadingMessage(
+        "Generating your personalized itinerary... This may take up to 2 minutes"
       );
+      setError("");
 
-      const tripResult = await createTrip(tripDetailsPayload, {
-        onLoadingChange: (isLoading) => {
-          setLoading(isLoading);
-          if (!isLoading) {
-            setLoadingMessage("");
-          }
-        },
-        onLoadingMessageChange: setLoadingMessage,
-        onError: (err) => {
+      const tripData = {
+        ...fullTripData,
+        specialRequirements: selectedRequirements,
+        additionalRequirement: additionalRequirement,
+        transportationPreference: selectedTransport,
+      };
+
+      console.log("[TripDetailsScreen] Sending trip details:", tripData);
+
+      const apiResult = await createTrip(tripData, {
+        onError: (error) => {
           console.error(
             "[TripDetailsScreen] Error in createTrip callback:",
-            err
+            error
           );
-          setError(err.message || t("tripDetails.alerts.error.message"));
+          let errorMessage = "Failed to create trip plan";
+
+          if (error.message?.includes("timeout") || error.error === "TIMEOUT") {
+            errorMessage =
+              "The service is taking longer than expected (over 2 minutes). Please try again.";
+          } else if (error.error === "RATE_LIMIT") {
+            errorMessage =
+              "Too many requests. Please wait a moment and try again.";
+          }
+
+          setError(errorMessage);
+        },
+        onLoadingChange: setLoading,
+        onLoadingMessageChange: (msg) => {
+          // Add progress indication
+          setLoadingMessage(
+            msg + "\nThis process typically takes 1-2 minutes."
+          );
         },
       });
 
-      if (!tripResult) {
-        throw new Error("Failed to create trip. No response received.");
-      }
-
-      console.log("[TripDetailsScreen] Trip creation successful:", tripResult);
-
-      if (tripResult.aiGenerationFailed) {
-        Alert.alert(
-          t("tripDetails.alerts.partialSuccess.title"),
-          t("tripDetails.alerts.partialSuccess.message"),
-          [
-            {
-              text: t("tripDetails.alerts.partialSuccess.viewButton"),
-              onPress: () => navigateToPlan(tripResult),
-            },
-          ]
-        );
+      if (apiResult?.status === "success" && apiResult?.data) {
+        console.log("[TripDetailsScreen] Trip creation successful:", apiResult);
+        navigateToPlan(apiResult);
       } else {
-        navigateToPlan(tripResult);
+        throw new Error("Invalid response format");
       }
-    } catch (err) {
-      console.error("[TripDetailsScreen] Error during trip creation:", err);
-      setError(t("tripDetails.alerts.error.createFailed"));
-      Alert.alert(
-        t("tripDetails.alerts.error.title"),
-        t("tripDetails.alerts.error.createFailed"),
-        [
-          {
-            text: t("common.buttons.ok"),
-            onPress: () => setError(""),
-          },
-        ]
-      );
+    } catch (error) {
+      console.error("[TripDetailsScreen] Error during trip creation:", error);
+      setError(error.message || "Failed to create trip plan");
     } finally {
       setLoading(false);
       setLoadingMessage("");

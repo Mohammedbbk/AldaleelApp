@@ -344,13 +344,28 @@ export function UserPlanScreen({ route, navigation }) {
 
   const plan = useMemo(() => {
     const tripData = route.params?.tripData;
-    if (!tripData?.itinerary?.data?.content) return null;
+
+    // Add debug logging
+    console.log(
+      "[UserPlanScreen] Received tripData:",
+      JSON.stringify(tripData, null, 2)
+    );
+
+    if (!tripData?.itinerary?.data?.content) {
+      console.log("[UserPlanScreen] Missing required data structure");
+      return null;
+    }
 
     try {
       const travelPlan =
         typeof tripData.itinerary.data.content === "string"
           ? JSON.parse(tripData.itinerary.data.content)
           : tripData.itinerary.data.content;
+
+      console.log(
+        "[UserPlanScreen] Parsed travel plan:",
+        JSON.stringify(travelPlan, null, 2)
+      );
 
       const tripInfo = travelPlan.TripInfo || {};
       const daysData = travelPlan.Days || [];
@@ -431,7 +446,7 @@ export function UserPlanScreen({ route, navigation }) {
         }),
       };
     } catch (error) {
-      console.error("Error parsing travel plan:", error);
+      console.error("[UserPlanScreen] Error parsing travel plan:", error);
       Alert.alert(
         t("userPlan.alerts.errorTitle"),
         t("userPlan.alerts.parsingError")
