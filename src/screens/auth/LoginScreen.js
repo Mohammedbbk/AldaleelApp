@@ -137,7 +137,23 @@ class LoginScreen extends React.Component {
     Alert.alert("Google Sign In", "Integration not implemented yet!");
   };
 
-  
+  // Handle skipping the login process
+  handleSkipSignIn = async () => {
+    try {
+      this.setState({ loading: true });
+      // Use the AuthContext to set a guest token
+      this.context.setUserToken("guest-token");
+      // Navigation will be handled automatically by AuthProvider
+    } catch (error) {
+      console.warn("Skip login error:", error);
+      Alert.alert(
+        "Notice",
+        "Unable to continue as guest at the moment. Please try signing in."
+      );
+    } finally {
+      this.setState({ loading: false });
+    }
+  };
 
   render() {
     const { email, password, isPasswordVisible, loading, errorMessage } =
@@ -424,6 +440,7 @@ const styles = StyleSheet.create({
     top: 20,
     right: 20,
     padding: 10,
+    zIndex: 1,
   },
   skipButtonText: {
     color: "#007AFF",

@@ -123,7 +123,7 @@ function AppStack() {
 function RootNavigator() {
   return (
     <AuthContext.Consumer>
-      {({ userToken, isLoading }) => {
+      {({ userToken, isLoading, isGuest }) => {
         if (isLoading) {
           return (
             <View
@@ -140,6 +140,7 @@ function RootNavigator() {
           );
         }
 
+        // Use the isGuest function to check authentication status
         return userToken ? <AppStack /> : <AuthStack />;
       }}
     </AuthContext.Consumer>

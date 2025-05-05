@@ -21,6 +21,8 @@ import {
   TRANSPORTATION_OPTIONS,
 } from "../../config/constants";
 import { createTrip } from "../../services/tripService";
+import { useContext } from 'react'; // Add useContext
+import { AuthContext } from '../../../AuthProvider'; // Add AuthContext
 
 // Define styles for better organization
 const styles = StyleSheet.create({
@@ -154,6 +156,7 @@ const styles = StyleSheet.create({
 export function TripDetailsScreen({ route, navigation }) {
   const { t } = useTranslation(); // Add translation hook
   const { isDarkMode, colors } = useTheme();
+  const { userToken } = useContext(AuthContext); // Get userToken
   const fullTripData = route.params?.fullTripData || {};
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -228,6 +231,7 @@ export function TripDetailsScreen({ route, navigation }) {
 
       const tripData = {
         ...fullTripData,
+        user_id: userToken, // Add the user_id
         specialRequirements: selectedRequirements,
         additionalRequirement: additionalRequirement,
         transportationPreference: selectedTransport,

@@ -8,6 +8,11 @@ export const AuthProvider = ({ children }) => {
   const [userToken, setUserTokenState] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper function to check if the current user is a guest
+  const isGuest = () => {
+    return userToken && userToken.startsWith("guest-");
+  };
+
   // Load token from AsyncStorage on app start
   useEffect(() => {
     const loadToken = async () => {
@@ -51,7 +56,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ userToken, setUserToken, logout, isLoading }}>
+    <AuthContext.Provider value={{ userToken, setUserToken, logout, isLoading, isGuest }}>
       {children}
     </AuthContext.Provider>
   );
