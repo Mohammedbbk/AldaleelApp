@@ -67,19 +67,19 @@ function generatePdfContent(plan, t) {
           @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
           body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; background-color: #f8f8f8; color: #333; }
           .container { margin: 30px auto; max-width: 800px; background: #ffffff; border-radius: 8px; padding: 25px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); }
-          .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #0EA5E9; /* Primary Blue */ }
+          .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #0EA5E9; }
           .header h1 { margin: 0; font-size: 28px; color: #0EA5E9; }
           .header p { margin: 5px 0 0; font-size: 16px; color: #555; }
           .details { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
           .detail { text-align: center; }
           .detail h3 { margin: 0 0 5px 0; font-size: 14px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
           .detail p { margin: 0; font-size: 18px; font-weight: 500; color: #333; }
-          .section-block { margin-bottom: 25px; background: #f9f9f9; padding: 15px 20px; border-radius: 6px; border-left: 4px solid #0EA5E9; /* Accent */ }
+          .section-block { margin-bottom: 25px; background: #f9f9f9; padding: 15px 20px; border-radius: 6px; border-left: 4px solid #0EA5E9; }
           .section-block h2 { font-size: 20px; color: #333; margin: 0 0 15px 0; padding-bottom: 8px; border-bottom: 1px solid #eee; }
           .section-block p, .section-block li { color: #555; line-height: 1.6; font-size: 14px; }
           .section-block ul { padding-left: 20px; margin-top: 5px; list-style-type: disc; }
           .section-block .key-value { margin-bottom: 8px; font-size: 14px; }
-          .section-block .key-value strong { color: #1F2937; /* Darker text */ margin-right: 5px; }
+          .section-block .key-value strong { color: #1F2937; margin-right: 5px; }
           .day-section { margin-bottom: 30px; }
           .day-section h2 { font-size: 22px; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dashed #0EA5E9; }
           .plan-item { margin-bottom: 12px; padding: 12px; background: #f9f9f9; border-left: 4px solid #0EA5E9; border-radius: 6px; display: flex; align-items: flex-start; }
@@ -338,7 +338,6 @@ function generatePdfContent(plan, t) {
   return htmlContent;
 }
 
-// --- Component ---
 export function UserPlanScreen({ route, navigation }) {
   const { t, i18n } = useTranslation();
   const { isDarkMode, colors } = useTheme();
@@ -346,7 +345,6 @@ export function UserPlanScreen({ route, navigation }) {
   const plan = useMemo(() => {
     const tripData = route.params?.tripData;
 
-    // Add debug logging
     console.log(
       "[UserPlanScreen] Received tripData:",
       JSON.stringify(tripData, null, 2)
@@ -372,13 +370,12 @@ export function UserPlanScreen({ route, navigation }) {
       const daysData = travelPlan.Days || [];
       const localInfo = travelPlan.LocalInfo || {};
 
-      // Filter out empty details
       const details = [
         { name: "Destination", value: tripInfo.Destination },
         { name: "Duration", value: tripInfo.Duration },
         { name: "Style", value: tripInfo.Style },
         { name: "Budget", value: tripInfo.TotalCost },
-      ].filter((item) => item.value); // Remove items with empty values
+      ].filter((item) => item.value);
 
       return {
         tripId: tripData.id,
@@ -415,7 +412,7 @@ export function UserPlanScreen({ route, navigation }) {
                   : null,
               cost: day.Activities.Evening.Cost,
             },
-          ].filter(Boolean), // Remove null items
+          ].filter(Boolean),
           activityCost: day.DailyCost,
           transport: day.Transport,
         })),
@@ -443,7 +440,7 @@ export function UserPlanScreen({ route, navigation }) {
         ...(localInfo.Customs && {
           cultureInsights: typeof localInfo.Customs === 'string' 
             ? { customs: localInfo.Customs } 
-            : localInfo.Customs // Pass structured data directly when available
+            : localInfo.Customs
         }),
       };
     } catch (error) {
@@ -456,9 +453,8 @@ export function UserPlanScreen({ route, navigation }) {
     }
   }, [route.params?.tripData, t]);
 
-  // --- Event Handlers ---
   const handleShare = async () => {
-    if (!plan) return; // Don't share if plan isn't ready
+    if (!plan) return;
     try {
       const htmlContent = generatePdfContent(plan, t);
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
@@ -495,10 +491,8 @@ export function UserPlanScreen({ route, navigation }) {
     navigation.navigate("Home");
   };
 
-  // --- Render Helper Functions ---
   const renderDetailItem = (item, index) => {
     if (!item || !item.name || !item.value) return null;
-    // The label is already handled by t(`userPlan.details.${item.name.toLowerCase()}`)
     return (
       <DetailItem
         key={`${item.name}-${index}`}
@@ -510,7 +504,6 @@ export function UserPlanScreen({ route, navigation }) {
   };
 
   const renderAccordionSection = (titleKey, iconName, data, renderContent) => {
-    // More robust check for "empty" data
     const isEmpty =
       !data ||
       (typeof data === "object" && Object.keys(data).length === 0) ||
@@ -539,7 +532,6 @@ export function UserPlanScreen({ route, navigation }) {
     );
   };
 
-  // Specific render functions for accordion content
   const renderItineraryContent = (days) => {
     if (!Array.isArray(days) || days.length === 0) {
       return (
@@ -632,12 +624,10 @@ export function UserPlanScreen({ route, navigation }) {
 
     return (
       <View>
-        {/* Handle string content */}
         {typeof data.details === "string" && data.details && (
           <Text style={styles.paragraphText}>{data.details}</Text>
         )}
 
-        {/* Handle structured precautions */}
         {Array.isArray(data.precautions) && data.precautions.length > 0 && (
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionTitle}>
@@ -651,7 +641,6 @@ export function UserPlanScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Handle structured safety tips */}
         {Array.isArray(data.safetyTips) && data.safetyTips.length > 0 && (
           <View style={styles.sectionBlock}>
             <Text style={styles.sectionTitle}>
@@ -665,7 +654,6 @@ export function UserPlanScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Handle emergency contacts */}
         {data.emergencyContacts &&
           Object.keys(data.emergencyContacts).length > 0 && (
             <View style={styles.sectionBlock}>
@@ -673,7 +661,7 @@ export function UserPlanScreen({ route, navigation }) {
                 {t("userPlan.health.emergencyContactsLabel")}
               </Text>
               {Object.entries(data.emergencyContacts)
-                .filter(([_, value]) => value) // Only show contacts that have values
+                .filter(([_, value]) => value)
                 .map(([key, value]) => (
                   <View key={`contact-${key}`} style={styles.keyValueItem}>
                     <Text style={styles.keyText}>
@@ -771,17 +759,14 @@ export function UserPlanScreen({ route, navigation }) {
   const renderCultureContent = (data) => {
     if (!data) return null;
 
-    // Handle string content directly
     if (typeof data === "string") {
       return <Text style={styles.paragraphText}>{data}</Text>;
     }
 
-    // Handle object with customs property (old format)
     if (data.customs && typeof data.customs === "string") {
       return <Text style={styles.paragraphText}>{data.customs}</Text>;
     }
 
-    // Handle object with etiquette and communication from new MCP structure
     const { etiquette, dressCode, communication, keyCustoms, notes } = data;
     return (
       <View>
@@ -825,7 +810,6 @@ export function UserPlanScreen({ route, navigation }) {
     );
   };
 
-  // --- Main Render ---
   if (!plan) {
     return (
       <SafeAreaView
@@ -877,7 +861,6 @@ export function UserPlanScreen({ route, navigation }) {
     >
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
 
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -928,7 +911,6 @@ export function UserPlanScreen({ route, navigation }) {
         bounces={true}
         overScrollMode="always"
       >
-        {/* Destination Card with shadow and enhanced styling */}
         <View
           style={[
             styles.destinationCard,
@@ -944,7 +926,6 @@ export function UserPlanScreen({ route, navigation }) {
           </View>
         </View>
 
-        {/* Conditionally render a message if parsing failed */}
         {plan.parsingError && (
           <View
             style={[
@@ -971,7 +952,6 @@ export function UserPlanScreen({ route, navigation }) {
           </View>
         )}
 
-        {/* Itinerary Section */}
         {renderAccordionSection(
           "userPlan.sections.itinerary",
           sectionIcons.dailyItinerary,
@@ -979,7 +959,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderItineraryContent
         )}
 
-        {/* Currency Section */}
         {renderAccordionSection(
           "userPlan.sections.currency",
           sectionIcons.currencyInfo,
@@ -987,7 +966,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderKeyValueContent
         )}
 
-        {/* Health & Safety Section */}
         {renderAccordionSection(
           "userPlan.sections.health",
           sectionIcons.healthAndSafety,
@@ -995,7 +973,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderHealthSafetyContent
         )}
 
-        {/* Transportation Section */}
         {renderAccordionSection(
           "userPlan.sections.transportation",
           sectionIcons.transportation,
@@ -1003,7 +980,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderTransportationContent
         )}
 
-        {/* Language Basics Section */}
         {renderAccordionSection(
           "userPlan.sections.language",
           sectionIcons.languageBasics,
@@ -1011,7 +987,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderLanguageBasicsContent
         )}
 
-        {/* Weather Info Section */}
         {renderAccordionSection(
           "userPlan.sections.weather",
           sectionIcons.weatherInfo,
@@ -1019,7 +994,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderWeatherContent
         )}
 
-        {/* Visa Requirements Section */}
         {renderAccordionSection(
           "userPlan.sections.visa",
           sectionIcons.visaRequirements,
@@ -1031,7 +1005,6 @@ export function UserPlanScreen({ route, navigation }) {
           )
         )}
 
-        {/* Culture Insights Section */}
         {renderAccordionSection(
           "userPlan.sections.culture",
           sectionIcons.cultureInsights,
@@ -1039,7 +1012,6 @@ export function UserPlanScreen({ route, navigation }) {
           renderCultureContent
         )}
 
-        {/* Nearby Events Section */}
         {renderAccordionSection(
           "userPlan.sections.events",
           sectionIcons.nearbyEvents,
@@ -1050,7 +1022,6 @@ export function UserPlanScreen({ route, navigation }) {
         )}
       </ScrollView>
 
-      {/* Footer Button */}
       <View
         style={[
           styles.footer,
@@ -1075,15 +1046,11 @@ export function UserPlanScreen({ route, navigation }) {
   );
 }
 
-// --- Styles ---
 const styles = StyleSheet.create({
-  // Base styles
   container: {
     flex: 1,
-    backgroundColor: "#F0F4F8", // Lighter, more modern background
+    backgroundColor: "#F0F4F8",
   },
-
-  // Enhanced header
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -1099,7 +1066,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 4,
   },
-
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
@@ -1108,7 +1074,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 12,
   },
-
   iconButton: {
     width: 44,
     height: 44,
@@ -1117,8 +1082,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(241, 245, 249, 0.8)",
   },
-
-  // New destination card
   destinationCard: {
     backgroundColor: "#FFF",
     borderRadius: 16,
@@ -1132,24 +1095,20 @@ const styles = StyleSheet.create({
     elevation: 6,
     padding: 20,
   },
-
   destinationTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#0EA5E9", // Primary blue
+    color: "#0EA5E9",
     textAlign: "center",
     marginBottom: 18,
     letterSpacing: 0.3,
   },
-
   detailsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     marginTop: 8,
   },
-
-  // Enhanced cards
   card: {
     backgroundColor: "#FFF",
     borderRadius: 16,
@@ -1160,10 +1119,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
-    overflow: "hidden", // Ensure content stays within borders
+    overflow: "hidden",
   },
-
-  // Enhanced accordion styling
   accordionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1171,7 +1128,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: "#F8FAFC",
   },
-
   accordionIcon: {
     marginRight: 16,
     width: 28,
@@ -1182,7 +1138,6 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     overflow: "hidden",
   },
-
   accordionTitle: {
     fontSize: 17,
     fontWeight: "600",
@@ -1190,18 +1145,14 @@ const styles = StyleSheet.create({
     flex: 1,
     letterSpacing: 0.3,
   },
-
   accordionContent: {
     padding: 20,
     backgroundColor: "#FFF",
   },
-
-  // Enhanced Daily Itinerary
   daysContainer: {
     width: "100%",
     paddingBottom: 0,
   },
-
   dayContainer: {
     backgroundColor: "#FFF",
     borderRadius: 12,
@@ -1215,41 +1166,35 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-
   dayTitleContainer: {
     backgroundColor: "#0EA5E9",
     paddingVertical: 14,
     paddingHorizontal: 18,
   },
-
   dayTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: "#FFF",
     letterSpacing: 0.5,
   },
-
   timeContainer: {
     backgroundColor: "#E0F2FE",
     padding: 10,
     borderRadius: 8,
     minWidth: 100,
   },
-
   planTime: {
     fontSize: 15,
-    color: "#0284C7", // Darker blue
+    color: "#0284C7",
     fontWeight: "600",
     textAlign: "center",
   },
-
   eventContainer: {
     flex: 1,
     paddingLeft: 16,
     paddingRight: 8,
     justifyContent: "space-between",
   },
-
   planItem: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1263,7 +1208,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-
   planEvent: {
     fontSize: 15,
     color: "#334155",
@@ -1273,29 +1217,24 @@ const styles = StyleSheet.create({
     textAlign: "left",
     fontWeight: "500",
   },
-
   costText: {
     fontSize: 14,
     color: "#64748B",
     marginTop: 6,
     fontStyle: "italic",
   },
-
   dayDetailsContainer: {
     padding: 16,
     backgroundColor: "#F8FAFC",
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
   },
-
   dayDetailText: {
     fontSize: 14,
     color: "#475569",
     marginBottom: 6,
     fontWeight: "500",
   },
-
-  // Enhanced key-value pairs
   keyValueItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1305,14 +1244,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
-
   keyText: {
     fontSize: 15,
     color: "#475569",
     fontWeight: "600",
     marginRight: 12,
   },
-
   valueText: {
     fontSize: 15,
     color: "#334155",
@@ -1322,8 +1259,6 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     fontWeight: "400",
   },
-
-  // Enhanced section styling
   sectionBlock: {
     marginTop: 10,
     marginBottom: 12,
@@ -1333,7 +1268,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
@@ -1341,8 +1275,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.3,
   },
-
-  // Enhanced list items
   listItem: {
     fontSize: 15,
     color: "#334155",
@@ -1350,8 +1282,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     paddingLeft: 8,
   },
-
-  // Enhanced paragraph text
   paragraphText: {
     fontSize: 15,
     color: "#334155",
@@ -1359,8 +1289,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontWeight: "400",
   },
-
-  // Enhanced footer
   footer: {
     position: "absolute",
     bottom: 0,
@@ -1377,8 +1305,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-
-  // Enhanced button
   nextButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -1393,15 +1319,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-
   nextButtonText: {
     color: "#FFF",
     fontSize: 17,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
-
-  // Enhanced error card
   errorCard: {
     padding: 16,
     borderRadius: 12,
@@ -1418,7 +1341,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-
   errorText: {
     marginLeft: 12,
     fontSize: 14,
@@ -1426,18 +1348,14 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 20,
   },
-
   scrollView: {
     flex: 1,
-    marginBottom: 70, // Add space for footer
+    marginBottom: 70,
   },
-
   scrollViewContent: {
     paddingTop: 16,
     paddingBottom: 90,
   },
-
-  // Loading state styles
   loadingHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1447,7 +1365,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
-
   loadingTitle: {
     fontSize: 22,
     fontWeight: "700",
@@ -1455,7 +1372,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     flex: 1,
   },
-
   backButton: {
     width: 44,
     height: 44,
@@ -1464,18 +1380,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "rgba(241, 245, 249, 0.8)",
   },
-
   placeholderButton: {
     width: 44,
   },
-
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
   },
-
   loadingText: {
     marginTop: 16,
     fontSize: 16,
@@ -1483,26 +1396,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
   },
-
   customsContainer: {
     paddingVertical: 10,
   },
-  
   customItem: {
     paddingVertical: 10,
     paddingHorizontal: 6,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
-  
   customText: {
     fontSize: 15,
     color: "#334155",
     lineHeight: 22,
     fontWeight: "400",
   },
-
-  // Extra styles for enhanced UI
   headerButtons: {
     flexDirection: "row",
     justifyContent: "center",
@@ -1512,11 +1420,9 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 10,
   },
-  
   iconColor: {
     color: "#64748B",
   },
-
   cultureSectionItem: {
     padding: 12,
     backgroundColor: "#FFF",

@@ -3,7 +3,7 @@ import { AI_RESPONSE } from "../config/AiResponse";
 import { Platform } from "react-native";
 import { useContext } from "react";
 import { AuthContext } from "../../AuthProvider";
-import { v4 as uuid } from "uuid"; // If needed for guest IDs
+import { v4 as uuid } from "uuid"; 
 
 export const getTrips = async ({
   page = 1,
