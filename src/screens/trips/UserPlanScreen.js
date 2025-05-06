@@ -23,14 +23,15 @@ import { DetailItem } from "../../components/shared/DetailItem";
 import { Accordion } from "../../components/shared/Accordion";
 
 const detailEmojis = {
-  Destination: "✈️",
+  Destination: "🌍",
   Duration: "⏳",
   Style: "🎨",
-  Expenses: "💵",
+  Expenses: "💰",
+  Budget: "💵",
 };
 
 const sectionIcons = {
-  dailyItinerary: "map-outline",
+  dailyItinerary: "calendar-outline",
   currencyInfo: "cash-outline",
   healthAndSafety: "medkit-outline",
   transportation: "car-sport-outline",
@@ -798,28 +799,28 @@ export function UserPlanScreen({ route, navigation }) {
           backgroundColor={isDarkMode ? colors.background : "#fff"}
         />
 
-        {/* Header Title (Centered) */}
-        <View className="flex-1 items-center">
-          <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+        <View style={styles.loadingHeader}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={28}
+              color={isDarkMode ? colors.text : "#374151"}
+            />
+          </TouchableOpacity>
+          <Text style={[styles.loadingTitle, isDarkMode && { color: colors.text }]}>
             {t("plan.title", "Your Plan")}
           </Text>
+          <View style={styles.placeholderButton} />
         </View>
 
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0EA5E9" />
-          <Text style={styles.loadingText}>{t("userPlan.loading")}</Text>
-        </View>
-
-        {/* Header Right Buttons */}
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={handleShare}
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
-            accessibilityRole="button"
-            accessibilityLabel={t("accessibility.shareButton", "Share Plan")}
-          >
-            <Ionicons name="share-outline" size={28} style={styles.iconColor} />
-          </TouchableOpacity>
+          <Text style={[styles.loadingText, isDarkMode && { color: colors.text }]}>
+            {t("userPlan.loading")}
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -848,6 +849,8 @@ export function UserPlanScreen({ route, navigation }) {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel={t("accessibility.backButton", "Go back")}
         >
           <Ionicons
             name="chevron-back"
@@ -863,7 +866,12 @@ export function UserPlanScreen({ route, navigation }) {
         >
           {t("userPlan.title")}
         </Text>
-        <TouchableOpacity onPress={handleShare} style={styles.iconButton}>
+        <TouchableOpacity 
+          onPress={handleShare} 
+          style={styles.iconButton}
+          accessibilityRole="button"
+          accessibilityLabel={t("accessibility.shareButton", "Share Plan")}
+        >
           <Ionicons
             name="share-outline"
             size={24}
@@ -875,19 +883,24 @@ export function UserPlanScreen({ route, navigation }) {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={true}
+        showsVerticalScrollIndicator={false}
         bounces={true}
         overScrollMode="always"
       >
-        {/* Basic Trip Details */}
+        {/* Destination Card with shadow and enhanced styling */}
         <View
           style={[
-            styles.card,
-            styles.detailsContainer,
+            styles.destinationCard,
             isDarkMode && { backgroundColor: colors.card },
           ]}
         >
-          {plan.details.map(renderDetailItem)}
+          <Text style={styles.destinationTitle}>
+            {plan.destination || t("userPlan.defaultDestination")}
+          </Text>
+          
+          <View style={styles.detailsGrid}>
+            {plan.details.map(renderDetailItem)}
+          </View>
         </View>
 
         {/* Conditionally render a message if parsing failed */}
@@ -1007,13 +1020,14 @@ export function UserPlanScreen({ route, navigation }) {
         ]}
       >
         <TouchableOpacity
-          style={[
-            styles.nextButton,
-            isDarkMode && { backgroundColor: colors.primary },
-          ]}
+          style={styles.nextButton}
           onPress={handleNext}
+          accessibilityRole="button"
+          accessibilityLabel={t("accessibility.homeButton", "Go to home")}
         >
-          <Text style={styles.nextButtonText}>Home</Text>
+          <Text style={styles.nextButtonText}>
+            {t("userPlan.homeButton", "Home")}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -1022,10 +1036,10 @@ export function UserPlanScreen({ route, navigation }) {
 
 // --- Styles ---
 const styles = StyleSheet.create({
-  // Existing base styles with improvements
+  // Base styles
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC", // Lighter, more modern background
+    backgroundColor: "#F0F4F8", // Lighter, more modern background
   },
 
   // Enhanced header
@@ -1034,19 +1048,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     backgroundColor: "#FFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
-    elevation: 2,
+    elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
   },
 
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
     color: "#1E293B",
     textAlign: "center",
@@ -1054,68 +1068,82 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
 
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(241, 245, 249, 0.8)",
+  },
+
+  // New destination card
+  destinationCard: {
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    padding: 20,
+  },
+
+  destinationTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#0EA5E9", // Primary blue
+    textAlign: "center",
+    marginBottom: 18,
+    letterSpacing: 0.3,
+  },
+
+  detailsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+
   // Enhanced cards
   card: {
     backgroundColor: "#FFF",
     borderRadius: 16,
     marginHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    overflow: "hidden", // Ensure content stays within borders
-  },
-
-  // Enhanced Details Card
-  detailsContainer: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    margin: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-
-  detailItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
-  },
-
-  detailIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F9FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+    shadowRadius: 6,
+    elevation: 4,
+    overflow: "hidden", // Ensure content stays within borders
   },
 
   // Enhanced accordion styling
   accordionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 16,
+    paddingVertical: 18,
     paddingHorizontal: 20,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#F8FAFC",
   },
 
   accordionIcon: {
-    marginRight: 14,
-    opacity: 0.8,
+    marginRight: 16,
+    width: 28,
+    height: 28,
+    textAlign: "center",
+    backgroundColor: "#E0F2FE",
+    borderRadius: 14,
+    lineHeight: 28,
+    overflow: "hidden",
   },
 
   accordionTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
     color: "#0F172A",
     flex: 1,
@@ -1123,7 +1151,7 @@ const styles = StyleSheet.create({
   },
 
   accordionContent: {
-    padding: 16,
+    padding: 20,
     backgroundColor: "#FFF",
   },
 
@@ -1139,13 +1167,18 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    marginBottom: 16,
+    marginBottom: 20,
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   dayTitleContainer: {
     backgroundColor: "#0EA5E9",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
   },
 
   dayTitle: {
@@ -1156,22 +1189,22 @@ const styles = StyleSheet.create({
   },
 
   timeContainer: {
-    backgroundColor: "#F0F9FF",
-    padding: 8,
+    backgroundColor: "#E0F2FE",
+    padding: 10,
     borderRadius: 8,
     minWidth: 100,
   },
 
   planTime: {
-    fontSize: 14,
-    color: "#0EA5E9",
+    fontSize: 15,
+    color: "#0284C7", // Darker blue
     fontWeight: "600",
     textAlign: "center",
   },
 
   eventContainer: {
     flex: 1,
-    paddingLeft: 12,
+    paddingLeft: 16,
     paddingRight: 8,
     justifyContent: "space-between",
   },
@@ -1191,50 +1224,24 @@ const styles = StyleSheet.create({
   },
 
   planEvent: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#334155",
-    lineHeight: 20,
+    lineHeight: 22,
     flexShrink: 1,
     flexWrap: "wrap",
     textAlign: "left",
-  },
-
-  planCost: {
-    fontSize: 12,
-    color: "#64748B",
-    marginTop: 4,
+    fontWeight: "500",
   },
 
   costText: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#64748B",
-    marginTop: 4,
+    marginTop: 6,
     fontStyle: "italic",
   },
 
-  activitiesContainer: {
-    padding: 16,
-    backgroundColor: "#F8FAFC",
-    borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
-  },
-
-  activitiesTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0F172A",
-    marginBottom: 8,
-  },
-
-  activityItem: {
-    fontSize: 14,
-    color: "#334155",
-    marginBottom: 4,
-    paddingLeft: 8,
-  },
-
   dayDetailsContainer: {
-    padding: 12,
+    padding: 16,
     backgroundColor: "#F8FAFC",
     borderTopWidth: 1,
     borderTopColor: "#E2E8F0",
@@ -1242,69 +1249,75 @@ const styles = StyleSheet.create({
 
   dayDetailText: {
     fontSize: 14,
-    color: "#64748B",
-    marginBottom: 4,
+    color: "#475569",
+    marginBottom: 6,
+    fontWeight: "500",
   },
 
   // Enhanced key-value pairs
   keyValueItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 6,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
 
   keyText: {
-    fontSize: 14,
-    color: "#64748B",
-    fontWeight: "500",
+    fontSize: 15,
+    color: "#475569",
+    fontWeight: "600",
     marginRight: 12,
   },
 
   valueText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#334155",
     textAlign: "right",
     flex: 1,
     flexWrap: "wrap",
     paddingLeft: 8,
+    fontWeight: "400",
   },
 
   // Enhanced section styling
   sectionBlock: {
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 12,
     backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
 
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: "#0F172A",
-    marginBottom: 8,
+    marginBottom: 10,
     letterSpacing: 0.3,
   },
 
   // Enhanced list items
   listItem: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#334155",
-    marginBottom: 6,
-    lineHeight: 20,
+    marginBottom: 8,
+    lineHeight: 22,
     paddingLeft: 8,
+    fontWeight: "400",
   },
 
   // Enhanced paragraph text
   paragraphText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#334155",
-    lineHeight: 20,
-    paddingHorizontal: 16,
+    lineHeight: 22,
     paddingVertical: 12,
+    fontWeight: "400",
   },
 
   // Enhanced footer
@@ -1331,19 +1344,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#0EA5E9",
-    paddingVertical: 14,
+    paddingVertical: 16,
     borderRadius: 12,
-    height: 54,
+    height: 56,
     shadowColor: "#0EA5E9",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 5,
   },
 
   nextButtonText: {
     color: "#FFF",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
@@ -1352,12 +1365,18 @@ const styles = StyleSheet.create({
   errorCard: {
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
+    borderLeftWidth: 4,
     borderColor: "#FEF3C7",
     backgroundColor: "#FFFBEB",
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginHorizontal: 16,
+    marginBottom: 20,
+    shadowColor: "#F59E0B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   errorText: {
@@ -1374,21 +1393,88 @@ const styles = StyleSheet.create({
   },
 
   scrollViewContent: {
+    paddingTop: 16,
     paddingBottom: 90,
+  },
+
+  // Loading state styles
+  loadingHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+
+  loadingTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1E293B",
+    textAlign: "center",
+    flex: 1,
+  },
+
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(241, 245, 249, 0.8)",
+  },
+
+  placeholderButton: {
+    width: 44,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#64748B",
+    textAlign: "center",
+    fontWeight: "500",
   },
 
   customsContainer: {
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
+  
   customItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
+  
   customText: {
-    fontSize: 14,
+    fontSize: 15,
     color: "#334155",
-    lineHeight: 20,
+    lineHeight: 22,
+    fontWeight: "400",
+  },
+
+  // Extra styles for enhanced UI
+  headerButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    top: 16,
+    right: 16,
+    zIndex: 10,
+  },
+  
+  iconColor: {
+    color: "#64748B",
   },
 });
 
