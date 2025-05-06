@@ -87,7 +87,6 @@ export const createTrip = async (tripData, callbacks = {}) => {
   const { onLoadingChange, onLoadingMessageChange, onError } = callbacks;
   const TIMEOUT = 130000; // 130 seconds
 
-  // Create payload with proper user_id
   const enrichedTripData = {
     ...tripData,
     user_id: tripData.user_id?.startsWith("guest-")

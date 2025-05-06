@@ -73,7 +73,6 @@ export default {
     moderate: "متوسط",
     luxury: "فاخر",
   },
-  // Replace this line
   tripDetails: {
     title: "تفاصيل الرحلة",
     stepIndicator: "الخطوة 3/3",
@@ -106,6 +105,33 @@ export default {
       shareButton: "مشاركة الخطة",
       editButton: "تعديل الخطة",
       nextButton: "الخطوة التالية",
+    },
+  },
+  userPlan: {
+    title: "خطة رحلتك",
+    loading: "جارٍ تحميل خطة رحلتك...",
+    details: {
+      destination: "الوجهة",
+      duration: "المدة",
+      expenses: "التكاليف",
+    },
+    sections: {
+      itinerary: "جدول الرحلة اليومي",
+      currency: "العملة والمدفوعات",
+      health: "الصحة والسلامة",
+      transportation: "المواصلات",
+      language: "أساسيات اللغة",
+      weather: "معلومات الطقس",
+      visa: "متطلبات التأشيرة",
+      culture: "معلومات ثقافية",
+      events: "الفعاليات القريبة",
+    },
+    culture: {
+      etiquetteLabel: "التحيات وآداب السلوك:",
+      dressCodeLabel: "قواعد اللباس:",
+      communicationLabel: "نمط التواصل:",
+      keyCustomsLabel: "العادات الرئيسية:",
+      notesLabel: "ملاحظات مهمة:",
     },
   },
 };

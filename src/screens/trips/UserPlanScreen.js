@@ -441,9 +441,9 @@ export function UserPlanScreen({ route, navigation }) {
           },
         }),
         ...(localInfo.Customs && {
-          cultureInsights: {
-            customs: localInfo.Customs,
-          },
+          cultureInsights: typeof localInfo.Customs === 'string' 
+            ? { customs: localInfo.Customs } 
+            : localInfo.Customs // Pass structured data directly when available
         }),
       };
     } catch (error) {
@@ -776,12 +776,53 @@ export function UserPlanScreen({ route, navigation }) {
       return <Text style={styles.paragraphText}>{data}</Text>;
     }
 
-    // Handle object with customs property
+    // Handle object with customs property (old format)
     if (data.customs && typeof data.customs === "string") {
       return <Text style={styles.paragraphText}>{data.customs}</Text>;
     }
 
-    return null;
+    // Handle object with etiquette and communication from new MCP structure
+    const { etiquette, dressCode, communication, keyCustoms, notes } = data;
+    return (
+      <View>
+        {etiquette && (
+          <View style={styles.cultureSectionItem}>
+            <Text style={styles.sectionTitle}>{t("userPlan.culture.etiquetteLabel")}</Text>
+            <Text style={styles.paragraphText}>{etiquette}</Text>
+          </View>
+        )}
+        
+        {dressCode && (
+          <View style={styles.cultureSectionItem}>
+            <Text style={styles.sectionTitle}>{t("userPlan.culture.dressCodeLabel")}</Text>
+            <Text style={styles.paragraphText}>{dressCode}</Text>
+          </View>
+        )}
+        
+        {communication && (
+          <View style={styles.cultureSectionItem}>
+            <Text style={styles.sectionTitle}>{t("userPlan.culture.communicationLabel")}</Text>
+            <Text style={styles.paragraphText}>{communication}</Text>
+          </View>
+        )}
+        
+        {Array.isArray(keyCustoms) && keyCustoms.length > 0 && (
+          <View style={styles.cultureSectionItem}>
+            <Text style={styles.sectionTitle}>{t("userPlan.culture.keyCustomsLabel")}</Text>
+            {keyCustoms.map((custom, index) => (
+              <Text key={index} style={styles.listItem}>• {custom}</Text>
+            ))}
+          </View>
+        )}
+        
+        {notes && (
+          <View style={styles.cultureSectionItem}>
+            <Text style={styles.sectionTitle}>{t("userPlan.culture.notesLabel")}</Text>
+            <Text style={styles.paragraphText}>{notes}</Text>
+          </View>
+        )}
+      </View>
+    );
   };
 
   // --- Main Render ---
@@ -1297,7 +1338,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#0F172A",
-    marginBottom: 10,
+    marginBottom: 8,
     letterSpacing: 0.3,
   },
 
@@ -1305,10 +1346,9 @@ const styles = StyleSheet.create({
   listItem: {
     fontSize: 15,
     color: "#334155",
-    marginBottom: 8,
-    lineHeight: 22,
+    marginBottom: 6,
+    lineHeight: 20,
     paddingLeft: 8,
-    fontWeight: "400",
   },
 
   // Enhanced paragraph text
@@ -1475,6 +1515,15 @@ const styles = StyleSheet.create({
   
   iconColor: {
     color: "#64748B",
+  },
+
+  cultureSectionItem: {
+    padding: 12,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 8,
+    marginBottom: 8,
   },
 });
 

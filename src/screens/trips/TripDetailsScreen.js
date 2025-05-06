@@ -194,8 +194,7 @@ export function TripDetailsScreen({ route, navigation }) {
       id: Math.random().toString(),
       itinerary: {
         data: {
-          // Remove one level of "content" nesting
-          content: apiResultData.data.content.data.content,
+          content: apiResultData.data.content,
         },
       },
       destination: fullTripData.destination,

@@ -354,6 +354,46 @@ class ChatScreen extends React.Component {
     }
     this.setState({ offlineMessages: [] });
   };
+
+  // Clear chat history
+  clearChat = () => {
+    Alert.alert(
+      "Clear Chat",
+      "Are you sure you want to clear all chat history?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Reset state to initial messages
+              this.setState({
+                messages: initialMessages,
+                conversation: null,
+                error: null,
+                retryCount: 0,
+                offlineMessages: [],
+              });
+              
+              // Clear stored chat history
+              await AsyncStorage.removeItem(STORAGE_KEY);
+              
+              // Scroll to bottom to show the welcome message
+              this.scrollToBottom();
+            } catch (error) {
+              console.error("Error clearing chat history:", error);
+              Alert.alert("Error", "Failed to clear chat history.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   render() {
     const { messages, isLoading, error } = this.state;
     const { isDarkMode, colors } = this.props.theme;
@@ -399,20 +439,37 @@ class ChatScreen extends React.Component {
             </Text>
           </View>
 
-          <TouchableOpacity
-            className={` w-[50px] h-[50px] rounded-full ${
-              isDarkMode
-                ? "bg-gray-800 border-gray-700"
-                : "bg-gray-50 border-gray-200"
-            } justify-center items-center`}
-            onPress={this.handleHome}
-          >
-            <Ionicons
-              name="home"
-              size={20}
-              color={isDarkMode ? "#fff" : "#111"}
-            />
-          </TouchableOpacity>
+          <View className="flex-row">
+            <TouchableOpacity
+              className={`w-[50px] h-[50px] rounded-full ${
+                isDarkMode
+                  ? "bg-gray-800 border-gray-700"
+                  : "bg-gray-50 border-gray-200"
+              } justify-center items-center mr-2`}
+              onPress={this.clearChat}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={isDarkMode ? "#fff" : "#111"}
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              className={`w-[50px] h-[50px] rounded-full ${
+                isDarkMode
+                  ? "bg-gray-800 border-gray-700"
+                  : "bg-gray-50 border-gray-200"
+              } justify-center items-center`}
+              onPress={this.handleHome}
+            >
+              <Ionicons
+                name="home"
+                size={20}
+                color={isDarkMode ? "#fff" : "#111"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Chat Messages */}

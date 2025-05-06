@@ -96,6 +96,13 @@ export default {
       climateLabel: "Climate:",
       packingTipsLabel: "Packing Tips:",
     },
+    culture: {
+      etiquetteLabel: "Greetings & Etiquette:",
+      dressCodeLabel: "Dress Code:",
+      communicationLabel: "Communication Style:",
+      keyCustomsLabel: "Key Customs:",
+      notesLabel: "Important Notes:",
+    },
     alerts: {
       sharingNotAvailableTitle: "Sharing Not Available",
       sharingNotAvailableMessage: "Sharing is not available on this device.",
