@@ -10,10 +10,8 @@ import {
   Animated,
 } from 'react-native';
 
-// استيراد عناصر SVG
 import Svg, { Path } from 'react-native-svg';
 
-// أمثلة على صور/شرائح مختلفة
 import waveBoat from '../../../assets/onboard/waveBoat.png';
 import cityTravel from '../../../assets/onboard/cityTravel.png';
 import beachAdventure from '../../../assets/onboard/beachAdventure.png';
@@ -24,23 +22,22 @@ class OnboardScreen extends React.Component {
   constructor(props) {
     super(props);
 
-    // الشرائح مع عناوين، نصوص فرعية، أوصاف وصور محدثة
     this.slides = [
       {
         key: 'slide1',
         image: waveBoat,
         title: 'Your journey, intelligently planned',
         subtitle: 'Harness AI to craft your perfect escape',
-        description: `Embark on a futuristic travel adventure. 
+        description: `Embark on a futuristic travel adventure.
 Let AI uncover hidden gems and design personalized itineraries for unforgettable memories.`,
-        showSlantedLine: true, // تستخدم في الشريحة الأولى (لرسم القوس)
+        showSlantedLine: true,
       },
       {
         key: 'slide2',
         image: cityTravel,
         title: 'Discover New Horizons',
         subtitle: 'Explore with AI-curated insights',
-        description: `Uncover breathtaking destinations and immerse yourself in vibrant cultures. 
+        description: `Uncover breathtaking destinations and immerse yourself in vibrant cultures.
 Our AI delivers tailored recommendations to elevate your travel experience.`,
       },
       {
@@ -48,7 +45,7 @@ Our AI delivers tailored recommendations to elevate your travel experience.`,
         image: beachAdventure,
         title: 'Experience Personalized Adventures',
         subtitle: 'Every detail meticulously crafted',
-        description: `From flights to local secrets, our AI takes care of every aspect. 
+        description: `From flights to local secrets, our AI takes care of every aspect.
 Dive into a journey designed uniquely for you.`,
       },
     ];
@@ -57,21 +54,16 @@ Dive into a journey designed uniquely for you.`,
       currentSlideIndex: 0,
     };
 
-    // مرجع للتحكم في الـ ScrollView
     this.scrollViewRef = React.createRef();
-
-    // قيمة متحركة لاستخدامها لاحقًا إن أردت أي تأثيرات (غير مستخدمة حالياً)
     this.scrollX = new Animated.Value(0);
   }
 
-  // عند انتهاء السحب نحدّد الشريحة الحالية
   handleScrollEnd = (e) => {
     const contentOffsetX = e.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(contentOffsetX / width);
     this.setState({ currentSlideIndex: currentIndex });
   };
 
-  // تخطي إلى الشريحة الأخيرة
   handleSkip = () => {
     const lastIndex = this.slides.length - 1;
     if (this.scrollViewRef.current) {
@@ -83,23 +75,18 @@ Dive into a journey designed uniquely for you.`,
     }
   };
 
-  // زر Get Started في الشريحة الأخيرة
   handleGetStarted = () => {
-    // يتم نقلك مباشرة بعد زر Get Started إلى Login
     this.props.navigation.replace('Login');
   };
 
   renderSlide = (slide, index) => {
     return (
       <View style={styles.slide} key={slide.key}>
-        {/* الحاوية العلوية للصورة مع حواف سفلية مستديرة */}
         <View style={styles.imageContainer}>
           <Image source={slide.image} style={styles.image} resizeMode="cover" />
         </View>
 
-        {/* المساحة المتبقية للمحتوى النصي */}
         <View style={styles.textContent}>
-          {/* العنوان مع تأثير تمييز الكلمة */}
           <View style={{ marginBottom: 10, position: 'relative' }}>
             <Text style={styles.title}>
               {slide.key === 'slide1'
@@ -118,35 +105,32 @@ Dive into a journey designed uniquely for you.`,
               }
             </Text>
 
-            {/* في حالة الشريحة الأولى، رسم القوس تحت كلمة "intelligently" */}
             {slide.showSlantedLine && (
- <View style={styles.arcContainer}>  
-<Svg  
-    width="220"  // زيادة العرض  
-    height="60"  // زيادة الارتفاع  
-    viewBox="0 0 80 50"  // تعديل نطاق الرسم  
-    style={styles.arcStyle}  
->  
-    <Path  
-        d="M0,20 C20,5 60,5 80,20" // تعديل نقاط التحكم للانحناء المعكوس  
-        fill="none"  
-        stroke="#FF6E2C"  
-        strokeWidth={4}  
-        strokeLinecap="round"  
-    />  
+ <View style={styles.arcContainer}>
+<Svg
+    width="220"
+    height="60"
+    viewBox="0 0 80 50"
+    style={styles.arcStyle}
+>
+    <Path
+        d="M0,20 C20,5 60,5 80,20"
+        fill="none"
+        stroke="#FF6E2C"
+        strokeWidth={4}
+        strokeLinecap="round"
+    />
 </Svg>
 </View>
             )}
           </View>
 
-          {/* النص الفرعي */}
           {slide.subtitle && (
             <Text style={styles.subtitle}>
               {slide.subtitle}
             </Text>
           )}
 
-          {/* الوصف النصي */}
           <Text style={styles.description}>{slide.description}</Text>
         </View>
       </View>
@@ -157,12 +141,10 @@ Dive into a journey designed uniquely for you.`,
     const { currentSlideIndex } = this.state;
     return (
       <View style={styles.container}>
-        {/* زر Skip في أعلى اليمين */}
         <TouchableOpacity style={styles.skipButton} onPress={this.handleSkip}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
 
-        {/* ScrollView أفقي يعرض الشرائح */}
         <ScrollView
           ref={this.scrollViewRef}
           horizontal
@@ -173,7 +155,6 @@ Dive into a journey designed uniquely for you.`,
           {this.slides.map((slide, i) => this.renderSlide(slide, i))}
         </ScrollView>
 
-        {/* المؤشرات (Dashes) بعد رفعها لتكون تحت النص المكتوب */}
         <View style={styles.dashesContainer}>
           {this.slides.map((_, i) => {
             const isActive = i === currentSlideIndex;
@@ -186,7 +167,6 @@ Dive into a journey designed uniquely for you.`,
           })}
         </View>
 
-        {/* زر Get Started يظهر فقط في الشريحة الأخيرة */}
         {currentSlideIndex === this.slides.length - 1 && (
           <TouchableOpacity style={styles.button} onPress={this.handleGetStarted}>
             <Text style={styles.buttonText}>Get Started</Text>
@@ -204,10 +184,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  // زر Skip
   skipButton: {
     position: 'absolute',
-    top: 50, // اضبطها حسب شكل الـ StatusBar أو الـ Notch
+    top: 50,
     right: 20,
     zIndex: 10,
   },
@@ -216,13 +195,11 @@ const styles = StyleSheet.create({
     color: '#666',
     fontFamily: 'Roboto',
   },
-  // كل شريحة تملأ الشاشة
   slide: {
     width: width,
     height: height,
     backgroundColor: '#fff',
   },
-  // الصورة العلوية
   imageContainer: {
     width: '100%',
     height: height * 0.55,
@@ -235,7 +212,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // منطقة النص
   textContent: {
     flex: 1,
     marginTop: 20,
@@ -250,23 +226,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
   highlight: {
-    color: '#FF6E2C', // برتقالي
+    color: '#FF6E2C',
     fontFamily: 'Roboto',
   },
-  // حاوية القوس
   arcContainer: {
     position: 'absolute',
-    left: '25%', // قد تحتاج لضبطه حسب المكان المناسب
-    top: 25,     // قد تحتاج لضبطه حسب ارتفاع الكلمة
+    left: '25%',
+    top: 25,
   },
-  // تنسيق SVG
   arcStyle: {
-    // لإضافة ظل خفيف (قد لا يعمل على كل المنصات بنفس الشكل):
     shadowColor: '#FF6E2C',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
-    elevation: 3, // لأندرويد
+    elevation: 3,
   },
   subtitle: {
     fontSize: 16,
@@ -283,10 +256,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Roboto',
   },
-  // المؤشرات (Dashes) تم رفعها لتكون تحت النص المكتوب
   dashesContainer: {
     position: 'absolute',
-    bottom: height * 0.18, // تحكم في المسافة من الأسفل
+    bottom: height * 0.18,
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'center',
@@ -303,7 +275,6 @@ const styles = StyleSheet.create({
     width: 30,
     backgroundColor: '#00ADEF',
   },
-  // زر Get Started
   button: {
     position: 'absolute',
     bottom: 40,

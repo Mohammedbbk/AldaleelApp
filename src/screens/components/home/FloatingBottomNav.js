@@ -1,8 +1,7 @@
-// components/FloatingBottomNav.js
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient"; // Import if using gradient for center button
+import { LinearGradient } from "expo-linear-gradient";
 import {
   HomeIcon,
   ListChecksIcon,
@@ -11,27 +10,21 @@ import {
   UserIcon,
 } from "lucide-react-native";
 
-// Define the component, accepting activeRouteName as a prop
 export default function FloatingBottomNav({ activeRouteName }) {
   const navigation = useNavigation();
 
-  // Helper function to determine if a route is active
   const isActive = (routeName) => activeRouteName === routeName;
 
-  // Define colors for active/inactive states
   const activeColor = "#24baec";
-  const inactiveColor = "#1b1f26b8"; // A slightly transparent dark color
-  const activeBgColor = "#e0f4ff"; // Light blue background for active icon
+  const inactiveColor = "#1b1f26b8";
+  const activeBgColor = "#e0f4ff";
 
   return (
-    // Absolute positioning to float above content
     <View className="absolute bottom-6 left-6 right-6 z-50">
-      {/* Container with shadow and rounded corners */}
       <View className="bg-b rounded-3xl shadow-xl py-4 px-6">
         <View className="flex-row justify-between items-center">
-          {/* Home Tab */}
           <TouchableOpacity
-            className="items-center flex-1" // Use flex-1 for even spacing
+            className="items-center flex-1"
             onPress={() => navigation.navigate("Home")}
           >
             <View
@@ -56,7 +49,6 @@ export default function FloatingBottomNav({ activeRouteName }) {
             </Text>
           </TouchableOpacity>
 
-          {/* Trips Tab */}
           <TouchableOpacity
             className="items-center flex-1"
             onPress={() => navigation.navigate("Trips")}
@@ -83,19 +75,15 @@ export default function FloatingBottomNav({ activeRouteName }) {
             </Text>
           </TouchableOpacity>
 
-          {/* Center Search Button */}
-          {/* Added flex-1 to maintain spacing, adjust alignment if needed */}
           <View className="items-center flex-1">
             <TouchableOpacity
-              // Raised position using negative margin
               className="-mt-8 bg-gradient-to-r from-[#24baec] to-[#1a8bec] w-16 h-16 rounded-full justify-center items-center shadow-lg"
-              onPress={() => navigation.navigate("Search")} // Or specific search screen
+              onPress={() => navigation.navigate("Search")}
             >
               <SearchIcon size={28} color="#fff" strokeWidth={2} />
             </TouchableOpacity>
           </View>
 
-          {/* AI Chat Tab */}
           <TouchableOpacity
             className="items-center flex-1"
             onPress={() => navigation.navigate("AssistantScreen")}
@@ -122,7 +110,6 @@ export default function FloatingBottomNav({ activeRouteName }) {
             </Text>
           </TouchableOpacity>
 
-          {/* Profile Tab */}
           <TouchableOpacity
             className="items-center flex-1"
             onPress={() => navigation.navigate("ProfileSetting")}

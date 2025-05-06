@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect, useContext } from "react";
 import {
+  SafeAreaView,
   View,
   Text,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   StatusBar,
@@ -11,24 +11,21 @@ import {
 } from "react-native";
 import { useTheme } from "../../../ThemeProvider";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next"; // Replace i18n import
+import { useTranslation } from "react-i18next";
 import { INTERESTS, TRIP_PACES } from "../../config/tripConstants";
 
 export function TripStyleScreen({ navigation, route }) {
-  // Initialize hooks first
   const { t } = useTranslation();
   const { isDarkMode, colors } = useTheme();
   const colorScheme = useColorScheme();
   const stepOneData = route.params?.stepOneData || {};
 
-  // State declarations
   const [selectedInterests, setSelectedInterests] = useState([]);
   const [selectedTripPace, setSelectedTripPace] = useState("");
   const [validationError, setValidationError] = useState("");
 
-  // Functions after hooks and state
   const toggleInterest = (interest) => {
-    setValidationError(""); // Clear any validation error
+    setValidationError("");
     setSelectedInterests((prevInterests) => {
       if (prevInterests.includes(interest)) {
         return prevInterests.filter((i) => i !== interest);
@@ -53,8 +50,6 @@ export function TripStyleScreen({ navigation, route }) {
     navigation.navigate("TripDetailsScreen", { fullTripData: mergedData });
   };
 
-  // Rest of the component logic remains the same...
-
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <StatusBar
@@ -62,7 +57,6 @@ export function TripStyleScreen({ navigation, route }) {
         backgroundColor={isDarkMode ? "#1f2937" : "#fff"}
       />
 
-      {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
         <TouchableOpacity
           className="w-[50] h-[50] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
@@ -87,7 +81,6 @@ export function TripStyleScreen({ navigation, route }) {
       </View>
 
       <ScrollView className="px-5 pb-24">
-        {/* Interests Section */}
         <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-5">
           {t("tripStyle.interests.title")}
         </Text>
@@ -138,7 +131,6 @@ export function TripStyleScreen({ navigation, route }) {
           })}
         </View>
 
-        {/* Trip Pace Section */}
         <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-10">
           {t("tripStyle.pace.title")}
         </Text>
@@ -176,7 +168,6 @@ export function TripStyleScreen({ navigation, route }) {
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation */}
       <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pt-3 pb-5 border-t border-gray-100">
         <View className="flex-row justify-between items-center h-[50px]">
           <TouchableOpacity

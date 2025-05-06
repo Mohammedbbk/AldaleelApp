@@ -1,4 +1,3 @@
-// src/screens/LoginScreen.js
 import React from "react";
 import {
   View,
@@ -14,20 +13,14 @@ import {
   Platform,
   Alert,
 } from "react-native";
-
-// أيقونات Ionicons
 import Ionicons from "react-native-vector-icons/Ionicons";
-
-// استيراد AuthContext من ملف المزوّد (AuthProvider.js مثلاً)
 import { AuthContext } from "../../../AuthProvider";
 
 const { width } = Dimensions.get("window");
 
-// ثابت خاص بعنوان الـAPI (غيّره حسب مشروعك)
 const LOGIN_API_URL = "http://10.0.2.2:5000/api/auth/login";
 
 class LoginScreen extends React.Component {
-  // للسماح باستخدام this.context
   static contextType = AuthContext;
 
   constructor(props) {
@@ -36,17 +29,15 @@ class LoginScreen extends React.Component {
       email: "",
       password: "",
       isPasswordVisible: false,
-      loading: false, // حالة التحميل
-      errorMessage: "", // عرض رسالة خطأ إن وجدت
+      loading: false,
+      errorMessage: "",
     };
   }
 
-  // زر الرجوع: ينقل المستخدم إلى شاشة Onboard
   handleBack = () => {
     this.props.navigation.replace("Onboard");
   };
 
-  // التحقق من صحة الحقول قبل إرسال الطلب
   validateInputs = () => {
     const { email, password } = this.state;
     const emailRegex = /\S+@\S+\.\S+/;
@@ -54,7 +45,6 @@ class LoginScreen extends React.Component {
       this.setState({ errorMessage: "Please enter a valid email address." });
       return false;
     }
-    // فحص طول كلمة المرور (8 حروف على الأقل)
     if (password.length < 8) {
       this.setState({
         errorMessage: "Password must be at least 8 characters.",
@@ -64,18 +54,15 @@ class LoginScreen extends React.Component {
     return true;
   };
 
-  // عند الضغط على زر Sign In
   handleSignIn = async () => {
-    this.setState({ errorMessage: "" }); // مسح الأخطاء السابقة
+    this.setState({ errorMessage: "" });
 
-    // التحقق من صحة المدخلات
     if (!this.validateInputs()) return;
 
     try {
-      this.setState({ loading: true }); // إظهار مؤشر التحميل
+      this.setState({ loading: true });
       const { email, password } = this.state;
 
-      // الاتصال بالـAPI الوهمي
       const response = await fetch(LOGIN_API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -83,22 +70,18 @@ class LoginScreen extends React.Component {
       });
       const data = await response.json();
 
-      // التحقق من حالة الرد
       if (!response.ok) {
         const message = data?.message || "Login failed. Please try again.";
         throw new Error(message);
       }
 
-      // نجاح تسجيل الدخول
-      const token = data.token; // تأكد من أن "token" هو الحقل الذي يعيده الـAPI
-      // تحديث التوكن في AuthContext (سيقوم الـAuthProvider بتخزينه)
+      const token = data.token;
       this.context.setUserToken(token);
 
       Alert.alert("Success", "Logged in successfully!", [
         {
           text: "OK",
           onPress: () => {
-            // مثال: الانتقال لصفحة رئيسية أو شاشة Verification
             this.props.navigation.replace("Home");
           },
         },
@@ -110,40 +93,32 @@ class LoginScreen extends React.Component {
     }
   };
 
-  // إظهار/إخفاء كلمة المرور
   togglePasswordVisibility = () => {
     this.setState((prevState) => ({
       isPasswordVisible: !prevState.isPasswordVisible,
     }));
   };
 
-  // شاشة ForgotPassword
   handleForgetPassword = () => {
     this.props.navigation.navigate("ForgotPassword");
   };
 
-  // الانتقال لشاشة Sign Up
   handleSignUp = () => {
     this.props.navigation.navigate("SignUp");
   };
 
-  // تسجيل الدخول عبر Apple (تنبيه شكلي حاليًا)
   handleSignInApple = () => {
     Alert.alert("Apple Sign In", "Integration not implemented yet!");
   };
 
-  // تسجيل الدخول عبر Google (تنبيه شكلي حاليًا)
   handleSignInGoogle = () => {
     Alert.alert("Google Sign In", "Integration not implemented yet!");
   };
 
-  // Handle skipping the login process
   handleSkipSignIn = async () => {
     try {
       this.setState({ loading: true });
-      // Use the AuthContext to set a guest token
       this.context.setUserToken("guest-token");
-      // Navigation will be handled automatically by AuthProvider
     } catch (error) {
       console.warn("Skip login error:", error);
       Alert.alert(
@@ -169,7 +144,6 @@ class LoginScreen extends React.Component {
             contentContainerStyle={styles.scrollContainer}
             bounces={false}
           >
-            {/* زر الرجوع ضمن دائرة شفافة */}
             <TouchableOpacity
               style={styles.backButton}
               onPress={this.handleBack}
@@ -179,18 +153,15 @@ class LoginScreen extends React.Component {
               </View>
             </TouchableOpacity>
 
-            {/* العنوان والنص الفرعي */}
             <Text style={styles.title}>Sign in now</Text>
             <Text style={styles.subTitle}>
               Please sign in to continue our app
             </Text>
 
-            {/* رسالة الخطأ (إن وجدت) */}
             {errorMessage !== "" && (
               <Text style={styles.errorText}>{errorMessage}</Text>
             )}
 
-            {/* حقل البريد */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -203,7 +174,6 @@ class LoginScreen extends React.Component {
               />
             </View>
 
-            {/* حقل كلمة المرور */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -213,7 +183,6 @@ class LoginScreen extends React.Component {
                 value={password}
                 onChangeText={(val) => this.setState({ password: val })}
               />
-              {/* زر العين لإظهار/إخفاء كلمة المرور */}
               <TouchableOpacity
                 style={styles.eyeButton}
                 onPress={this.togglePasswordVisibility}
@@ -226,7 +195,6 @@ class LoginScreen extends React.Component {
               </TouchableOpacity>
             </View>
 
-            {/* رابط نسيان كلمة المرور */}
             <TouchableOpacity
               style={styles.forgetPasswordButton}
               onPress={this.handleForgetPassword}
@@ -234,11 +202,10 @@ class LoginScreen extends React.Component {
               <Text style={styles.forgetPasswordText}>Forget Password?</Text>
             </TouchableOpacity>
 
-            {/* زر تسجيل الدخول */}
             <TouchableOpacity
               style={styles.signInButton}
               onPress={this.handleSignIn}
-              disabled={loading} // تعطيل الزر أثناء التحميل
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
@@ -247,7 +214,6 @@ class LoginScreen extends React.Component {
               )}
             </TouchableOpacity>
 
-            {/* رابط التسجيل */}
             <View style={styles.signUpContainer}>
               <Text style={styles.signUpText}>Don't have an account? </Text>
               <TouchableOpacity onPress={this.handleSignUp}>
@@ -255,10 +221,8 @@ class LoginScreen extends React.Component {
               </TouchableOpacity>
             </View>
 
-            {/* نص الفصل */}
             <Text style={styles.orConnectText}>Or connect</Text>
 
-            {/* زر Apple */}
             <TouchableOpacity
               style={styles.appleButton}
               onPress={this.handleSignInApple}
@@ -272,7 +236,6 @@ class LoginScreen extends React.Component {
               <Text style={styles.appleButtonText}>Sign in with Apple</Text>
             </TouchableOpacity>
 
-            {/* زر Google */}
             <TouchableOpacity
               style={styles.googleButton}
               onPress={this.handleSignInGoogle}
@@ -286,7 +249,6 @@ class LoginScreen extends React.Component {
               <Text style={styles.googleButtonText}>Sign in with Google</Text>
             </TouchableOpacity>
 
-            {/* Add Skip button at the top */}
             <TouchableOpacity
               style={styles.skipButton}
               onPress={this.handleSkipSignIn}
@@ -300,7 +262,6 @@ class LoginScreen extends React.Component {
   }
 }
 
-// Add these new styles to the existing StyleSheet
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

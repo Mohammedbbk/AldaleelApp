@@ -39,7 +39,6 @@ export default function VerificationScreen({ navigation, route }) {
     setOtp(newOtp);
     setError("");
 
-    // Auto-advance to next input
     if (text && index < 5) {
       inputRefs.current[index + 1].focus();
     }
@@ -56,7 +55,6 @@ export default function VerificationScreen({ navigation, route }) {
 
     setLoading(true);
     try {
-      // Implement your resend code logic here
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setTimeLeft(60);
       setIsResendActive(false);
@@ -79,7 +77,6 @@ export default function VerificationScreen({ navigation, route }) {
 
     setLoading(true);
     try {
-      // Implement your verification logic here
       await new Promise((resolve) => setTimeout(resolve, 1500));
       navigation.replace("Home");
     } catch (err) {
@@ -96,7 +93,6 @@ export default function VerificationScreen({ navigation, route }) {
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
-      {/* Header */}
       <View className="px-6 py-4 flex-row items-center border-b border-gray-100">
         <TouchableOpacity className="p-2" onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#000" />
@@ -109,7 +105,6 @@ export default function VerificationScreen({ navigation, route }) {
       </View>
 
       <View className="px-6 pt-8">
-        {/* Title and Description */}
         <Text className="text-2xl font-bold text-[#1b1e28] mb-3">
           Enter verification code
         </Text>
@@ -118,7 +113,6 @@ export default function VerificationScreen({ navigation, route }) {
           <Text className="font-medium text-[#1b1e28]"> {contact}</Text>
         </Text>
 
-        {/* OTP Input Fields */}
         <View className="flex-row justify-between mb-8">
           {otp.map((digit, index) => (
             <TextInput
@@ -136,12 +130,10 @@ export default function VerificationScreen({ navigation, route }) {
           ))}
         </View>
 
-        {/* Error Message */}
         {error ? (
           <Text className="text-red-500 text-center mb-4">{error}</Text>
         ) : null}
 
-        {/* Resend Timer */}
         <View className="flex-row justify-center items-center mb-8">
           <Text className="text-gray-500">Didn't receive the code?</Text>
           <TouchableOpacity
@@ -158,7 +150,6 @@ export default function VerificationScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
-        {/* Verify Button */}
         <TouchableOpacity
           className={`py-4 rounded-xl items-center
             ${loading ? "bg-gray-100" : "bg-[#24baec]"}`}

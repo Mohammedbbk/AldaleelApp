@@ -10,23 +10,22 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./global.css";
 
-// Import screens - Onboarding
 import SplashScreen from "./src/screens/onboarding/SplashScreen";
 import OnboardScreen from "./src/screens/onboarding/OnboardScreen";
 
-// Import screens - Authentication
+
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import SignUpScreen from "./src/screens/auth/SignUpScreen";
 import VerificationScreen from "./src/screens/auth/VerificationScreen";
 import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
 
-// Import screens - Main app
+
 import HomeScreen from "./src/screens/home/HomeScreen";
 import InformationScreen from "./src/screens/home/InformationScreen";
 import InfoBaseScreen from "./src/screens/home/InfoBaseScreen";
 import AssistantScreen from "./src/screens/assistant/AssistantScreen";
 
-// Import screens - Trip related
+
 import UserPlanScreen from "./src/screens/trips/UserPlanScreen";
 import CreateTripScreen from "./src/screens/trips/CreateTripScreen";
 import TripStyleScreen from "./src/screens/trips/TripStyleScreen";
@@ -39,13 +38,13 @@ import NotificationSettings from "./src/screens/profile/NotificationSettings";
 import TravelPreferences from "./src/screens/profile/TravelPreferences";
 import ThemeSettings from "./src/screens/profile/ThemeSettings";
 
-// Import the providers
+
 import { AuthProvider, AuthContext } from "./AuthProvider";
 import { ThemeProvider } from "./ThemeProvider";
 
 const Stack = createStackNavigator();
 
-// Auth Stack for unauthenticated users
+
 function AuthStack() {
   return (
     <Stack.Navigator
@@ -62,7 +61,7 @@ function AuthStack() {
   );
 }
 
-// App Stack for authenticated users
+
 function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -84,7 +83,7 @@ function AppStack() {
       <Stack.Screen name="TripStyleScreen" component={TripStyleScreen} />
       <Stack.Screen name="TripDetailsScreen" component={TripDetailsScreen} />
 
-      {/* Information screens with content keys */}
+
       <Stack.Screen
         name="VisaScreen"
         component={InfoBaseScreen}
@@ -119,7 +118,7 @@ function AppStack() {
   );
 }
 
-// Root navigator that conditionally renders Auth or App stack based on authentication state
+
 function RootNavigator() {
   return (
     <AuthContext.Consumer>
@@ -140,14 +139,14 @@ function RootNavigator() {
           );
         }
 
-        // Use the isGuest function to check authentication status
+
         return userToken ? <AppStack /> : <AuthStack />;
       }}
     </AuthContext.Consumer>
   );
 }
 
-// Add error boundary for navigation
+
 function NavigationErrorBoundary({ children }) {
   return (
     <View style={{ flex: 1 }}>
@@ -162,7 +161,7 @@ function NavigationErrorBoundary({ children }) {
           </View>
         }
         onStateChange={(state) => {
-          // Optional: Add navigation state logging for debugging
+
           console.log("New navigation state:", state);
         }}
       >
@@ -172,7 +171,7 @@ function NavigationErrorBoundary({ children }) {
   );
 }
 
-// Create a QueryClient instance
+
 const queryClient = new QueryClient();
 
 function App() {

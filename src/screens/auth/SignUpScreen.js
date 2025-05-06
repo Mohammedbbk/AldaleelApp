@@ -1,4 +1,3 @@
-// src/screens/SignUpScreen.js
 import React from "react";
 import {
   View,
@@ -15,16 +14,13 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-// استيراد الـ AuthContext لاستخدامه في إدارة حالة التوكن
 import { AuthContext } from "../../../AuthProvider";
 
 const { width } = Dimensions.get("window");
 
-// عنوان API وهمي للتسجيل؛ غيّره حسب مشروعك
-const SIGNUP_API_URL = "http://10.0.2.2:5000/api/auth/signup"; // for android emulator
+const SIGNUP_API_URL = "http://10.0.2.2:5000/api/auth/signup";
 
 class SignUpScreen extends React.Component {
-  // تعيين الـ context ليكون متاحاً عبر this.context
   static contextType = AuthContext;
 
   constructor(props) {
@@ -34,17 +30,15 @@ class SignUpScreen extends React.Component {
       email: "",
       password: "",
       isPasswordVisible: false,
-      loading: false, // مؤشر التحميل
-      errorMessage: "", // رسالة الخطأ
+      loading: false,
+      errorMessage: "",
     };
   }
 
-  // زر الرجوع: ينقل المستخدم لشاشة Onboard (أو غيرها)
   handleBack = () => {
     this.props.navigation.replace("Onboard");
   };
 
-  // التحقق من صحة المدخلات (Validation)
   validateInputs = () => {
     const { name, email, password } = this.state;
     if (name.trim().length < 2) {
@@ -65,16 +59,13 @@ class SignUpScreen extends React.Component {
     return true;
   };
 
-  // عند الضغط على Sign Up
   handleSignUp = async () => {
-    // إزالة أي خطأ سابق
     this.setState({ errorMessage: "" });
 
-    // التحقق من صحة المدخلات
     if (!this.validateInputs()) return;
 
     try {
-      this.setState({ loading: true }); // بدأ التحميل
+      this.setState({ loading: true });
 
       const { name, email, password } = this.state;
       const response = await fetch(SIGNUP_API_URL, {
@@ -89,9 +80,7 @@ class SignUpScreen extends React.Component {
         throw new Error(message);
       }
 
-      // نجاح إنشاء الحساب: استخرج التوكن
       const token = data.token;
-      // استخدام الدالة من الـ AuthContext لتخزين التوكن
       this.context.setUserToken(token);
 
       Alert.alert("Success", "Account created successfully!", [
@@ -109,35 +98,28 @@ class SignUpScreen extends React.Component {
     }
   };
 
-  // إظهار/إخفاء كلمة المرور
   togglePasswordVisibility = () => {
     this.setState((prevState) => ({
       isPasswordVisible: !prevState.isPasswordVisible,
     }));
   };
 
-  // الانتقال إلى شاشة تسجيل الدخول
   handleSignIn = () => {
     this.props.navigation.replace("Login");
   };
 
-  // Sign Up مع Apple (حاليًا تنبيه شكلي)
   handleSignUpApple = () => {
     Alert.alert("Apple Sign Up", "Integration not implemented yet!");
   };
 
-  // Sign Up مع Google (حاليًا تنبيه شكلي)
   handleSignUpGoogle = () => {
     Alertalert("Google Sign Up", "Integration not implemented yet!");
   };
 
-  // Add new handler for skip button
   handleSkipSignUp = async () => {
     try {
       this.setState({ loading: true });
-      // Use the AuthContext to set a guest token
       this.context.setUserToken("guest-token");
-      // Navigation will be handled automatically by AuthProvider
     } catch (error) {
       console.warn("Skip signup error:", error);
       Alert.alert(
@@ -155,7 +137,6 @@ class SignUpScreen extends React.Component {
 
     return (
       <SafeAreaView style={styles.safeArea}>
-        {/* Add Skip button at the top */}
         <TouchableOpacity
           style={styles.skipButton}
           onPress={this.handleSkipSignUp}
@@ -171,7 +152,6 @@ class SignUpScreen extends React.Component {
             contentContainerStyle={styles.scrollContainer}
             bounces={false}
           >
-            {/* زر الرجوع */}
             <TouchableOpacity
               style={styles.backButton}
               onPress={this.handleBack}
@@ -181,18 +161,15 @@ class SignUpScreen extends React.Component {
               </View>
             </TouchableOpacity>
 
-            {/* العنوان والنص الفرعي */}
             <Text style={styles.title}>Sign up now</Text>
             <Text style={styles.subTitle}>
               Please fill the details and create account
             </Text>
 
-            {/* عرض رسالة الخطأ إن وجدت */}
             {errorMessage !== "" && (
               <Text style={styles.errorText}>{errorMessage}</Text>
             )}
 
-            {/* حقل الاسم */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -203,7 +180,6 @@ class SignUpScreen extends React.Component {
               />
             </View>
 
-            {/* حقل البريد */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -216,7 +192,6 @@ class SignUpScreen extends React.Component {
               />
             </View>
 
-            {/* حقل كلمة المرور + زر العين */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -238,12 +213,10 @@ class SignUpScreen extends React.Component {
               </TouchableOpacity>
             </View>
 
-            {/* ملاحظة حول كلمة المرور */}
             <Text style={styles.passwordNote}>
               Password must be 8 characters
             </Text>
 
-            {/* زر Sign Up */}
             <TouchableOpacity
               style={styles.signUpButton}
               onPress={this.handleSignUp}
@@ -256,7 +229,6 @@ class SignUpScreen extends React.Component {
               )}
             </TouchableOpacity>
 
-            {/* رابط تسجيل الدخول */}
             <View style={styles.signInContainer}>
               <Text style={styles.signInText}>Already have an account? </Text>
               <TouchableOpacity onPress={this.handleSignIn}>
@@ -264,10 +236,8 @@ class SignUpScreen extends React.Component {
               </TouchableOpacity>
             </View>
 
-            {/* نص الفصل */}
             <Text style={styles.orConnectText}>Or connect</Text>
 
-            {/* زر Apple */}
             <TouchableOpacity
               style={styles.appleButton}
               onPress={this.handleSignUpApple}
@@ -281,7 +251,6 @@ class SignUpScreen extends React.Component {
               <Text style={styles.appleButtonText}>Sign up with Apple</Text>
             </TouchableOpacity>
 
-            {/* زر Google */}
             <TouchableOpacity
               style={styles.googleButton}
               onPress={this.handleSignUpGoogle}
@@ -436,7 +405,6 @@ const styles = StyleSheet.create({
     color: "#333",
     fontWeight: "500",
   },
-  // Add these new styles
   skipButton: {
     position: "absolute",
     top: 20,

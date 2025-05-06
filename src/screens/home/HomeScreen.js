@@ -40,7 +40,6 @@ import { useThemeAwareStyles } from "../../components/ThemeAwareComponent";
 const { width } = Dimensions.get("window");
 const cardWidth = width * 0.75;
 
-// Move these to inside the component as they'll be loaded via state
 const tripData = [
   {
     id: 1,
@@ -109,7 +108,6 @@ export default function HomeScreen() {
   const { isDarkMode, colors } = useTheme();
   const { styles, colors: themeColors } = useThemeAwareStyles();
 
-  // State variables
   const [userName, setUserName] = useState(null);
   const [recommendedTrips, setRecommendedTrips] = useState([]);
   const [popularDestinations, setPopularDestinations] = useState([]);
@@ -117,11 +115,9 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Single useEffect for data fetching
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch user data
         const token = await AsyncStorage.getItem("userToken");
         if (!token) {
           console.warn("No token found!");
@@ -152,7 +148,6 @@ export default function HomeScreen() {
     fetchData();
   }, []);
 
-  // Loading state
   if (isLoading) {
     return (
       <SafeAreaView
@@ -177,7 +172,6 @@ export default function HomeScreen() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <SafeAreaView
@@ -199,7 +193,6 @@ export default function HomeScreen() {
           onPress={() => {
             setIsLoading(true);
             setError(null);
-            // Retry loading data
             const retryFetch = async () => {
               try {
                 const token = await AsyncStorage.getItem("userToken");
@@ -248,7 +241,6 @@ export default function HomeScreen() {
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
-      {/* Header Section */}
       <View className="px-6 pt-2 pb-2">
         <View className="flex-row justify-between items-center">
           <TouchableOpacity
@@ -320,7 +312,6 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Search */}
         <View className="px-6 mb-8">
           <LinearGradient
             colors={
@@ -382,7 +373,6 @@ export default function HomeScreen() {
           </LinearGradient>
         </View>
 
-        {/* Travel Categories */}
         <View className="px-6 mb-8">
           <Text
             className={`text-xl font-bold mb-4 ${
@@ -447,7 +437,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Recommended Trips Section */}
         <View className="mb-8">
           <View className="flex-row justify-between items-center px-6 mb-4">
             <Text
@@ -596,7 +585,6 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Popular Destinations */}
         <View className="px-6 mb-8">
           <View className="flex-row justify-between items-center mb-4">
             <Text
@@ -663,7 +651,6 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Recent Searches Section */}
         <View className="px-6 mb-24">
           <View className="flex-row justify-between items-center mb-4">
             <Text

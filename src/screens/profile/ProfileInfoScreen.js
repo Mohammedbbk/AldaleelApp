@@ -1,4 +1,3 @@
-// screens/ProfileInfoScreen.js
 import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
@@ -23,7 +22,6 @@ export default function ProfileInfoScreen() {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // adjust to your emulator/device
   const BASE_URL = "http://10.0.2.2:5000";
 
   useEffect(() => {
@@ -68,7 +66,6 @@ export default function ProfileInfoScreen() {
     );
   }
 
-  // Format joined date
   const joinedDate = new Date(userData.joinedAt);
   const joinedStr = joinedDate.toLocaleString("default", {
     month: "long",
@@ -86,7 +83,6 @@ export default function ProfileInfoScreen() {
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
-      {/* Top Bar */}
       <View
         style={{
           flexDirection: "row",
@@ -108,7 +104,6 @@ export default function ProfileInfoScreen() {
         >
           Profile Info
         </Text>
-        {/* empty placeholder to balance layout */}
         <View style={{ width: 24 }} />
       </View>
 
@@ -120,7 +115,6 @@ export default function ProfileInfoScreen() {
               : "bg-white border-gray-200"
           }`}
         >
-          {/* Avatar + Name + Joined */}
           <View
             style={styles.header}
             className={`${
@@ -155,7 +149,6 @@ export default function ProfileInfoScreen() {
             </View>
           </View>
 
-          {/* Basic Information */}
           <View
             style={styles.section}
             className={`${
@@ -182,7 +175,6 @@ export default function ProfileInfoScreen() {
             </View>
           </View>
 
-          {/* Travel Statistics */}
           <View
             style={styles.section}
             className={`${

@@ -7,12 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  ActivityIndicator, // Added ActivityIndicator import
+  ActivityIndicator,
 } from "react-native";
 import { useTheme } from "../../../ThemeProvider";
 import { useNavigation, useRoute } from "@react-navigation/native";
 
-// Assuming these helpers are correctly defined in tripService.js
 import {
   WorkspaceVisaInfo,
   WorkspaceCultureInsights,
@@ -26,7 +25,6 @@ const InfoBaseScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode, colors } = useTheme();
   const route = useRoute();
-  // Default to empty object if route.params is undefined
   const {
     contentKey,
     nationality,
@@ -34,7 +32,6 @@ const InfoBaseScreen = () => {
     tripData = null,
   } = route.params || {};
 
-  // Debug log parameters
   console.log("InfoBaseScreen params:", {
     contentKey,
     nationality,
@@ -42,28 +39,22 @@ const InfoBaseScreen = () => {
     hasTripData: !!tripData,
   });
 
-  // State for dynamic content fetching
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [dynamicContent, setDynamicContent] = React.useState(null);
 
-  // Add cache state at the top level
   const [cachedResponses, setCachedResponses] = React.useState({});
 
-  // Attempt to load static fallback info (title/image) gracefully
   const staticInfo = (() => {
     try {
-      // Make sure the path to AiResponse is correct relative to this file
       return require("../../config/AiResponse").AI_RESPONSE.Information[
         contentKey
       ];
     } catch {
-      // Return null or a default object if AiResponse or the key doesn't exist
       return null;
     }
   })();
 
-  // Effect to fetch dynamic content for specific keys
   React.useEffect(() => {
     let cancelled = false;
 
@@ -72,7 +63,6 @@ const InfoBaseScreen = () => {
       setError("");
       setDynamicContent(null);
 
-      // --- Step 1: Prioritize pre-fetched data ---
       let prefetchedData = null;
       if (tripData) {
         switch (contentKey) {
@@ -81,7 +71,7 @@ const InfoBaseScreen = () => {
             break;
           case "local":
             prefetchedData = tripData.cultureInsights;
-            break; // Use cultureInsights
+            break;
           case "currency":
             prefetchedData = tripData.currencyInfo;
             break;
@@ -101,10 +91,9 @@ const InfoBaseScreen = () => {
         console.log(`[InfoBaseScreen] Using pre-fetched ${contentKey} data.`);
         setDynamicContent(prefetchedData);
         setIsLoading(false);
-        return; // Data found, no need to fetch
+        return;
       }
 
-      // --- Step 2: Fetch data if not pre-fetched or unavailable ---
       console.log(
         `[InfoBaseScreen] Pre-fetched ${contentKey} data not found or empty. Attempting API fetch.`
       );
@@ -129,7 +118,6 @@ const InfoBaseScreen = () => {
         console.log(
           `[InfoBaseScreen] Fetching ${contentKey} for ${nationality} -> ${destination}`
         );
-        // Call the appropriate service function
         switch (contentKey) {
           case "visa":
             fetchedContent = await WorkspaceVisaInfo(nationality, destination);
@@ -159,7 +147,6 @@ const InfoBaseScreen = () => {
       } catch (e) {
         console.error(`[InfoBaseScreen] Error fetching ${contentKey}:`, e);
         if (!cancelled) {
-          // Check if we have *any* fallback data from tripData, even if API failed
           if (prefetchedData) {
             console.warn(
               `[InfoBaseScreen] API fetch failed for ${contentKey}, but using prefetched data as fallback.`
@@ -169,7 +156,7 @@ const InfoBaseScreen = () => {
               `Could not refresh ${contentKey} data, showing previously generated info. Error: ${
                 e.message || "Failed to fetch"
               }`
-            ); // Non-blocking error
+            );
           } else {
             setError(e.message || `Failed to fetch ${contentKey} information.`);
           }
@@ -186,16 +173,10 @@ const InfoBaseScreen = () => {
     };
   }, [contentKey, nationality, destination, tripData]);
 
-  // Handler to close the screen
   const handleClose = () => {
-    // Consider navigation.goBack() if it's always modal-like,
-    // or navigate specifically if needed.
     navigation.goBack();
   };
 
-  // --- RENDER LOGIC ---
-
-  // Determine Title: Use static title if available, otherwise generate default
   const screenTitle =
     staticInfo?.title ||
     (contentKey === "visa"
@@ -204,14 +185,11 @@ const InfoBaseScreen = () => {
       ? "Local Customs"
       : "Information");
 
-  // Determine Image: Use static image if available
   const screenImage = staticInfo?.image;
 
-  // Update the content rendering section
   const renderContent = () => {
     if (!dynamicContent) return null;
 
-    // If it's a string, render directly
     if (typeof dynamicContent === "string") {
       return (
         <Text className="text-base leading-relaxed text-gray-700 dark:text-gray-300">
@@ -220,7 +198,6 @@ const InfoBaseScreen = () => {
       );
     }
 
-    // Handle structured content based on contentKey
     switch (contentKey) {
       case "currency":
         return (
@@ -421,7 +398,6 @@ const InfoBaseScreen = () => {
           </View>
         );
 
-      // For visa and local customs, use the existing structured content rendering
       default:
         return (
           <View>
@@ -471,32 +447,25 @@ const InfoBaseScreen = () => {
   };
 
   return (
-    // Use SafeAreaView for notches/status bars
     <SafeAreaView className="flex-1 bg-white pt-10">
-      {/* Status Bar */}
       <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Add padding for Close button */}
-        {/* Title */}
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
             {screenTitle}
           </Text>
         </View>
-        {/* Image (Optional) */}
         {screenImage && (
           <Image
-            source={screenImage} // Use require() for local images
-            className="w-full h-[200px] my-[20px]" // Adjusted margin
+            source={screenImage}
+            className="w-full h-[200px] my-[20px]"
             resizeMode="contain"
           />
         )}
-        {/* Content Area */}
         <View className="p-5">
-          {/* Logic for Dynamic Content */}
           {!error && (
             <>
               {isLoading ? (
@@ -516,7 +485,6 @@ const InfoBaseScreen = () => {
             </>
           )}
 
-          {/* Display common error message */}
           {error && (
             <View className="items-center justify-center py-10 px-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
               <Text className="text-base text-red-600 dark:text-red-400 text-center">
@@ -527,10 +495,9 @@ const InfoBaseScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Close Button (Positioned) */}
       <TouchableOpacity
-        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0 shadow-md" // Added shadow
-        activeOpacity={0.8} // Slightly less opacity change
+        className="bg-[#24BAEC] mx-5 p-[15px] rounded-lg absolute bottom-[30px] left-0 right-0 shadow-md"
+        activeOpacity={0.8}
         onPress={handleClose}
       >
         <Text className="text-white text-center text-base font-semibold">

@@ -7,15 +7,14 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  StyleSheet, // Import StyleSheet
+  StyleSheet,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useTheme } from "../../../ThemeProvider"; // Import ThemeProvider
+import { useTheme } from "../../../ThemeProvider";
 
-// Pictures - Make sure these paths are correct
 import visa from "../../../assets/Information_pictures/Visa.png";
 import health from "../../../assets/Information_pictures/Health.png";
 import language from "../../../assets/Information_pictures/Language.png";
@@ -23,7 +22,6 @@ import local from "../../../assets/Information_pictures/Local.png";
 import transportation from "../../../assets/Information_pictures/Transportation.png";
 import currency from "../../../assets/Information_pictures/Currency.png";
 
-// Fallback image for loading errors
 import placeholderImage from "../../../assets/Information_pictures/Language.png";
 
 const titles = [
@@ -77,20 +75,16 @@ const InformationScreen = () => {
   const route = useRoute();
   const { isDarkMode } = useTheme();
 
-  // Get nationality and destination from route params
   const { nationality, destination } = route.params || {};
 
   const handleBack = () => {
-    // Go back to the previous screen
     navigation.goBack();
   };
 
   const handleBackToHome = () => {
-    // Navigate to the main Home screen
     navigation.navigate("Home");
   };
   const handleBackToTrips = () => {
-    // Navigate to the main Home screen
     navigation.navigate("Trips");
   };
 
@@ -128,7 +122,6 @@ const InformationScreen = () => {
       return;
     }
 
-    // Navigate to the appropriate screen with all necessary parameters
     try {
       navigation.navigate(item.screen, {
         contentKey: item.contentKey,
@@ -147,9 +140,7 @@ const InformationScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
-      {/* Header */}
       <View className="flex-row items-center justify-between px-5 pt-2.5 pb-3 bg-white dark:bg-gray-900">
-        {/* Header Left Buttons */}
         <View style={styles.headerButtons}>
           <TouchableOpacity
             className="w-[50px] h-[50px] rounded-full bg-gray-100 dark:bg-gray-800 justify-center items-center"
@@ -159,14 +150,12 @@ const InformationScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Header Title (Centered) */}
         <View className="flex-1 items-center">
           <Text className="text-2xl font-bold text-gray-900 dark:text-white">
             {t("information.title", "Information Hub")}
           </Text>
         </View>
 
-        {/* Header Right Buttons */}
         <View style={styles.headerButtons}>
           <TouchableOpacity
             onPress={handleShare}
@@ -179,9 +168,8 @@ const InformationScreen = () => {
         </View>
       </View>
 
-      {/* Body */}
       <ScrollView
-        className="px-2.5" // Reduced padding
+        className="px-2.5"
         showsVerticalScrollIndicator={false}
       >
         <View className="flex-col items-stretch pt-5 pb-48 gap-5">
@@ -225,18 +213,15 @@ const InformationScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation Bar */}
       <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pt-3 pb-5 border-t border-gray-100">
         <View className="flex-row justify-between gap-2 items-center h-[50px]">
-          {/* Home Button */}
           <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5" // Adjusted size/shadow
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5"
             onPress={handleBackToHome}
           >
             <FontAwesome name="home" size={26} color="#444" />
           </TouchableOpacity>
 
-          {/* Edit Button */}
           <TouchableOpacity
             className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5"
             onPress={handleEditPlan}
@@ -246,7 +231,6 @@ const InformationScreen = () => {
             <Ionicons name="pencil-outline" size={26} color="#444" />
           </TouchableOpacity>
 
-          {/* Back Button */}
           <TouchableOpacity
             className="flex-row flex-1 items-center justify-center rounded-full px-6 py-3 shadow shadow-black/10 bg-sky-500"
             onPress={handleBackToTrips}
@@ -261,16 +245,15 @@ const InformationScreen = () => {
   );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f5f5f5", // Use hex color
+    backgroundColor: "#f5f5f5",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // Adjust as needed
+    justifyContent: "space-between",
     paddingVertical: 10,
     paddingHorizontal: 15,
     backgroundColor: "white",
@@ -278,65 +261,61 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E5EA",
   },
   headerButton: {
-    padding: 5, // Add padding for easier tapping
+    padding: 5,
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "600", // Semibold is common for iOS titles
+    fontWeight: "600",
     color: "black",
     textAlign: "center",
-    flex: 1, // Allow title to take space but center
-    marginHorizontal: 10, // Add horizontal margin
+    flex: 1,
+    marginHorizontal: 10,
   },
   headerRightButtons: {
     flexDirection: "row",
-    // Add gap if needed: gap: 15,
   },
   scrollView: {
-    flex: 1, // Ensure ScrollView takes available space
+    flex: 1,
   },
   scrollViewContent: {
-    paddingHorizontal: 10, // Use consistent padding
-    paddingVertical: 20, // Add vertical padding
-    paddingBottom: 40, // Ensure space at the bottom
+    paddingHorizontal: 10,
+    paddingVertical: 20,
+    paddingBottom: 40,
   },
   itemContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 10, // Use consistent padding
+    padding: 10,
     backgroundColor: "white",
-    borderRadius: 12, // Slightly less rounding
-    marginBottom: 15, // Replaced gap with marginBottom
-    // iOS Shadow (optional)
+    borderRadius: 12,
+    marginBottom: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    // Android Shadow (optional)
     elevation: 3,
-    overflow: "hidden", // Keep overflow hidden
+    overflow: "hidden",
   },
   itemImage: {
-    height: 80, // Adjust size as needed
-    width: 80, // Adjust size as needed
-    borderRadius: 8, // Match container rounding
-    backgroundColor: "#E5E7EB", // Placeholder color
+    height: 80,
+    width: 80,
+    borderRadius: 8,
+    backgroundColor: "#E5E7EB",
   },
   itemTextContainer: {
     flex: 1,
-    alignItems: "center", // Center text horizontally
-    paddingHorizontal: 15, // Add padding around text
+    alignItems: "center",
+    paddingHorizontal: 15,
   },
   itemTitle: {
     fontSize: 18,
-    fontWeight: "400", // Normal weight
+    fontWeight: "400",
     textAlign: "center",
     color: "black",
   },
   itemChevron: {
-    // No specific style needed unless padding is desired
-    marginRight: 5, // Add slight margin
+    marginRight: 5,
   },
 });
 

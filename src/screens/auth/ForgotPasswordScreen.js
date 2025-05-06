@@ -1,4 +1,3 @@
-// src/screens/ForgotPasswordScreen.js
 import React from 'react';
 import {
   View,
@@ -25,28 +24,22 @@ class ForgotPasswordScreen extends React.Component {
     this.state = {
       email: '',
       loading: false,
-      // حالتا عرض المودال - نجاح و خطأ
       showSuccessModal: false,
       showErrorModal: false,
-      // لتخزين نصوص الخطأ حسب الحالة
       errorTitle: '',
       errorMessage: '',
     };
   }
 
-  // زر الرجوع
   handleBack = () => {
     this.props.navigation.replace('Login');
   };
 
-  // زر Reset Password
   handleResetPassword = async () => {
     const { email } = this.state;
 
-    // فحص البريد باستخدام Regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      // عرض مودال الخطأ مع الرسالة المناسبة
       this.setState({
         showErrorModal: true,
         errorTitle: 'Invalid Email',
@@ -60,16 +53,13 @@ class ForgotPasswordScreen extends React.Component {
     try {
       this.setState({ loading: true });
 
-      // 🔹 محاكاة استدعاء API (قم بتغييره إلى API حقيقي)
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // عرض المودال المخصص للنجاح
       this.setState({
         showSuccessModal: true,
-        email: '', // إعادة تعيين الحقل
+        email: '',
       });
     } catch (error) {
-      // في حال حدوث خطأ عام
       this.setState({
         showErrorModal: true,
         errorTitle: 'Something went wrong',
@@ -80,12 +70,10 @@ class ForgotPasswordScreen extends React.Component {
     }
   };
 
-  // إغلاق مودال النجاح
   closeSuccessModal = () => {
     this.setState({ showSuccessModal: false });
   };
 
-  // إغلاق مودال الخطأ
   closeErrorModal = () => {
     this.setState({ showErrorModal: false });
   };
@@ -107,22 +95,18 @@ class ForgotPasswordScreen extends React.Component {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView contentContainerStyle={styles.container} bounces={false}>
-            {/* زر الرجوع */}
             <TouchableOpacity style={styles.backButton} onPress={this.handleBack}>
               <View style={styles.backButtonCircle}>
                 <Ionicons name="chevron-back" size={24} color="#000" />
               </View>
             </TouchableOpacity>
 
-            {/* العنوان */}
             <Text style={styles.title}>Forgot password</Text>
 
-            {/* النص الفرعي */}
             <Text style={styles.subTitle}>
               Enter your email account to reset{'\n'}your password
             </Text>
 
-            {/* حقل البريد */}
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
@@ -135,7 +119,6 @@ class ForgotPasswordScreen extends React.Component {
               />
             </View>
 
-            {/* زر Reset Password */}
             <TouchableOpacity
               style={[
                 styles.resetButton,
@@ -152,7 +135,6 @@ class ForgotPasswordScreen extends React.Component {
             </TouchableOpacity>
           </ScrollView>
 
-          {/* مودال النجاح */}
           <Modal
             visible={showSuccessModal}
             transparent
@@ -160,17 +142,13 @@ class ForgotPasswordScreen extends React.Component {
           >
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
-                {/* أيقونة النجاح */}
                 <View style={styles.successIconWrapper}>
                   <Ionicons name="mail" size={30} color="#fff" />
                 </View>
-                {/* العنوان */}
                 <Text style={styles.modalTitle}>Check your email</Text>
-                {/* الرسالة */}
                 <Text style={styles.modalMessage}>
                   We have sent password recovery{'\n'}instruction to your email
                 </Text>
-                {/* زر إغلاق المودال */}
                 <TouchableOpacity onPress={this.closeSuccessModal} style={styles.closeButton}>
                   <Text style={styles.closeButtonText}>OK</Text>
                 </TouchableOpacity>
@@ -178,7 +156,6 @@ class ForgotPasswordScreen extends React.Component {
             </View>
           </Modal>
 
-          {/* مودال الخطأ */}
           <Modal
             visible={showErrorModal}
             transparent
@@ -186,15 +163,11 @@ class ForgotPasswordScreen extends React.Component {
           >
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
-                {/* أيقونة الخطأ */}
                 <View style={styles.errorIconWrapper}>
                   <Ionicons name="warning" size={30} color="#fff" />
                 </View>
-                {/* العنوان */}
                 <Text style={styles.modalTitle}>{errorTitle}</Text>
-                {/* الرسالة */}
                 <Text style={styles.modalMessage}>{errorMessage}</Text>
-                {/* زر إغلاق المودال */}
                 <TouchableOpacity onPress={this.closeErrorModal} style={styles.closeButton}>
                   <Text style={styles.closeButtonText}>OK</Text>
                 </TouchableOpacity>
@@ -275,10 +248,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // أنماط المودال
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)', // خلفية شفافة للمودال
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -289,7 +261,6 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  // أيقونة النجاح
   successIconWrapper: {
     width: 60,
     height: 60,
@@ -299,7 +270,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 15,
   },
-  // أيقونة الخطأ
   errorIconWrapper: {
     width: 60,
     height: 60,

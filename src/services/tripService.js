@@ -5,7 +5,6 @@ import { useContext } from "react";
 import { AuthContext } from "../../AuthProvider";
 import { v4 as uuid } from "uuid"; // If needed for guest IDs
 
-// --- Service Function: Get Trips ---
 export const getTrips = async ({
   page = 1,
   limit = 10,
@@ -33,7 +32,6 @@ export const getTrips = async ({
       user_id,
     });
 
-    // Ensure we have the expected data structure
     if (!response || !response.data) {
       throw new Error("Invalid response format from server");
     }
@@ -52,53 +50,39 @@ export const getTrips = async ({
   }
 };
 
-// --- Service Function: Fetch Visa Info ---
 export const getVisaInfo = async (nationality, destination) => {
-  // ...existing code...
 };
 
-// --- Service Function: Fetch Culture Insights ---
 export const getCultureInsights = async (destination) => {
-  // ...existing code...
 };
 
-// --- Service Function: Fetch Currency Info ---
 export const getCurrencyInfo = async (destination) => {
-  // ...existing code...
 };
 
-// --- Service Function: Fetch Health Info ---
 export const getHealthInfo = async (destination) => {
-  // ...existing code...
 };
 
-// --- Service Function: Fetch Transportation Info ---
 export const getTransportationInfo = async (destination) => {
-  // ...existing code...
 };
 
-// --- Service Function: Fetch Language Info ---
 export const getLanguageInfo = async (destination) => {
-  // ...existing code...
 };
 
-// --- Service Function: Create Trip ---
 export const createTrip = async (tripData, callbacks = {}) => {
   const { onLoadingChange, onLoadingMessageChange, onError } = callbacks;
-  const TIMEOUT = 130000; // 130 seconds
-
+  
+  const TIMEOUT = 130000; 
   const enrichedTripData = {
     ...tripData,
     user_id: tripData.user_id?.startsWith("guest-")
-      ? tripData.user_id // Use guest token as is
-      : tripData.user_id, // For logged-in users, this is their UUID
+      ? tripData.user_id 
+      : tripData.user_id, 
   };
 
   try {
     console.log("[tripService] Starting request...");
     const startTime = Date.now();
 
-    // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
@@ -135,7 +119,6 @@ export const createTrip = async (tripData, callbacks = {}) => {
   } catch (error) {
     console.error("[tripService] Create trip error:", error);
 
-    // Map error messages
     const errorMessage =
       error.name === "AbortError"
         ? "Request timed out after 130 seconds"
@@ -149,7 +132,6 @@ export const createTrip = async (tripData, callbacks = {}) => {
   }
 };
 
-// Export legacy names for backward compatibility
 export const WorkspaceVisaInfo = getVisaInfo;
 export const WorkspaceCultureInsights = getCultureInsights;
 export const WorkspaceCurrencyInfo = getCurrencyInfo;

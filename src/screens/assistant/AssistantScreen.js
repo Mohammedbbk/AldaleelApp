@@ -21,13 +21,11 @@ import {
   getRecoverySteps,
 } from "../../services/apiClient";
 
-// Constants
 const STORAGE_KEY = "@aldaleel_chat_history";
 const DEBOUNCE_DELAY = 1000;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 2000;
 
-// Initial system message
 const initialMessages = [
   {
     id: 1,
@@ -81,7 +79,6 @@ class ChatScreen extends React.Component {
     }
   }
 
-  // Load chat history from storage
   loadChatHistory = async () => {
     try {
       const history = await AsyncStorage.getItem(STORAGE_KEY);
@@ -97,7 +94,6 @@ class ChatScreen extends React.Component {
     }
   };
 
-  // Save chat history to storage
   saveChatHistory = async () => {
     try {
       const { messages, conversation } = this.state;
@@ -113,7 +109,6 @@ class ChatScreen extends React.Component {
     }
   };
 
-  // Navigation handlers
   handleBack = () => {
     this.props.navigation.goBack();
   };
@@ -122,7 +117,6 @@ class ChatScreen extends React.Component {
     this.props.navigation.navigate("Home");
   };
 
-  // Scroll to bottom of chat
   scrollToBottom = () => {
     if (this.scrollViewRef.current) {
       this.scrollViewRef.current.scrollToEnd({ animated: true });
@@ -143,7 +137,6 @@ class ChatScreen extends React.Component {
    */
   sendMessage = async (message, context) => {
     try {
-      // Defensive check to handle potential import/bundling issues
       if (!chatApiClient || typeof chatApiClient.sendChatMessage !== 'function') {
         console.error("[AssistantScreen] ERROR: chatApiClient or sendChatMessage method is not available", {
           chatApiClient: typeof chatApiClient,
@@ -151,7 +144,6 @@ class ChatScreen extends React.Component {
           hasApiClient: chatApiClient && 'apiClient' in chatApiClient
         });
         
-        // Fallback to direct fetch if apiClient is not working properly
         const mcpUrl = Platform.select({
           android: "http://10.0.2.2:8000",
           ios: "http://localhost:8000",
@@ -193,7 +185,6 @@ class ChatScreen extends React.Component {
         };
       }
       
-      // Original path using apiClient
       console.log("[AssistantScreen] chatApiClient object type:", Object.prototype.toString.call(chatApiClient));
       console.log("[AssistantScreen] chatApiClient.sendChatMessage exists:", typeof chatApiClient.sendChatMessage === 'function');
       console.log("[AssistantScreen] Calling chatApiClient.sendChatMessage with:", { 
@@ -213,7 +204,6 @@ class ChatScreen extends React.Component {
     }
   };
 
-  // Handle sending messages with debouncing
   handleSend = () => {
     if (this.debounceTimeout) {
       clearTimeout(this.debounceTimeout);
@@ -223,7 +213,6 @@ class ChatScreen extends React.Component {
       const { userInput, messages, offlineMessages, conversation } = this.state;
       if (!userInput.trim()) return;
 
-      // Create user message
       const userMessage = {
         id: messages.length + 1,
         role: "user",
@@ -242,7 +231,6 @@ class ChatScreen extends React.Component {
       );
 
       try {
-        // Get AI response using our API client
         const response = await this.sendMessage(
           userInput,
           conversation?.context || "general"
@@ -267,12 +255,10 @@ class ChatScreen extends React.Component {
           }
         );
 
-        // Process any offline messages
         if (offlineMessages.length > 0) {
           this.processOfflineMessages();
         }
       } catch (error) {
-        // Handle error and show recovery UI
         const errorMessage = {
           id: messages.length + 2,
           role: "system",
@@ -284,7 +270,6 @@ class ChatScreen extends React.Component {
           },
         };
 
-        // Store message for offline processing if needed
         if (!navigator.onLine) {
           this.setState((prevState) => ({
             offlineMessages: [...prevState.offlineMessages, userInput],
@@ -304,7 +289,6 @@ class ChatScreen extends React.Component {
           }
         );
 
-        // Show error alert with recovery options
         Alert.alert("Error", getErrorMessage(error), [
           {
             text: "Try Again",
@@ -319,7 +303,6 @@ class ChatScreen extends React.Component {
     }, DEBOUNCE_DELAY);
   };
 
-  // Retry last failed message
   retryLastMessage = () => {
     const { messages } = this.state;
     const lastUserMessage = messages.filter((m) => m.role === "user").pop();
@@ -333,7 +316,6 @@ class ChatScreen extends React.Component {
     }
   };
 
-  // Process offline messages when back online
   processOfflineMessages = async () => {
     const { offlineMessages } = this.state;
     for (const message of offlineMessages) {
@@ -355,7 +337,6 @@ class ChatScreen extends React.Component {
     this.setState({ offlineMessages: [] });
   };
 
-  // Clear chat history
   clearChat = () => {
     Alert.alert(
       "Clear Chat",
@@ -370,7 +351,6 @@ class ChatScreen extends React.Component {
           style: "destructive",
           onPress: async () => {
             try {
-              // Reset state to initial messages
               this.setState({
                 messages: initialMessages,
                 conversation: null,
@@ -379,10 +359,8 @@ class ChatScreen extends React.Component {
                 offlineMessages: [],
               });
               
-              // Clear stored chat history
               await AsyncStorage.removeItem(STORAGE_KEY);
               
-              // Scroll to bottom to show the welcome message
               this.scrollToBottom();
             } catch (error) {
               console.error("Error clearing chat history:", error);
@@ -406,7 +384,6 @@ class ChatScreen extends React.Component {
             : "bg-white border-gray-200"
         }`}
       >
-        {/* Header */}
         <View
           className={`flex-row items-center justify-between px-5 pt-2.5 pb-3 ${
             isDarkMode
@@ -534,7 +511,6 @@ class ChatScreen extends React.Component {
           )}
         </ScrollView>
 
-        {/* Input Area */}
         <View
           className={`px-3 p-3 rounded-s-xl ${
             isDarkMode
@@ -585,7 +561,6 @@ class ChatScreen extends React.Component {
   }
 }
 
-// Wrap component with theme
 export default function ThemedChatScreen(props) {
   const theme = useTheme();
   return <ChatScreen {...props} theme={theme} />;

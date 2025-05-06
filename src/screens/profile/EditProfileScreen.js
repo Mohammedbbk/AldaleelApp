@@ -1,4 +1,3 @@
-// src/screens/profile/EditProfileScreen.js
 import React, { useState, useEffect } from "react";
 import {
   SafeAreaView,
@@ -29,7 +28,6 @@ export default function EditProfileScreen() {
 
   const BASE = "http://10.0.2.2:5000/api/users";
 
-  // fetch profile on mount
   useEffect(() => {
     (async () => {
       try {
@@ -57,7 +55,6 @@ export default function EditProfileScreen() {
     })();
   }, []);
 
-  // photo pickers
   const pickImage = async () => {
     let { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) return Alert.alert("Permission required");
@@ -80,7 +77,6 @@ export default function EditProfileScreen() {
     if (!canceled) setForm({ ...form, avatarUrl: assets[0].uri });
   };
 
-  // detect if anything changed
   const changed =
     initial &&
     (form.name !== initial.name || form.avatarUrl !== initial.avatarUrl);
@@ -129,7 +125,6 @@ export default function EditProfileScreen() {
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
-      {/* Header */}
       <View
         style={{
           flexDirection: "row",
@@ -165,7 +160,6 @@ export default function EditProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {/* Avatar */}
         <View style={{ alignItems: "center", marginBottom: 24 }}>
           <Image
             source={
@@ -213,7 +207,6 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
-        {/* Name input */}
         <View
           style={{
             borderRadius: 12,
@@ -250,7 +243,6 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
-        {/* Save button */}
         <TouchableOpacity
           onPress={saveChanges}
           disabled={!changed}

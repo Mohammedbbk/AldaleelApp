@@ -1,4 +1,3 @@
-// src/screens/SplashScreen.js
 import React from 'react';
 import {
   View,
@@ -8,7 +7,6 @@ import {
   Dimensions,
 } from 'react-native';
 
-// استيراد الإطارات
 import frame1 from '../../../assets/splash/frame1.jpg';
 import frame2 from '../../../assets/splash/frame2.jpg';
 import frame3 from '../../../assets/splash/frame3.jpg';
@@ -23,7 +21,6 @@ class SplashScreen extends React.Component {
   constructor(props) {
     super(props);
 
-    // جميع الإطارات التي نريد تراكُمها
     this.frames = [
       frame1,
       frame2,
@@ -34,36 +31,29 @@ class SplashScreen extends React.Component {
       frame7,
     ];
 
-    // مصفوفة من Animated.Value لكل إطار
-    // نجعل أول إطار مرئيًا من البداية (1)، والبقية 0
     this.framesOpacity = this.frames.map((_, index) =>
       new Animated.Value(index === 0 ? 1 : 0)
     );
 
-    // متغير تحكم بظهور نص "Al Daleel"
     this.textOpacity = new Animated.Value(0);
 
     this.state = {
-      totalDuration: 0, // فقط للاحتفاظ بمجموع الزمن (اختياري)
+      totalDuration: 0,
     };
   }
 
   componentDidMount() {
-    // سنشغل الأنيميشن لكل إطار بالتتابع
-    // بعد كل 400 مللي ثانية نجعل الإطار التالي يظهر
     this.framesOpacity.forEach((animValue, i) => {
       if (i > 0) {
-        // جدولة تشغيل الأنيميشن لكل إطار بعد 400 * i مللي ثانية
         setTimeout(() => {
           Animated.timing(animValue, {
             toValue: 1,
-            duration: 600,     // مدة الفيد
+            duration: 600,
             useNativeDriver: true,
           }).start();
         }, i * 400);
       }
 
-      // عندما يصل المؤشر إلى الإطار الثاني (i==1) نبدأ بإظهار النص
       if (i === 1) {
         setTimeout(() => {
           Animated.timing(this.textOpacity, {
@@ -75,12 +65,9 @@ class SplashScreen extends React.Component {
       }
     });
 
-    // احسب الزمن الكلي: (عدد الإطارات -1) * 400 + مدة آخر أنيميشن
     const totalDuration = (this.framesOpacity.length - 1) * 400 + 600;
     this.setState({ totalDuration });
 
-    // الانتقال لشاشة Onboard بعد (الزمن الكلي + 1000 مللي ثانية) مثلاً
-    // لإتاحة وقت إضافي لمشاهدة الشكل النهائي
     this.timeout = setTimeout(() => {
       this.props.navigation.replace('Onboard');
     }, totalDuration + 1000);
@@ -93,10 +80,6 @@ class SplashScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        {/* 
-          سنرسم جميع الإطارات فوق بعضها (Position: absolute)،
-          بحيث لا نخفي الإطار الأول عند ظهور الثاني، إلخ.
-        */}
         {this.frames.map((frame, i) => (
           <Animated.Image
             key={i}
@@ -109,7 +92,6 @@ class SplashScreen extends React.Component {
           />
         ))}
 
-        {/* النص يظهر مع الفريم الثاني عبر textOpacity */}
         <Animated.Text
           style={[
             styles.text,
@@ -133,9 +115,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   frameImage: {
-    width: width * 1.3,  // جعل الصورة أكبر من الشاشة
+    width: width * 1.3,
     height: height * 1.3,
-    position: 'absolute', // تكديس جميع الإطارات فوق بعض
+    position: 'absolute',
   },
   text: {
     fontSize: width * 0.07,

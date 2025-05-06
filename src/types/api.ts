@@ -54,7 +54,6 @@ export interface ChatResponseData {
 
 export type ChatResponse = SuccessResponse<ChatResponseData>;
 
-// Trip types
 export interface TripActivity {
   id: string;
   name: string;
@@ -160,7 +159,6 @@ export interface CultureInsightsData {
 
 export type CultureInsightsResponse = SuccessResponse<CultureInsightsData>;
 
-// Currency Info types
 export interface CurrencyInfoData {
   currency?: string;
   exchangeRate?: string;
@@ -174,7 +172,6 @@ export interface CurrencyInfoData {
 
 export type CurrencyInfoResponse = SuccessResponse<CurrencyInfoData>;
 
-// Health Info types
 export interface HealthInfoData {
   vaccinations?: string;
   precautions?: string;
@@ -187,7 +184,6 @@ export interface HealthInfoData {
 
 export type HealthInfoResponse = SuccessResponse<HealthInfoData>;
 
-// Transportation Info types
 export interface TransportationInfoData {
   gettingAround?: string;
   options?: string[];
@@ -200,7 +196,6 @@ export interface TransportationInfoData {
 
 export type TransportationInfoResponse = SuccessResponse<TransportationInfoData>;
 
-// Language Info types
 export interface LanguageInfoData {
   officialLanguage?: string;
   phrases?: string[];
@@ -210,7 +205,6 @@ export interface LanguageInfoData {
 
 export type LanguageInfoResponse = SuccessResponse<LanguageInfoData>;
 
-// API client types
 export interface ApiClientConfig {
   baseUrl: string;
   timeout?: number;

@@ -21,7 +21,6 @@ import {
 export default function NotificationSettings() {
   const navigation = useNavigation();
   const { isDarkMode, colors } = useTheme();
-  // Notification settings state
   const [notificationSettings, setNotificationSettings] = useState({
     tripUpdates: true,
     chatMessages: true,
@@ -29,12 +28,10 @@ export default function NotificationSettings() {
     promotions: false,
   });
 
-  // Function to navigate back to ProfileSetting
   const navigateToProfileSetting = () => {
     navigation.navigate("ProfileSetting");
   };
 
-  // Toggle handler for switches
   const toggleSwitch = (key) => {
     setNotificationSettings((prevState) => ({
       ...prevState,
@@ -53,7 +50,6 @@ export default function NotificationSettings() {
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
-      {/* Header with back button */}
       <View
         className={`flex-row items-center px-4 py-3 ${
           isDarkMode
@@ -75,7 +71,6 @@ export default function NotificationSettings() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-6">
-          {/* Description */}
           <View className="mb-6">
             <Text
               className={`text-base ${
@@ -87,7 +82,6 @@ export default function NotificationSettings() {
             </Text>
           </View>
 
-          {/* Notification Options */}
           <View
             className={`${
               isDarkMode
@@ -95,7 +89,6 @@ export default function NotificationSettings() {
                 : "bg-gray-50 border-gray-200"
             } rounded-2xl shadow-sm overflow-hidden mb-6`}
           >
-            {/* Trip Updates */}
             <View
               className={`flex-row items-center justify-between p-4 border-b ${
                 isDarkMode
@@ -141,7 +134,6 @@ export default function NotificationSettings() {
               />
             </View>
 
-            {/* Chat Messages */}
             <View
               className={`flex-row items-center justify-between p-4 border-b ${
                 isDarkMode
@@ -187,7 +179,6 @@ export default function NotificationSettings() {
               />
             </View>
 
-            {/* Travel Alerts */}
             <View
               className={`flex-row items-center justify-between p-4 border-b ${
                 isDarkMode
@@ -233,7 +224,6 @@ export default function NotificationSettings() {
               />
             </View>
 
-            {/* Promotions */}
             <View
               className={`flex-row items-center justify-between p-4 border-b ${
                 isDarkMode
@@ -280,14 +270,9 @@ export default function NotificationSettings() {
             </View>
           </View>
 
-          {/* Save Button */}
           <TouchableOpacity
             className="bg-blue-500 py-4 rounded-xl items-center"
             onPress={() => {
-              // Here you would implement saving the settings to a backend or local storage
-              // Save logic here...
-
-              // Then navigate to ProfileSetting
               navigateToProfileSetting();
             }}
           >

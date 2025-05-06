@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
     android: "http://10.0.2.2:8000",
     ios: "http://localhost:8000",
   }),
-  timeout: 130000, // 130 seconds
+  timeout: 130000, 
   retryAttempts: 3,
   retryDelay: 2000,
   androidEmulatorConfig: {
@@ -27,21 +27,15 @@ export class ApiClient {
   }
 
   shouldRetry(error) {
-    // Don't retry on validation errors
     if (error.status >= 400 && error.status < 500) {
       return false;
     }
 
     return (
-      // Retry on server errors
       error.status >= 500 ||
-      // Retry on network errors
       !error.status ||
-      // Retry on timeout
       error.message.includes("timeout") ||
-      // Retry on JSON parsing errors
       error.message.includes("JSON") ||
-      // Retry on non-JSON responses
       error.message.includes("non-JSON")
     );
   }
@@ -51,7 +45,6 @@ export class ApiClient {
   }
 
   async handleResponse(response) {
-    // Check content type first
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       console.error("[ApiClient] Received non-JSON response:", {
@@ -194,12 +187,10 @@ export class ApiClient {
         },
       });
 
-      // Additional response validation
       if (!response || typeof response !== "object") {
         throw new Error("Invalid response format");
       }
 
-      // Fixed: Backend returns trips directly in response.data, not in response.data.trips
       const trips = response.data || [];
       console.log("[ApiClient] Received trips:", trips);
 
@@ -250,17 +241,14 @@ export class ApiClient {
       const data = await response.json();
       console.log("[ApiClient] Raw chat response:", data);
       
-      // Check if response has the expected format
       if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
         console.error("[ApiClient] Invalid response format:", data);
         throw new Error("Invalid response format from chat service");
       }
       
-      // Extract updated context from response if available
-      const updatedContext = data.context || context;
+        const updatedContext = data.context || context;
       console.log("[ApiClient] Updated context:", updatedContext);
       
-      // Transform the response to match the expected ChatResponseData format
       return {
         data: {
           message: {

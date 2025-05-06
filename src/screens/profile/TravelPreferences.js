@@ -1,4 +1,3 @@
-// screens/TravelPreferences.js
 import React, { useState } from "react";
 import {
   SafeAreaView,
@@ -16,7 +15,6 @@ import { ChevronLeft, CheckCircle, Circle } from "lucide-react-native";
 export default function TravelPreferences() {
   const navigation = useNavigation();
 
-  // Default travel preferences state
   const [preferences, setPreferences] = useState({
     interests: {
       culture: true,
@@ -26,22 +24,20 @@ export default function TravelPreferences() {
       adventure: false,
       relaxation: true,
     },
-    pace: "balanced", // 'relaxed', 'balanced', 'intense'
+    pace: "balanced",
     requirements: {
       halalFood: true,
       wheelchairAccessible: false,
       kidFriendly: false,
       petFriendly: false,
     },
-    transportation: "mix", // 'public', 'private', 'walking', 'mix'
+    transportation: "mix",
   });
 
-  // Function to navigate back to ProfileSetting
   const navigateToProfileSetting = () => {
     navigation.navigate("ProfileSetting");
   };
 
-  // Toggle boolean preferences
   const toggleInterest = (key) => {
     setPreferences((prev) => ({
       ...prev,
@@ -62,7 +58,6 @@ export default function TravelPreferences() {
     }));
   };
 
-  // Set single-choice preferences
   const setPace = (value) => {
     setPreferences((prev) => ({
       ...prev,
@@ -89,7 +84,6 @@ export default function TravelPreferences() {
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
-      {/* Header with back button */}
       <View
         className={`flex-row items-center px-4 py-3 ${
           isDarkMode
@@ -110,7 +104,6 @@ export default function TravelPreferences() {
       </View>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-6">
-          {/* Description */}
           <View className="mb-6">
             <Text
               className={`text-base ${
@@ -123,7 +116,6 @@ export default function TravelPreferences() {
             </Text>
           </View>
 
-          {/* Interests Section */}
           <View
             className={`${
               isDarkMode
@@ -154,9 +146,8 @@ export default function TravelPreferences() {
               </Text>
             </View>
 
-            <View className="p-2">
+            <View className="p-4">
               <View className="flex-row flex-wrap">
-                {/* Interest Items */}
                 <InterestItem
                   label="Culture"
                   className={`text-lg font-bold ${
@@ -200,7 +191,6 @@ export default function TravelPreferences() {
             </View>
           </View>
 
-          {/* Trip Pace Section */}
           <View
             className={`${
               isDarkMode
@@ -252,7 +242,6 @@ export default function TravelPreferences() {
             </View>
           </View>
 
-          {/* Special Requirements */}
           <View
             className={`${
               isDarkMode
@@ -308,7 +297,6 @@ export default function TravelPreferences() {
             </View>
           </View>
 
-          {/* Transportation Preference */}
           <View
             className={`${
               isDarkMode
@@ -364,13 +352,12 @@ export default function TravelPreferences() {
             </View>
           </View>
 
-          {/* Save Button */}
           <TouchableOpacity
             className={`py-4 rounded-xl items-center ${
               isDarkMode ? "bg-blue-600" : "bg-blue-500"
             }`}
             onPress={() => {
-              // ...existing code...
+              // Save logic would go here
             }}
           >
             <Text className="text-white font-semibold text-base">
@@ -379,14 +366,12 @@ export default function TravelPreferences() {
           </TouchableOpacity>
         </View>
 
-        {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// Component for interest item
 const InterestItem = ({ label, emoji, selected, onPress }) => {
   const { isDarkMode } = useTheme();
   return (
@@ -422,7 +407,6 @@ const InterestItem = ({ label, emoji, selected, onPress }) => {
   );
 };
 
-// Component for pace option
 const PaceOption = ({ label, selected, onPress }) => {
   const { isDarkMode } = useTheme();
   return (
@@ -453,7 +437,6 @@ const PaceOption = ({ label, selected, onPress }) => {
   );
 };
 
-// Component for requirement item with switch
 const RequirementItem = ({ label, value, onToggle, noBorder = false }) => {
   const { isDarkMode } = useTheme();
   return (
@@ -486,7 +469,6 @@ const RequirementItem = ({ label, value, onToggle, noBorder = false }) => {
   );
 };
 
-// Component for radio option
 const RadioOption = ({ label, selected, onPress, noBorder = false }) => {
   const { isDarkMode } = useTheme();
   return (

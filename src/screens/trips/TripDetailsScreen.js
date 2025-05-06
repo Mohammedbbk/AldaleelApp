@@ -15,16 +15,15 @@ import {
 } from "react-native";
 import { useTheme } from "../../../ThemeProvider";
 import { Ionicons, FontAwesome, Feather } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next"; // Replace i18n import
+import { useTranslation } from "react-i18next";
 import {
   SPECIAL_REQUIREMENTS,
   TRANSPORTATION_OPTIONS,
 } from "../../config/constants";
 import { createTrip } from "../../services/tripService";
-import { useContext } from "react"; // Add useContext
-import { AuthContext } from "../../../AuthProvider"; // Add AuthContext
+import { useContext } from "react";
+import { AuthContext } from "../../../AuthProvider";
 
-// Define styles for better organization
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FFF" },
   errorText: {
@@ -90,7 +89,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1F2937",
   },
-  createButtonContainer: { marginBottom: 40, marginTop: 10 }, // Added marginTop
+  createButtonContainer: { marginBottom: 40, marginTop: 10 },
   createButton: {
     borderRadius: 999,
     paddingVertical: 16,
@@ -154,9 +153,9 @@ const styles = StyleSheet.create({
 });
 
 export function TripDetailsScreen({ route, navigation }) {
-  const { t } = useTranslation(); // Add translation hook
+  const { t } = useTranslation();
   const { isDarkMode, colors } = useTheme();
-  const { userId } = useContext(AuthContext); // Get userId instead of userToken
+  const { userId } = useContext(AuthContext);
   const fullTripData = route.params?.fullTripData || {};
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -167,7 +166,6 @@ export function TripDetailsScreen({ route, navigation }) {
   const [additionalRequirement, setAdditionalRequirement] = useState("");
   const [selectedTransport, setSelectedTransport] = useState([]);
 
-  // Use useCallback for functions passed to TouchableOpacity to prevent unnecessary re-renders
   const toggleRequirement = useCallback((value) => {
     setSelectedRequirements((prev) =>
       prev.includes(value)
@@ -230,7 +228,7 @@ export function TripDetailsScreen({ route, navigation }) {
 
       const tripData = {
         ...fullTripData,
-        user_id: userId, // Add the user_id
+        user_id: userId,
         specialRequirements: selectedRequirements,
         additionalRequirement: additionalRequirement,
         transportationPreference: selectedTransport,
@@ -258,7 +256,6 @@ export function TripDetailsScreen({ route, navigation }) {
         },
         onLoadingChange: setLoading,
         onLoadingMessageChange: (msg) => {
-          // Add progress indication
           setLoadingMessage(
             msg + "\nThis process typically takes 1-2 minutes."
           );
@@ -297,8 +294,6 @@ export function TripDetailsScreen({ route, navigation }) {
       { cancelable: true }
     );
   };
-
-  // --- Render Helper Functions ---
 
   const renderRequirementOption = (item) => {
     const isSelected = selectedRequirements.includes(item.value);
@@ -360,10 +355,9 @@ export function TripDetailsScreen({ route, navigation }) {
 
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined} // 'height' might also work
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // Adjust offset as needed
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
-        {/* Header */}
         <View className="flex-row items-center justify-between px-5 pt-2.5 pb-5 bg-white dark:bg-gray-900">
           <TouchableOpacity
             className="w-[50] h-[50] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
@@ -378,7 +372,6 @@ export function TripDetailsScreen({ route, navigation }) {
               {t("tripDetails.title")}
             </Text>
           </View>
-          {/* Adjusted to not rely on absolute positioning if header structure changes */}
           <Text className="text-base text-orange-500 font-semibold">
             {t("tripDetails.stepIndicator")}
           </Text>
@@ -389,12 +382,10 @@ export function TripDetailsScreen({ route, navigation }) {
           scrollEnabled={!loading}
           contentContainerStyle={{ paddingBottom: 40 }}
         >
-          {/* Special Requirements */}
           <Text style={styles.sectionTitle}>
             {t("tripDetails.specialRequirements.title")}
           </Text>
           <View style={styles.optionsContainer}>
-            {/* Defensive check before mapping */}
             {Array.isArray(SPECIAL_REQUIREMENTS) ? (
               SPECIAL_REQUIREMENTS.map(renderRequirementOption)
             ) : (
@@ -407,23 +398,21 @@ export function TripDetailsScreen({ route, navigation }) {
                 placeholder={t(
                   "tripDetails.specialRequirements.additionalPlaceholder"
                 )}
-                placeholderTextColor="#9CA3AF" // Use a less intrusive color
+                placeholderTextColor="#9CA3AF"
                 value={additionalRequirement}
                 onChangeText={setAdditionalRequirement}
                 accessibilityLabel={t(
                   "tripDetails.specialRequirements.additionalPlaceholder"
                 )}
-                accessibilityRole="text" // Correct role
+                accessibilityRole="text"
               />
             </View>
           </View>
 
-          {/* Transportation Preference */}
           <Text style={styles.sectionTitle}>
             {t("tripDetails.transportation.title")}
           </Text>
           <View style={styles.optionsContainer}>
-            {/* Defensive check before mapping */}
             {Array.isArray(TRANSPORTATION_OPTIONS) ? (
               TRANSPORTATION_OPTIONS.map(renderTransportOption)
             ) : (
@@ -431,7 +420,6 @@ export function TripDetailsScreen({ route, navigation }) {
             )}
           </View>
 
-          {/* Create Adventure Button */}
           <View style={styles.createButtonContainer}>
             <TouchableOpacity
               style={[
@@ -477,12 +465,11 @@ export function TripDetailsScreen({ route, navigation }) {
             </TouchableOpacity>
           </View>
 
-          {/* Bottom Buttons */}
           <View style={styles.bottomButtonsContainer}>
             <TouchableOpacity
               style={styles.startFreshButton}
               onPress={handleStartFresh}
-              disabled={loading} // Disable if loading
+              disabled={loading}
               accessibilityRole="button"
               accessibilityLabel={t("tripDetails.buttons.startFresh")}
               accessibilityState={{ disabled: loading }}

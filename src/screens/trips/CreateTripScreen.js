@@ -1,5 +1,3 @@
-// Propose changes to AldaleelApp/src/screens/trips/CreateTripScreen.js
-
 import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -26,11 +24,8 @@ import {
 } from "@expo/vector-icons";
 import { debounce } from "lodash";
 
-// --- Configuration ---
-// IMPORTANT: Store API keys securely in a real app (env variables, config)!
 import { OPENWEATHERMAP_API_KEY } from "../../config/keys";
 
-// --- Constants ---
 const MONTHS = [
   ["Jan", "Feb", "Mar"],
   ["Apr", "May", "Jun"],
@@ -42,8 +37,7 @@ const TRAVELER_STYLES = ["Solo", "Family", "Friends"];
 const BUDGET_LEVELS = ["Economy", "Moderate", "Luxury"];
 
 export function CreateTripScreen({ navigation, route }) {
-  // State hooks - Adjusted for city search
-  const [destination, setDestination] = useState(""); // Will hold "City, Country" string for display
+  const [destination, setDestination] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState("2025");
   const [showYearSelector, setShowYearSelector] = useState(false);
@@ -53,17 +47,14 @@ export function CreateTripScreen({ navigation, route }) {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState(null); // Holds selected city object { name, country, lat, lon }
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [duration, setDuration] = useState(""); // ADDED: State for trip duration (days)
-  const [nationality, setNationality] = useState(""); // ADDED: State for user nationality
+  const [duration, setDuration] = useState("");
+  const [nationality, setNationality] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
   const { isDarkMode, colors } = useTheme();
 
-  // --- Form Validation ---
-  // Now includes duration and nationality
   useEffect(() => {
-    // Validate the form fields, now including duration and nationality
     const durationValid =
       duration && !isNaN(duration) && parseInt(duration, 10) > 0;
     const nationalityValid = nationality && nationality.trim().length > 0;
@@ -86,11 +77,8 @@ export function CreateTripScreen({ navigation, route }) {
     nationality,
   ]);
 
-  // --- API Call for Cities ---
   const searchCities = async (query) => {
-    // ... (existing searchCities function remains unchanged) ...
     if (!query || query.trim().length < 2) {
-      // Don't search for very short queries
       setSearchResults([]);
       setShowSearchResults(false);
       setIsLoading(false);
@@ -111,10 +99,9 @@ export function CreateTripScreen({ navigation, route }) {
 
     console.log("Searching for:", query);
     setIsLoading(true);
-    setShowSearchResults(true); // Show the results area (might show loader)
+    setShowSearchResults(true);
 
     try {
-      // Using OpenWeatherMap Geocoding API
       const response = await fetch(
         `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
           query
@@ -124,13 +111,12 @@ export function CreateTripScreen({ navigation, route }) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      // Filter out results without a country code for better quality
       const validResults = data.filter((city) => city.country);
       setSearchResults(validResults);
       console.log("API Results:", validResults);
     } catch (error) {
       console.error("Error fetching cities:", error);
-      setSearchResults([]); // Clear results on error
+      setSearchResults([]);
       Alert.alert(
         "Search Error",
         "Could not fetch city data. Please try again later."
@@ -140,28 +126,22 @@ export function CreateTripScreen({ navigation, route }) {
     }
   };
 
-  // Debounced search function
   const debouncedSearchCities = useCallback(debounce(searchCities, 500), [
     OPENWEATHERMAP_API_KEY,
   ]);
 
-  // Effect to trigger search when query changes
   useEffect(() => {
-    // ... (existing useEffect remains unchanged) ...
     debouncedSearchCities(searchQuery);
-    // Cancel the debounce on unmount or query change
     return () => debouncedSearchCities.cancel();
   }, [searchQuery, debouncedSearchCities]);
 
-  // --- Handlers ---
   const handleSelectPlace = (place) => {
-    // ... (existing handleSelectPlace function remains unchanged) ...
-    setSelectedPlace(place); // Store the full place object
-    setDestination(`${place.name}, ${place.country}`); // Set display string
-    setSearchQuery(""); // Clear search query
-    setSearchResults([]); // Clear results
-    setShowSearchModal(false); // Close modal
-    setShowSearchResults(false); // Hide results area
+    setSelectedPlace(place);
+    setDestination(`${place.name}, ${place.country}`);
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowSearchModal(false);
+    setShowSearchResults(false);
   };
 
   const handleNext = () => {
@@ -178,40 +158,33 @@ export function CreateTripScreen({ navigation, route }) {
     }
 
     const stepOneData = {
-      // Keep existing data
-      destination: selectedPlace?.name, // Use city name from selectedPlace
-      destinationCountry: selectedPlace?.country, // Use country code from selectedPlace
+      destination: selectedPlace?.name,
+      destinationCountry: selectedPlace?.country,
       latitude: selectedPlace?.lat,
       longitude: selectedPlace?.lon,
-      displayDestination: destination, // Keep the display string "City, Country"
+      displayDestination: destination,
       year: selectedYear,
       month: selectedMonth,
       travelerStyle: selectedTravelerStyle,
       budgetLevel: selectedBudgetLevel,
-      // ADDED: Pass duration and nationality
       duration: parseInt(duration, 10),
       nationality: nationality.trim(),
     };
-    console.log("Step 1 Data:", stepOneData); // Log data being passed
+    console.log("Step 1 Data:", stepOneData);
     navigation.navigate("TripStyleScreen", { stepOneData });
   };
 
   const handleBackToHome = () => {
-    // ... (existing handleBackToHome function remains unchanged) ...
-    navigation.navigate("Home"); // Assuming 'HomePage' is your main screen route name
+    navigation.navigate("Home");
   };
 
   const openSearchModal = () => {
-    // ... (existing openSearchModal function remains unchanged) ...
-    setSearchQuery(""); // Clear previous search on open
+    setSearchQuery("");
     setSearchResults([]);
     setShowSearchModal(true);
   };
 
-  // --- Render Functions ---
-  // Function to render search results (can remain mostly the same)
   const renderSearchResults = () => {
-    // ... (existing renderSearchResults function remains unchanged) ...
     if (!showSearchResults) return null;
 
     if (isLoading) {
@@ -235,7 +208,7 @@ export function CreateTripScreen({ navigation, route }) {
       >
         {searchResults.map((item, index) => (
           <TouchableOpacity
-            key={`${item.lat}-${item.lon}-${index}`} // More unique key
+            key={`${item.lat}-${item.lon}-${index}`}
             className="p-3 border-b border-gray-100"
             onPress={() => handleSelectPlace(item)}
           >
@@ -263,9 +236,8 @@ export function CreateTripScreen({ navigation, route }) {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0} // Adjust offset if needed
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
-        {/* Header */}
         <View
           className={`flex-row items-center justify-between px-5 pt-2.5 pb-3 ${
             isDarkMode
@@ -273,20 +245,17 @@ export function CreateTripScreen({ navigation, route }) {
               : "bg-white border-gray-200"
           }`}
         >
-          {/* Back Button */}
           <TouchableOpacity
             className="w-[50] h-[50] rounded-full bg-gray-100 dark:bg-gray-900 justify-center items-center"
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="chevron-back" size={28} color="#000" />
           </TouchableOpacity>
-          {/* Title */}
           <View className="flex-1 items-center">
             <Text className="text-2xl font-bold text-gray-900 dark:text-white">
               Plan Your Trip
             </Text>
           </View>
-          {/* Step Indicator */}
           <Text className="text-base text-orange-500 font-semibold">
             Step 1/3
           </Text>
@@ -296,7 +265,6 @@ export function CreateTripScreen({ navigation, route }) {
           className="flex-1 px-5 mb-20"
           keyboardShouldPersistTaps="handled"
         >
-          {/* --- Destination --- */}
           <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2 mt-5">
             Where to?
           </Text>
@@ -319,12 +287,10 @@ export function CreateTripScreen({ navigation, route }) {
             </Text>
           </TouchableOpacity>
 
-          {/* --- Dates --- */}
           <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
             When are you going?
           </Text>
           <View className="flex-row justify-between items-center mb-6">
-            {/* Month Selector */}
             <View className="flex-1 mr-2">
               <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Month
@@ -361,7 +327,6 @@ export function CreateTripScreen({ navigation, route }) {
               </View>
             </View>
 
-            {/* Year Selector */}
             <View className="w-24">
               <Text className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 Year
@@ -378,7 +343,6 @@ export function CreateTripScreen({ navigation, route }) {
             </View>
           </View>
 
-          {/* --- ADDED: Duration Input --- */}
           <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2 mt-4">
             How long?
           </Text>
@@ -396,10 +360,10 @@ export function CreateTripScreen({ navigation, route }) {
               className="flex-1 text-base text-gray-800 dark:text-gray-200"
               placeholder="e.g., 7"
               placeholderTextColor="#999"
-              keyboardType="number-pad" // Use number pad for easier input
+              keyboardType="number-pad"
               value={duration}
-              onChangeText={(text) => setDuration(text.replace(/[^0-9]/g, ""))} // Allow only numbers
-              maxLength={3} // Limit to 3 digits (max 999 days)
+              onChangeText={(text) => setDuration(text.replace(/[^0-9]/g, ""))}
+              maxLength={3}
             />
             {duration ? (
               <Text className="text-base text-gray-600 dark:text-gray-400 ml-2">
@@ -408,7 +372,6 @@ export function CreateTripScreen({ navigation, route }) {
             ) : null}
           </View>
 
-          {/* --- ADDED: Nationality Input --- */}
           <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2 mt-4">
             Your Nationality?
           </Text>
@@ -423,12 +386,11 @@ export function CreateTripScreen({ navigation, route }) {
               placeholderTextColor="#999"
               value={nationality}
               onChangeText={setNationality}
-              autoCapitalize="words" // Capitalize first letter of each word
+              autoCapitalize="words"
               returnKeyType="done"
             />
           </View>
 
-          {/* --- Travel Style --- */}
           <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-4">
             Who's traveling?
           </Text>
@@ -456,7 +418,6 @@ export function CreateTripScreen({ navigation, route }) {
             ))}
           </View>
 
-          {/* --- Budget --- */}
           <Text className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 mt-4">
             Budget level?
           </Text>
@@ -486,16 +447,13 @@ export function CreateTripScreen({ navigation, route }) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Search Modal */}
       <Modal
         transparent={true}
         visible={showSearchModal}
         animationType="slide"
         onRequestClose={() => setShowSearchModal(false)}
       >
-        {/* ... (Search Modal content remains unchanged) ... */}
         <SafeAreaView className="flex-1 bg-white">
-          {/* Modal Header */}
           <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-200">
             <TouchableOpacity
               onPress={() => setShowSearchModal(false)}
@@ -509,22 +467,20 @@ export function CreateTripScreen({ navigation, route }) {
             <View className="w-8">
               <Text> </Text>
             </View>
-            {/* Spacer with empty Text component */}
           </View>
 
-          {/* Search Input Area */}
           <View className="px-4 pt-4">
             <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-2">
               <Ionicons name="search" size={20} color="#999" className="mr-2" />
               <TextInput
-                className="flex-1 text-base text-gray-800 h-10" // Ensure consistent height
+                className="flex-1 text-base text-gray-800 h-10"
                 placeholder="Enter city name..."
                 placeholderTextColor="#999"
                 value={searchQuery}
-                onChangeText={setSearchQuery} // Directly set, useEffect will trigger debounced search
+                onChangeText={setSearchQuery}
                 autoFocus={true}
                 returnKeyType="search"
-                onBlur={() => setShowSearchResults(true)} // Keep results visible when input loses focus within modal
+                onBlur={() => setShowSearchResults(true)}
               />
               {searchQuery.length > 0 && (
                 <TouchableOpacity
@@ -537,12 +493,10 @@ export function CreateTripScreen({ navigation, route }) {
             </View>
           </View>
 
-          {/* Search Results Area */}
           {renderSearchResults()}
         </SafeAreaView>
       </Modal>
 
-      {/* Year Selector Modal */}
       <Modal
         transparent={true}
         visible={showYearSelector}
@@ -555,8 +509,8 @@ export function CreateTripScreen({ navigation, route }) {
           onPress={() => setShowYearSelector(false)}
         >
           <View
-            onStartShouldSetResponder={() => true} // Prevent closing on inner press
-            className="w-4/5 bg-white rounded-xl p-5 shadow-md max-h-[70%]" // Added max-h
+            onStartShouldSetResponder={() => true}
+            className="w-4/5 bg-white rounded-xl p-5 shadow-md max-h-[70%]"
           >
             <View className="flex-row justify-between items-center mb-4 pb-2.5 border-b border-gray-100">
               <Text className="text-lg font-bold text-gray-800">
@@ -597,12 +551,10 @@ export function CreateTripScreen({ navigation, route }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* Bottom Navigation */}
       <View className="absolute bottom-0 left-0 right-0 bg-white px-5 pt-3 pb-5 border-t border-gray-100">
         <View className="flex-row justify-between items-center h-[50px]">
-          {/* Home Button */}
           <TouchableOpacity
-            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5" // Adjusted size/shadow
+            className="w-[50px] h-[50px] rounded-full bg-gray-100 justify-center items-center shadow shadow-black/5"
             onPress={handleBackToHome}
           >
             <FontAwesome name="home" size={26} color="#444" />
@@ -610,13 +562,12 @@ export function CreateTripScreen({ navigation, route }) {
           <View style={{ flex: 0.05 }}>
             <Text> </Text>
           </View>
-          {/* Next Button */}
           <TouchableOpacity
             className={`flex-row flex-1 items-center justify-center rounded-full px-6 py-3 shadow shadow-black/10 ml-4 ${
-              isFormValid ? "bg-sky-500" : "bg-sky-300" // Use updated isFormValid
+              isFormValid ? "bg-sky-500" : "bg-sky-300"
             }`}
             onPress={handleNext}
-            disabled={!isFormValid} // Use updated isFormValid
+            disabled={!isFormValid}
           >
             <Text className="text-white text-lg font-semibold mr-1.5">
               Next

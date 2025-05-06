@@ -21,7 +21,6 @@ import FloatingBottomNav from "../../components/navigation/FloatingBottomNav";
 import { getTrips } from "../../services/tripService";
 import { LinearGradient } from "expo-linear-gradient";
 
-// Define filter options
 const filterOptions = [
   { id: "all", translationKey: "trips.list.filters.all" },
   { id: "upcoming", translationKey: "trips.list.filters.upcoming" },
@@ -29,7 +28,6 @@ const filterOptions = [
 ];
 
 function TripListScreen({ navigation }) {
-  // Add translation hook
   const { t } = useTranslation();
   const [searchText, setSearchText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,10 +37,8 @@ function TripListScreen({ navigation }) {
   const [sortBy, setSortBy] = useState("date");
   const colorScheme = useColorScheme();
 
-  // Get userToken and userId from AuthContext
   const { userToken, userId } = useContext(AuthContext);
 
-  // --- Updated fetchTrips using getTrips service ---
   const fetchTripsData = useCallback(
     async (options = {}) => {
       const {
@@ -102,43 +98,34 @@ function TripListScreen({ navigation }) {
         setIsLoading(false);
       }
     },
-    [selectedFilter, sortBy, searchText, t, userId] // Add userId to dependencies
+    [selectedFilter, sortBy, searchText, t, userId]
   );
 
-  // --- Handlers for Search, Filter, Sort ---
-
-  // Debounced effect for search triggering
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      // Trigger fetch only when searchText changes (or filter/sort change via handlers)
-      // Pass current filter/sort state along with search text
       fetchTripsData({
         page: 1,
         search: searchText,
         filter: selectedFilter,
         sort: sortBy,
       });
-    }, 500); // Adjust debounce delay as needed
+    }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchText, selectedFilter, sortBy, fetchTripsData]); // Re-run if search, filter, sort, or the fetch function itself changes
+  }, [searchText, selectedFilter, sortBy, fetchTripsData]);
 
   const handleFilterChange = (filterId) => {
     setSelectedFilter(filterId);
-    // fetchTripsData will be triggered by the useEffect above because selectedFilter changed
   };
 
   const handleSort = () => {
     const newSortBy = sortBy === "date" ? "destination" : "date";
     setSortBy(newSortBy);
-    // fetchTripsData will be triggered by the useEffect above because sortBy changed
   };
 
-  // --- Trip Action Handlers ---
   const handleTripAction = (actionType, tripId) => {
     switch (actionType) {
       case "view":
-        // Find the trip in the trips array
         const tripToView = trips.find((t) => t.id === tripId);
         if (tripToView) {
           navigation.navigate("UserPlanScreen", { tripData: tripToView });
@@ -167,9 +154,7 @@ function TripListScreen({ navigation }) {
               text: t("trips.list.delete"),
               style: "destructive",
               onPress: () => {
-                // In a real app, you would call an API to delete the trip
                 console.log("Delete trip:", tripId);
-                // Then update the UI by removing the trip from the list
                 setTrips((prevTrips) =>
                   prevTrips.filter((trip) => trip.id !== tripId)
                 );
@@ -185,8 +170,8 @@ function TripListScreen({ navigation }) {
 
   const renderTripItem = ({ item, index }) => (
     <TripCard
-      item={item} // Pass the whole item
-      index={index} // Pass index for staggered animations
+      item={item}
+      index={index}
       onViewPress={() => handleTripAction("view", item.id)}
       onEditPress={() => handleTripAction("edit", item.id)}
       onSharePress={() => handleTripAction("share", item.id)}

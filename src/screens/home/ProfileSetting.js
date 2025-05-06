@@ -24,7 +24,7 @@ import {
   LogOut,
 } from "lucide-react-native";
 import FloatingBottomNav from "../../components/navigation/FloatingBottomNav";
-import { AuthContext } from "../../../AuthProvider"; // auth provider page in the root folder
+import { AuthContext } from "../../../AuthProvider";
 import { useTheme } from "../../../ThemeProvider";
 
 const profileOptions = [
@@ -126,7 +126,6 @@ export default function ProfileSetting() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-6 pb-8 ">
-          {/* --- Top Profile Info Section --- */}
           <View
             className={`shadow-xl flex-row items-center justify-between ${
               isDarkMode
@@ -134,7 +133,6 @@ export default function ProfileSetting() {
                 : "bg-gray-50 border-gray-200"
             } p-5 rounded-2xl shadow-sm mb-8`}
           >
-            {/* Left Side: Avatar, Name, Email */}
             <View className="flex-row items-center flex-shrink mr-4">
               <Image
                 source={{ uri: userData.avatarUrl }}
@@ -161,7 +159,6 @@ export default function ProfileSetting() {
               </View>
             </View>
 
-            {/* Right Side: Stats */}
             <View className="items-end space-y-2">
               <View className="items-center">
                 <Text
@@ -190,7 +187,6 @@ export default function ProfileSetting() {
             </View>
           </View>
 
-          {/* --- Profile Options + Logout --- */}
           <View
             className={`${
               isDarkMode
@@ -224,7 +220,6 @@ export default function ProfileSetting() {
               </TouchableOpacity>
             ))}
 
-            {/* --- Logout Button --- */}
             <TouchableOpacity
               onPress={logout}
               className={`flex-row items-center justify-between p-4 border-t ${

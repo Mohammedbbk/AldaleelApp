@@ -1,4 +1,3 @@
-// screens/ThemeSettingsScreen.js
 import React from "react";
 import {
   SafeAreaView,
@@ -31,7 +30,6 @@ export default function ThemeSettingsScreen() {
     colors,
   } = useTheme();
 
-  // Theme color options
   const themeColors = [
     { id: "blue", name: "Blue", primary: "#3b82f6", secondary: "#93c5fd" },
     { id: "green", name: "Green", primary: "#10b981", secondary: "#a7f3d0" },
@@ -41,10 +39,8 @@ export default function ThemeSettingsScreen() {
     { id: "teal", name: "Teal", primary: "#14b8a6", secondary: "#99f6e4" },
   ];
 
-  // Toggle dark mode
   const handleDarkModeToggle = () => {
     if (themeMode === "system") {
-      // If system theme is enabled, disable it first
       setThemeMode("dark");
     } else if (themeMode === "dark") {
       setThemeMode("light");
@@ -53,17 +49,14 @@ export default function ThemeSettingsScreen() {
     }
   };
 
-  // Toggle system theme
   const handleSystemThemeToggle = (value) => {
     setThemeMode(value ? "system" : isDarkMode ? "dark" : "light");
   };
 
-  // Select theme color
   const handleColorSelect = (colorId) => {
     setThemeColor(colorId);
   };
 
-  // Save theme settings and go back
   const saveThemeSettings = () => {
     navigation.goBack();
   };
@@ -79,7 +72,6 @@ export default function ThemeSettingsScreen() {
         backgroundColor={isDarkMode ? "#111827" : "#fff"}
       />
 
-      {/* Top navigation bar */}
       <View
         className={`flex-row items-center px-4 py-3 ${
           isDarkMode
@@ -101,7 +93,6 @@ export default function ThemeSettingsScreen() {
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="p-6 pb-8 gap-5">
-          {/* Theme Mode Section */}
           <View
             className={`${
               isDarkMode
@@ -244,7 +235,6 @@ export default function ThemeSettingsScreen() {
             </View>
           </View>
 
-          {/* Theme Color Section */}
           <View
             className={`${
               isDarkMode ? "bg-gray-800" : "bg-gray-50"
@@ -312,7 +302,6 @@ export default function ThemeSettingsScreen() {
             </View>
           </View>
 
-          {/* Save button */}
           <TouchableOpacity
             onPress={saveThemeSettings}
             className="mt-6 p-4 rounded-xl"
